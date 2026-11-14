@@ -3,6 +3,7 @@
 import { BOT } from './config.js';
 import { clearLine } from './collide.js';
 import { eyeOf, heightOf } from './actors.js';
+import { smokeBlocks } from './grenades.js';
 
 export const NOISE = { STEP: 16, SHOT: 48, RELOAD: 9, LAND: 12 };
 
@@ -31,6 +32,7 @@ export function canSee(state, a, b) {
   }
   const ex = a.pos.x, ey = a.pos.y + eyeOf(a), ez = a.pos.z;
   const h = heightOf(b);
+  if (smokeBlocks(state, ex, ey, ez, b.pos.x, b.pos.y + h * 0.65, b.pos.z)) return false;
   return clearLine(state.map, ex, ey, ez, b.pos.x, b.pos.y + h - 0.15, b.pos.z)
     || clearLine(state.map, ex, ey, ez, b.pos.x, b.pos.y + h * 0.65, b.pos.z);
 }

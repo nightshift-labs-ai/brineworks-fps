@@ -1,6 +1,6 @@
 // Radar: the whole map drawn once from the grid onto an offscreen canvas, then each frame the
 // player's team and any enemy a teammate currently has eyes on.
-import { TEAMS } from '../sim/config.js';
+import { TEAMS, SIDE } from '../sim/config.js';
 
 export function createRadar(state, canvas) {
   const map = state.map;
@@ -43,6 +43,12 @@ export function createRadar(state, canvas) {
       if (!a.alive || a === p) continue;
       if (a.team === p.team) dot(a, TEAMS[a.team].css, 5);
       else if (spotted(a)) dot(a, '#ff4d4d', 6);
+    }
+    // The Fuse Core: attackers always know where it is; defenders once it is armed.
+    const core = state.core;
+    if (core.state !== 'carried' && (core.state === 'planted' || state.teams[p.team].side === SIDE.ATTACK)) {
+      ctx.fillStyle = state.time % 0.6 < 0.3 ? '#efc94c' : '#7a5f10';
+      ctx.fillRect(ox + (core.x / map.cell) * scale - 4, oy + (core.z / map.cell) * scale - 4, 8, 8);
     }
     if (p.alive) {
       const x = ox + (p.pos.x / map.cell) * scale, y = oy + (p.pos.z / map.cell) * scale;

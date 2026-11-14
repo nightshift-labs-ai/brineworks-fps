@@ -11,6 +11,11 @@ export const EV = {
   ROUND: 8, // v = 0 start, 1 end; a = winning team
   JUMP: 9, // a = actor
   DRAW: 10, // a = actor, v = weapon index
+  CORE: 11, // v = 0 dropped, 1 picked up, 2 armed, 3 disarmed, 4 beep, 5 work started; a = actor
+  BLAST: 12, // (x,y,z) centre, v = radius, a = thrower (-1 for the core)
+  THROW: 13, // a = actor, v = 0 frag / 1 smoke
+  BOUNCE: 14, // x = grenade position
+  SMOKE: 15, // (x,y,z) cloud centre
 };
 
 const SIZE = 512;

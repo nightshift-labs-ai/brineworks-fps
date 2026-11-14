@@ -7,8 +7,10 @@ import { buildLevel } from './level.js';
 import { createCharacters } from './characters.js';
 import { createEffects } from './effects.js';
 import { createViewModel } from './viewmodel.js';
+import { createProps } from './props.js';
 import { drain, EV } from '../sim/events.js';
 import { eyeOf } from '../sim/actors.js';
+import { WEAPONS } from '../sim/config.js';
 
 export function createView(state, container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -22,7 +24,7 @@ export function createView(state, container) {
 
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(PALETTE.haze, 35, 170);
-  const camera = new THREE.PerspectiveCamera(74, 1, 0.05, 600);
+  const camera = new THREE.PerspectiveCamera(74, 1, 0.05, 600); // fov: BASE_FOV below
   camera.rotation.order = 'YXZ';
 
   const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(), side: THREE.BackSide, fog: false, depthWrite: false }));
@@ -43,7 +45,10 @@ export function createView(state, container) {
   scene.add(buildLevel(map, createTextures()));
   const characters = createCharacters(scene, state);
   const effects = createEffects(scene);
+  const props = createProps(scene, state);
   const vm = createViewModel();
+  const BASE_FOV = 74;
+  let shake = 0;
 
   const muzzle = new THREE.Vector3();
   let cursor = state.events.head;
@@ -96,6 +101,15 @@ export function createView(state, container) {
       case EV.ROUND:
         if (e.v === 0) effects.clearDecals();
         break;
+      case EV.BLAST: {
+        effects.spawnBlast(e.x, e.y, e.z, e.v);
+        const d = Math.hypot(e.x - camera.position.x, e.z - camera.position.z);
+        shake = Math.max(shake, Math.max(0, 1 - d / (e.v * 3)));
+        break;
+      }
+      case EV.CORE:
+        if (e.v === 4) props.beep();
+        break;
     }
   }
 
@@ -109,12 +123,19 @@ export function createView(state, container) {
     // The player's own view uses the freshest mouse look; recoil punch is drawn on top.
     const yaw = who === state.player ? look.yaw : who.yaw;
     const pitch = who === state.player ? look.pitch : who.pitch;
-    camera.rotation.set(pitch + who.punchPitch, yaw + who.punchYaw, 0);
+    shake = Math.max(0, shake - dt * 1.8);
+    const jolt = shake * shake * 0.04 * Math.sin(performance.now() * 0.09);
+    camera.rotation.set(pitch + who.punchPitch + jolt, yaw + who.punchYaw + jolt * 0.7, 0);
+    // A scoped marksman rifle narrows the view; the HUD draws the scope ring.
+    const w = who.slots[who.active];
+    const fov = who.scoped && w ? BASE_FOV * WEAPONS[w.id].scope : BASE_FOV;
+    if (camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
     camera.updateMatrixWorld();
 
     characters.update(alpha, dt, who.id);
+    props.update(alpha, dt, who.id);
     effects.update(dt);
-    vm.setVisible(who === state.player && who.alive);
+    vm.setVisible(who === state.player && who.alive && !who.scoped);
     vm.update(dt, who, look);
 
     renderer.clear();

@@ -5,7 +5,7 @@ import { raySphere, rayCylinder } from './collide.js';
 import { emit, EV } from './events.js';
 
 export function createCommand() {
-  return { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, reload: false, crouch: false, walk: false, jump: false, use: false, slot: -1 };
+  return { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, aim: false, reload: false, crouch: false, walk: false, jump: false, use: false, slot: -1, toss: '' };
 }
 
 export function createActor(id, team, name, isBot) {
@@ -20,6 +20,8 @@ export function createActor(id, team, name, isBot) {
     // loadout: one primary, one sidearm; each slot { id, mag, reserve } or null
     slots: [null, null],
     active: 1,
+    grenades: { frag: 0, smoke: 0 },
+    scoped: false,
     fireCooldown: 0, reloadTimer: 0, drawTimer: 0, triggerHeld: false,
     bloom: 0, punchPitch: 0, punchYaw: 0, shotsFired: 0,
     kills: 0, deaths: 0, roundKills: 0,
@@ -45,7 +47,7 @@ export function giveWeapon(a, id) {
 // Place an actor at a spawn for a new round. Survivors keep their guns and armour; the dead start
 // again with the sidearm. Every gun is refilled.
 export function respawn(a, spawn, yaw) {
-  if (!a.alive) { a.slots[0] = null; a.slots[1] = null; a.armor = 0; }
+  if (!a.alive) { a.slots[0] = null; a.slots[1] = null; a.armor = 0; a.grenades.frag = 0; a.grenades.smoke = 0; }
   if (!a.slots[1]) giveWeapon(a, 'pike');
   for (const w of a.slots) if (w) { w.mag = WEAPONS[w.id].mag; w.reserve = WEAPONS[w.id].reserve; }
   a.active = a.slots[0] ? 0 : 1;
@@ -56,7 +58,7 @@ export function respawn(a, spawn, yaw) {
   a.yaw = a.prevYaw = yaw; a.pitch = a.prevPitch = 0;
   a.crouch = 0; a.grounded = true; a.stride = 0;
   a.fireCooldown = 0; a.reloadTimer = 0; a.drawTimer = 0;
-  a.bloom = 0; a.punchPitch = 0; a.punchYaw = 0; a.shotsFired = 0;
+  a.bloom = 0; a.punchPitch = 0; a.punchYaw = 0; a.shotsFired = 0; a.scoped = false;
   a.roundKills = 0; a.lastHurtBy = -1;
 }
 

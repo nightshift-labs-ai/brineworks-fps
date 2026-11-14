@@ -101,7 +101,31 @@ export function createEffects(scene) {
     f.life = 0.05;
   }
 
+  // Explosion: a big flash, a burst of fire and grit, and a short light.
+  const blastSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot(), color: 0xffb35c, blending: THREE.AdditiveBlending, depthWrite: false }));
+  blastSprite.visible = false;
+  const blastLight = new THREE.PointLight(0xff9a40, 0, 30);
+  scene.add(blastSprite, blastLight);
+  let blastLife = 0, blastSize = 0;
+
+  function spawnBlast(x, y, z, radius) {
+    blastSprite.position.set(x, y + 0.6, z);
+    blastLight.position.set(x, y + 1.5, z);
+    blastLife = 0.45;
+    blastSize = radius * 0.9;
+    spawnParticles(x, y + 0.3, z, 0, 1, 0, 40, 1, 0.55, 0.18, 7);
+    spawnParticles(x, y + 0.3, z, 0, 0.6, 0, 30, 0.25, 0.22, 0.2, 5);
+  }
+
   function update(dt) {
+    if (blastLife > 0) {
+      blastLife -= dt;
+      const k = Math.max(0, blastLife / 0.45);
+      blastSprite.visible = k > 0;
+      blastSprite.scale.setScalar(blastSize * (1.4 - k * 0.6));
+      blastSprite.material.opacity = k;
+      blastLight.intensity = k * 60;
+    }
     for (let i = 0; i < TRACERS; i++) {
       const t = tracers[i];
       if (!t.live) continue;
@@ -140,5 +164,5 @@ export function createEffects(scene) {
     decalMesh.instanceMatrix.needsUpdate = true;
   }
 
-  return { spawnTracer, spawnDecal, spawnParticles, spawnFlash, update, clearDecals };
+  return { spawnTracer, spawnDecal, spawnParticles, spawnFlash, spawnBlast, update, clearDecals };
 }

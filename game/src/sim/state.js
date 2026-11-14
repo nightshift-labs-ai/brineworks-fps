@@ -6,6 +6,8 @@ import { createRng } from './rng.js';
 import { createEvents } from './events.js';
 import { createActor } from './actors.js';
 import { createBrain } from './bots.js';
+import { createCore } from './objective.js';
+import { createNades, createSmokes } from './grenades.js';
 
 const CALLSIGNS = [
   ['You', 'Rook', 'Tamsin', 'Ozzy', 'Brandt'],
@@ -21,7 +23,11 @@ export function createState(seed) {
     teams: TEAMS.map((t, id) => ({ id, name: t.name, side: id, score: 0, lossStreak: 0, lastPay: 0 })),
     actors: [],
     player: null,
-    round: { number: 0, phase: 'freeze', timer: 0, clock: 0, winner: -1, reason: '', buyOpen: false },
+    round: { number: 0, phase: 'freeze', timer: 0, clock: 0, winner: -1, reason: '', buyOpen: false, planted: false },
+    core: createCore(),
+    nades: createNades(),
+    smokes: createSmokes(),
+    intel: [{ x: 0, z: 0, time: -99 }, { x: 0, z: 0, time: -99 }], // last enemy sighting, per team
     match: { winner: -1 },
     events: createEvents(),
   };

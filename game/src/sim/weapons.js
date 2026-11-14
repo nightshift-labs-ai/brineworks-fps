@@ -6,6 +6,7 @@ import { raycast } from './collide.js';
 import { eyeOf, rayActor, applyDamage } from './actors.js';
 import { emit, EV } from './events.js';
 import { makeNoise, NOISE } from './senses.js';
+import { throwNade } from './grenades.js';
 
 const worldHit = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, kind: 0 };
 const partOut = { part: 0 };
@@ -15,7 +16,8 @@ export function spreadOf(a, def) {
   const speed = Math.hypot(a.vel.x, a.vel.z);
   const moving = Math.max(0, Math.min(1, (speed - 0.5) / (MOVE.runSpeed - 0.5)));
   const s = def.spread;
-  const cone = s.base + s.move * moving + (a.grounded ? 0 : s.air) + a.bloom;
+  const base = def.scope && !a.scoped ? s.unscoped : s.base; // a marksman rifle is only precise scoped
+  const cone = base + s.move * moving + (a.grounded ? 0 : s.air) + a.bloom;
   return cone * (1 + (s.crouch - 1) * a.crouch);
 }
 
@@ -35,6 +37,11 @@ export function updateWeapon(state, a, cmd, canFire) {
     }
   }
   if (cmd.reload) startReload(state, a, w, def);
+  a.scoped = !!def.scope && cmd.aim && a.reloadTimer <= 0 && a.drawTimer <= 0;
+  if (cmd.toss && canFire && a.drawTimer <= 0 && throwNade(state, a, cmd.toss)) {
+    a.drawTimer = 0.55; // the gun comes back up after the throw
+    a.reloadTimer = 0;
+  }
 
   const pulled = cmd.fire && (def.auto || !a.triggerHeld);
   if (pulled && canFire && a.fireCooldown <= 0 && a.drawTimer <= 0 && a.reloadTimer <= 0) {

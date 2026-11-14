@@ -5,6 +5,7 @@ import { respawn } from './actors.js';
 import { payRound, botShop } from './economy.js';
 import { planRound } from './bots.js';
 import { emit, EV } from './events.js';
+import { resetCore } from './objective.js';
 
 export function startMatch(state) {
   for (const t of state.teams) { t.score = 0; t.side = t.id; t.lossStreak = 0; }
@@ -24,6 +25,9 @@ export function startRound(state) {
   round.winner = -1;
   round.reason = '';
   round.buyOpen = true;
+  round.planted = false;
+  for (const n of state.nades) n.live = false;
+  for (const s of state.smokes) s.live = false;
   const used = [0, 0];
   for (const a of state.actors) {
     const side = state.teams[a.team].side;
@@ -33,6 +37,10 @@ export function startRound(state) {
     a.cmd.yaw = a.yaw; a.cmd.pitch = 0;
     if (a.isBot) botShop(state, a);
   }
+  // The Fuse Core goes to the player when attacking, else to a random attacking bot.
+  const attackers = state.actors.filter((a) => state.teams[a.team].side === SIDE.ATTACK);
+  const carrier = attackers.includes(state.player) ? state.player : state.rng.pick(attackers);
+  resetCore(state, carrier.id);
   for (const t of state.teams) planRound(state, t.id, t.side === SIDE.ATTACK);
   emit(state.events, EV.ROUND, -1, -1, 0);
 }
@@ -58,11 +66,17 @@ export function updateRound(state) {
       if (round.timer <= 0) { round.phase = 'live'; round.timer = 0; }
       break;
     case 'live': {
-      round.clock -= DT;
-      round.buyOpen = ROUND.live - round.clock < ROUND.buyWindow;
-      const alive0 = aliveCount(state, 0), alive1 = aliveCount(state, 1);
-      if (alive0 === 0 || alive1 === 0) endRound(state, alive0 === 0 ? 1 : 0, 'eliminated');
-      else if (round.clock <= 0) endRound(state, teamOnSide(state, SIDE.DEFEND), 'time');
+      // Win conditions. Once the core is armed the clock stops mattering: the attackers win if it
+      // detonates or every defender is down; the defenders must disarm it, even if no attacker is left.
+      const atk = teamOnSide(state, SIDE.ATTACK), def = 1 - atk;
+      const core = state.core.state;
+      if (core !== 'planted') round.clock -= DT;
+      round.buyOpen = ROUND.live - round.clock < ROUND.buyWindow && core !== 'planted';
+      if (core === 'detonated') endRound(state, atk, 'detonated');
+      else if (core === 'defused') endRound(state, def, 'defused');
+      else if (aliveCount(state, def) === 0) endRound(state, atk, 'eliminated');
+      else if (aliveCount(state, atk) === 0 && core !== 'planted') endRound(state, def, 'eliminated');
+      else if (round.clock <= 0 && core !== 'planted') endRound(state, def, 'time');
       break;
     }
     case 'over':

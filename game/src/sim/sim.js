@@ -6,6 +6,8 @@ import { startMatch, updateRound } from './round.js';
 import { think } from './bots.js';
 import { moveActor, separateActors } from './movement.js';
 import { updateWeapon } from './weapons.js';
+import { updateCore, isWorking } from './objective.js';
+import { updateNades } from './grenades.js';
 
 export function createGame(seed) {
   const state = createState(seed);
@@ -21,9 +23,11 @@ export function step(state) {
   const actors = state.actors;
   for (const a of actors) if (a.alive && a.isBot) think(state, a);
   for (const a of actors) {
-    if (a.alive) moveActor(state, a, a.cmd, frozen);
+    if (a.alive) moveActor(state, a, a.cmd, frozen || isWorking(state, a));
     else { a.prev.x = a.pos.x; a.prev.y = a.pos.y; a.prev.z = a.pos.z; }
   }
   separateActors(state);
-  for (const a of actors) if (a.alive) updateWeapon(state, a, a.cmd, !frozen);
+  for (const a of actors) if (a.alive) updateWeapon(state, a, a.cmd, !frozen && !isWorking(state, a));
+  updateNades(state);
+  if (!frozen) updateCore(state);
 }

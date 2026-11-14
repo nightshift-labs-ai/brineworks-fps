@@ -44,6 +44,29 @@ function wasp() {
   return { group: g, muzzle: new THREE.Vector3(0, 0.05, -0.41) };
 }
 
+function brute() {
+  const g = new THREE.Group();
+  add(g, METAL, 0.08, 0.1, 0.36, 0, 0.04, -0.1); // receiver
+  add(g, METAL, 0.045, 0.045, 0.42, 0, 0.07, -0.48); // barrel
+  add(g, FURNITURE, 0.07, 0.07, 0.24, 0, 0.0, -0.42); // pump
+  add(g, FURNITURE, 0.065, 0.13, 0.07, 0, -0.06, 0.04, -0.3);
+  add(g, FURNITURE, 0.07, 0.11, 0.26, 0, 0.0, 0.22);
+  return { group: g, muzzle: new THREE.Vector3(0, 0.07, -0.7) };
+}
+
+function heron() {
+  const g = new THREE.Group();
+  add(g, METAL, 0.075, 0.1, 0.46, 0, 0.04, -0.12);
+  add(g, METAL, 0.032, 0.032, 0.5, 0, 0.05, -0.58); // long barrel
+  add(g, METAL, 0.05, 0.05, 0.08, 0, 0.05, -0.86);
+  add(g, METAL, 0.06, 0.07, 0.3, 0, 0.14, -0.12); // scope tube
+  add(g, METAL, 0.075, 0.08, 0.05, 0, 0.14, -0.28);
+  add(g, METAL, 0.05, 0.12, 0.07, 0, -0.06, -0.14, 0.15); // box magazine
+  add(g, FURNITURE, 0.065, 0.13, 0.07, 0, -0.06, 0.03, -0.3);
+  add(g, FURNITURE, 0.07, 0.13, 0.28, 0, 0.0, 0.24);
+  return { group: g, muzzle: new THREE.Vector3(0, 0.05, -0.9) };
+}
+
 function pike() {
   const g = new THREE.Group();
   add(g, METAL, 0.06, 0.07, 0.22, 0, 0.06, -0.06); // slide
@@ -72,7 +95,7 @@ export function createViewModel() {
   scene.add(sun);
   const holder = new THREE.Group();
   scene.add(holder);
-  const models = { kestrel: kestrel(), wasp: wasp(), pike: pike() };
+  const models = { kestrel: kestrel(), wasp: wasp(), brute: brute(), heron: heron(), pike: pike() };
   for (const [id, m] of Object.entries(models)) {
     arms(m.group, WEAPONS[id].kind !== 'pistol');
     m.group.visible = false;

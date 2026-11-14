@@ -68,9 +68,42 @@ export const WEAPONS = {
     spread: { base: 0.0035, move: 0.075, air: 0.16, crouch: 0.75, bloom: 0.0075 },
     recoil: { climb: 0.0105, sway: 0.0075, settle: 7, recover: 6 },
   },
+  brute: {
+    name: 'Brute-12', kind: 'shotgun', slot: 'primary', price: 1100, mag: 7, reserve: 28,
+    interval: 0.85, auto: false, damage: 15, headMult: 2, armorPen: 0.6, falloff: 0.45, range: 40,
+    pellets: 9, reload: 3, speedMult: 0.95, reward: 900, draw: 0.7,
+    spread: { base: 0.055, move: 0.02, air: 0.06, crouch: 0.95, bloom: 0.01 },
+    recoil: { climb: 0.05, sway: 0.004, settle: 1, recover: 4 },
+  },
+  heron: {
+    name: 'Heron .338', kind: 'marksman', slot: 'primary', price: 4300, mag: 5, reserve: 20,
+    interval: 1.3, auto: false, damage: 108, headMult: 2.5, armorPen: 0.95, falloff: 0.99, range: 160,
+    pellets: 1, reload: 3.2, speedMult: 0.82, reward: 100, draw: 1,
+    scope: 0.32, // field of view multiplier while scoped (right mouse)
+    spread: { base: 0.0008, unscoped: 0.075, move: 0.12, air: 0.25, crouch: 0.85, bloom: 0.02 },
+    recoil: { climb: 0.045, sway: 0.005, settle: 1, recover: 4 },
+  },
 };
-export const WEAPON_ORDER = ['pike', 'wasp', 'kestrel'];
+export const WEAPON_ORDER = ['pike', 'wasp', 'kestrel', 'brute', 'heron'];
 WEAPON_ORDER.forEach((id, index) => Object.assign(WEAPONS[id], { id, index }));
+
+// Grenades, bought like guns and thrown with G (frag) and F (smoke). index 100: kill-feed id.
+export const GRENADES = {
+  frag: { name: 'Clatter frag', price: 300, fuse: 1.5, radius: 7, damage: 105, reward: 300, index: 100 },
+  smoke: { name: 'Haze canister', price: 300, fuse: 1.6, radius: 4.4, duration: 15 },
+};
+
+// The Fuse Core (the attackers' charge): arm it on a site, defenders disarm it.
+export const OBJECTIVE = {
+  plantTime: 3.2,
+  defuseTime: 5,
+  fuse: 40,
+  reach: 1.6, // metres from the core to disarm it
+  reward: 300, // to the one who arms or disarms
+  plantBonus: 800, // to each attacker when they lose a round after arming
+  blastRadius: 15,
+  blastDamage: 240,
+};
 
 export const ECON = {
   start: 800,

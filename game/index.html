@@ -73,7 +73,17 @@
   #mag { font: 700 44px var(--mono); line-height: 1; }
   #reserve { font: 16px var(--mono); color: var(--muted); }
   #ammo.empty #mag { color: var(--danger); }
+  #nades { font: 11px var(--mono); color: var(--muted); margin-top: 4px; white-space: pre; }
   #hint { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); font-size: 13px; letter-spacing: 0.12em; color: var(--paint); }
+  #objective { position: absolute; top: 92px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--paint); white-space: nowrap; }
+  #progress { --p: 0%; position: absolute; top: 62%; left: 50%; width: 260px; height: 8px; margin-left: -130px; background: var(--panel); border: 1px solid var(--line); display: none; }
+  #progress.on { display: block; }
+  #progress::after { content: ''; position: absolute; inset: 0; width: var(--p); background: var(--paint); }
+  #scope { position: absolute; inset: 0; display: none; background: radial-gradient(circle at center, transparent 0 33vh, #000 calc(33vh + 2px)); }
+  #scope.on { display: block; }
+  #scope::before, #scope::after { content: ''; position: absolute; background: #000; }
+  #scope::before { left: 50%; top: 17vh; bottom: 17vh; width: 1px; }
+  #scope::after { top: 50%; left: calc(50% - 33vh); right: calc(50% - 33vh); height: 1px; }
   #spectate { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); font-size: 15px; color: var(--muted); }
 
   #crosshair { --gap: 4px; position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
@@ -95,7 +105,7 @@
   #damage { --angle: 0deg; position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(170, 20, 10, 0.45) 100%); }
   #damage::after { content: ''; position: absolute; left: 50%; top: 50%; width: 220px; height: 220px; margin: -110px; border-radius: 50%; border-top: 6px solid var(--danger); transform: rotate(var(--angle)); filter: drop-shadow(0 0 6px var(--danger)); }
 
-  #banner { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); text-align: center; padding: 14px 34px; opacity: 0; transition: opacity 200ms; }
+  #banner { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); text-align: center; padding: 14px 34px; opacity: 0; transition: opacity 200ms; }
   #banner.on { opacity: 1; }
   #banner-title { font-size: 34px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
   #banner.win #banner-title { color: var(--paint); }
@@ -110,6 +120,7 @@
   #buy-list li.off { opacity: 0.35; }
   #buy-list b { font-family: var(--mono); color: var(--paint); }
   kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; font: 12px var(--mono); text-align: center; }
+  #board { top: 60%; }
   #board table { border-collapse: collapse; min-width: 420px; font-size: 14px; }
   #board td, #board th { padding: 5px 12px; text-align: left; border-bottom: 1px solid var(--line); }
   #board th { font-size: 11px; letter-spacing: 0.14em; color: var(--muted); }
@@ -135,18 +146,21 @@
     <div class="team right"><div class="row"><span class="name" id="name1"></span><span class="side" id="side1"></span><span class="score" id="score1">0</span></div><div class="pips" id="pips1"></div></div>
   </div>
   <ul id="feed"></ul>
+  <div id="scope"></div>
   <div id="crosshair"><i></i><i></i><i></i><i></i></div>
   <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
   <div id="damage"></div>
   <div id="banner" class="panel"><div id="banner-title"></div><div id="banner-sub"></div></div>
   <div id="spectate"></div>
+  <div id="objective"></div>
+  <div id="progress"></div>
   <div id="vitals" class="panel">
     <div class="stat"><b id="hp">100</b><small>HEALTH</small></div>
     <div class="stat"><b id="armor">0</b><small>ARMOUR</small></div>
     <div id="money">$800</div>
   </div>
   <div id="hint"></div>
-  <div id="ammo-box" class="panel"><div id="weapon"></div><div id="ammo"><span id="mag">0</span><span id="reserve">/ 0</span></div></div>
+  <div id="ammo-box" class="panel"><div id="weapon"></div><div id="ammo"><span id="mag">0</span><span id="reserve">/ 0</span></div><div id="nades"></div></div>
   <div id="buy" class="menu panel"><h2>Requisition <span id="buy-money"></span></h2><ul id="buy-list"></ul></div>
   <div id="board" class="menu panel"><table><thead><tr><th>OPERATOR</th><th></th><th>K</th><th>D</th><th>$</th></tr></thead><tbody id="board-body"></tbody></table></div>
 </div>
@@ -154,7 +168,7 @@
 <div id="overlay">
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
     <h1 id="overlay-title">SALT<span>LINE</span></h1>
-    <p>Five against five at the Saltline refinery. Harrow salvage crews against the Wardens who guard it. Rounds are short, money carries over, and a shot fired while running goes wide.</p>
+    <p>Five against five at the Saltline refinery. Harrow salvage crews try to arm a Fuse Core on site A or B; the Wardens who guard the plant stop them or disarm it. Rounds are short, money carries over, and a shot fired while running goes wide.</p>
     <button id="play" type="button">Deploy</button>
     <ul class="keys">
       <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</li>
@@ -162,6 +176,9 @@
       <li><kbd>Shift</kbd> walk (silent)</li>
       <li><kbd>C</kbd> crouch, <kbd>Space</kbd> jump</li>
       <li><kbd>R</kbd> reload, <kbd>1</kbd><kbd>2</kbd> weapons</li>
+      <li><kbd>Right click</kbd> scope (Heron)</li>
+      <li><kbd>G</kbd> frag, <kbd>F</kbd> smoke</li>
+      <li><kbd>E</kbd> hold to arm / disarm</li>
       <li><kbd>B</kbd> buy, <kbd>Tab</kbd> scores</li>
     </ul>
   </section>

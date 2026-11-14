@@ -79,13 +79,17 @@ const mid = await page.evaluate(() => {
   pause();
   const before = state.round.number;
   const moved = state.actors.filter((a) => a.isBot && Math.hypot(a.vel.x, a.vel.z) > 0.5).length;
-  for (let i = 0; i < 60 * 60 * 8; i++) step(state);
+  let roundsEnded = 0, matches = 0, last = state.round.phase;
+  for (let i = 0; i < 60 * 60 * 8; i++) {
+    step(state);
+    if (state.round.phase !== last) { last = state.round.phase; if (last === 'over') roundsEnded++; if (last === 'matchover') matches++; }
+  }
   resume();
-  return { before, after: state.round.number, scores: state.teams.map((t) => t.score), moved, kills: state.actors.reduce((n, a) => n + a.kills, 0), phase: state.round.phase };
+  return { roundsEnded, matches, before, after: state.round.number, scores: state.teams.map((t) => t.score), moved, kills: state.actors.reduce((n, a) => n + a.kills, 0), phase: state.round.phase, clock: state.round.clock, core: state.core.state, fuse: state.core.fuse, site: state.core.site };
 });
 await page.waitForTimeout(4000);
 check('bots move', mid.moved >= 3, `${mid.moved} moving`);
-check('rounds end and restart', mid.after > mid.before && mid.scores[0] + mid.scores[1] > 0, JSON.stringify(mid));
+check('rounds end and restart', mid.roundsEnded >= 3, JSON.stringify(mid));
 check('no console errors', errors.length === 0, errors.slice(0, 5).join(' | '));
 await page.screenshot({ path: '/home/agent/makefun/fps2/tools/playtest.jpg', type: 'jpeg', quality: 70 });
 await browser.close();
