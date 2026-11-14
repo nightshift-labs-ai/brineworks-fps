@@ -1,0 +1,5 @@
+out/
+node_modules/
+tools/*.jpg
+tools/*.png
+tools/shots-tmp/
