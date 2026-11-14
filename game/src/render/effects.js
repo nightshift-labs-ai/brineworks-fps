@@ -1,79 +1,55 @@
-// Pooled combat effects, all allocated once: travelling tracer streaks (one instanced mesh),
-// bullet-hole decals (instanced, recycled oldest-first), grit and hit particles (one Points
-// cloud) and third-person muzzle flashes (a few sprites). spawn* functions only rewrite slots.
+// Pooled combat effects, allocated once: tracer streaks, decals (holes, scorch), particles, flashes, blasts.
 import * as THREE from 'three';
-import { holeTexture, softDot } from './textures.js';
+import { holeTexture, softDot, glow } from './textures.js';
 
-const TRACERS = 48, DECALS = 160, PARTICLES = 360, FLASHES = 10;
-const TRACER_SPEED = 260, STREAK = 5;
+const TRACERS = 48, DECALS = 160, PARTICLES = 400, FLASHES = 10, TRACER_SPEED = 260, STREAK = 5;
+const HIDE = new THREE.Matrix4().makeScale(0, 0, 0);
+
+function instanced(scene, geo, mat, n) {
+  const m = new THREE.InstancedMesh(geo, mat, n);
+  m.frustumCulled = false;
+  for (let i = 0; i < n; i++) m.setMatrixAt(i, HIDE);
+  scene.add(m);
+  return m;
+}
 
 export function createEffects(scene) {
-  const mat4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3();
-  const zAxis = new THREE.Vector3(0, 0, 1), color = new THREE.Color();
-
-  // Tracers: a unit box along +z, scaled into a thin streak between two points along the shot.
-  const tracerMesh = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
-    TRACERS,
-  );
-  tracerMesh.frustumCulled = false;
+  const mat4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), zAxis = new THREE.Vector3(0, 0, 1);
+  // Tracers: a unit box along +z, stretched into a streak that travels along the shot.
+  const tracerMesh = instanced(scene, new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5), new THREE.MeshBasicMaterial({ color: 0xf29e40, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }), TRACERS);
   const tracers = Array.from({ length: TRACERS }, () => ({ live: false, ox: 0, oy: 0, oz: 0, dir: new THREE.Vector3(), len: 0, t: 0 }));
-  let nextTracer = 0;
-  const hideMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
-  for (let i = 0; i < TRACERS; i++) { tracerMesh.setMatrixAt(i, hideMatrix); tracerMesh.setColorAt(i, color.setRGB(0.95, 0.62, 0.25)); }
-  scene.add(tracerMesh);
-
-  // Decals: bullet holes laid flat on the struck face.
-  const decalMesh = new THREE.InstancedMesh(
-    new THREE.PlaneGeometry(0.13, 0.13),
-    new THREE.MeshBasicMaterial({ map: holeTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }),
-    DECALS,
-  );
-  decalMesh.frustumCulled = false;
-  for (let i = 0; i < DECALS; i++) decalMesh.setMatrixAt(i, hideMatrix);
-  let nextDecal = 0;
-  scene.add(decalMesh);
-
-  // Particles: grit off walls, dark spray off bodies. Colour alpha fades with life.
-  const pPos = new Float32Array(PARTICLES * 3), pCol = new Float32Array(PARTICLES * 4);
-  const pVel = new Float32Array(PARTICLES * 3), pLife = new Float32Array(PARTICLES), pMax = new Float32Array(PARTICLES);
+  const decalMesh = instanced(scene, new THREE.PlaneGeometry(0.13, 0.13), new THREE.MeshBasicMaterial({ map: holeTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), DECALS);
+  // Particles: grit, sparks and spray in one Points cloud; the colour's alpha fades with life.
+  const pPos = new Float32Array(PARTICLES * 3), pCol = new Float32Array(PARTICLES * 4), pVel = new Float32Array(PARTICLES * 3);
+  const pLife = new Float32Array(PARTICLES), pMax = new Float32Array(PARTICLES);
   const pGeo = new THREE.BufferGeometry();
   pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
   pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 4));
-  const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.11, map: softDot(), vertexColors: true, transparent: true, depthWrite: false }));
+  const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.12, map: softDot(), vertexColors: true, transparent: true, depthWrite: false }));
   points.frustumCulled = false;
-  let nextParticle = 0;
   scene.add(points);
-
-  // Third-person muzzle flashes.
-  const flashMat = new THREE.SpriteMaterial({ map: softDot(), color: 0xc88a40, blending: THREE.AdditiveBlending, depthWrite: false });
-  const flashes = Array.from({ length: FLASHES }, () => {
-    const sp = new THREE.Sprite(flashMat);
-    sp.visible = false;
-    sp.scale.setScalar(0.3);
-    scene.add(sp);
-    return { sprite: sp, life: 0 };
-  });
-  let nextFlash = 0;
+  const flashMat = glow(0xd99a4c);
+  const flashes = Array.from({ length: FLASHES }, () => { const sp = new THREE.Sprite(flashMat); sp.visible = false; sp.scale.setScalar(0.3); scene.add(sp); return { sprite: sp, life: 0 }; });
+  const blastSprite = new THREE.Sprite(glow(0xffc070)), blastLight = new THREE.PointLight(0xff9a40, 0, 30);
+  blastSprite.visible = false;
+  scene.add(blastSprite, blastLight);
+  let nextTracer = 0, nextDecal = 0, nextParticle = 0, nextFlash = 0, blastLife = 0, blastSize = 0;
 
   function spawnTracer(x0, y0, z0, x1, y1, z1) {
     const t = tracers[nextTracer];
     nextTracer = (nextTracer + 1) % TRACERS;
-    t.ox = x0; t.oy = y0; t.oz = z0;
     t.dir.set(x1 - x0, y1 - y0, z1 - z0);
     t.len = t.dir.length();
     if (t.len < 0.5) return;
+    t.ox = x0; t.oy = y0; t.oz = z0; t.t = 0; t.live = true;
     t.dir.multiplyScalar(1 / t.len);
-    t.t = 0;
-    t.live = true;
   }
 
-  function spawnDecal(x, y, z, nx, ny, nz) {
-    v.set(nx, ny, nz);
-    q.setFromUnitVectors(zAxis, v);
-    s.setScalar(0.7 + ((nextDecal * 7919) % 100) / 160);
-    mat4.compose(v.set(x + nx * 0.004, y + ny * 0.004, z + nz * 0.004), q, s);
+  // A decal flat on the struck face: a bullet hole, or (size ~25) a blast scorch.
+  function spawnDecal(x, y, z, nx, ny, nz, size = 1) {
+    q.setFromUnitVectors(zAxis, v.set(nx, ny, nz));
+    s.setScalar(size * (0.7 + ((nextDecal * 7919) % 100) / 160));
+    mat4.compose(v.set(x + nx * 0.004, y + ny * 0.004 + (size > 1 ? 0.01 : 0), z + nz * 0.004), q, s);
     decalMesh.setMatrixAt(nextDecal, mat4);
     decalMesh.instanceMatrix.needsUpdate = true;
     nextDecal = (nextDecal + 1) % DECALS;
@@ -81,15 +57,12 @@ export function createEffects(scene) {
 
   function spawnParticles(x, y, z, nx, ny, nz, count, r, g, b, speed) {
     for (let k = 0; k < count; k++) {
-      const i = nextParticle;
+      const i = nextParticle, j = (k * 0.618 + i * 0.137) % 1, h = ((k + 1) * 0.381 + i * 0.071) % 1;
       nextParticle = (nextParticle + 1) % PARTICLES;
-      const j = (k * 0.618 + i * 0.137) % 1, h = ((k + 1) * 0.381 + i * 0.071) % 1;
       pPos[i * 3] = x; pPos[i * 3 + 1] = y; pPos[i * 3 + 2] = z;
-      pVel[i * 3] = (nx + (j - 0.5) * 1.4) * speed;
-      pVel[i * 3 + 1] = (ny + h * 0.9) * speed;
-      pVel[i * 3 + 2] = (nz + (h - j) * 1.4) * speed;
+      pVel[i * 3] = (nx + (j - 0.5) * 1.4) * speed; pVel[i * 3 + 1] = (ny + h * 0.9) * speed; pVel[i * 3 + 2] = (nz + (h - j) * 1.4) * speed;
       pCol[i * 4] = r; pCol[i * 4 + 1] = g; pCol[i * 4 + 2] = b; pCol[i * 4 + 3] = 1;
-      pLife[i] = pMax[i] = 0.35 + j * 0.4;
+      pLife[i] = pMax[i] = 0.35 + j * 0.5;
     }
   }
 
@@ -101,26 +74,19 @@ export function createEffects(scene) {
     f.life = 0.05;
   }
 
-  // Explosion: a big flash, a burst of fire and grit, and a brief light.
-  const blastSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot(), color: 0xffb35c, blending: THREE.AdditiveBlending, depthWrite: false }));
-  blastSprite.visible = false;
-  const blastLight = new THREE.PointLight(0xff9a40, 0, 30);
-  scene.add(blastSprite, blastLight);
-  let blastLife = 0, blastSize = 0;
-
+  // A blast: flash, a brief light, fire sparks, dark debris and a scorch mark on the ground.
   function spawnBlast(x, y, z, radius) {
     blastSprite.position.set(x, y + 0.6, z);
     blastLight.position.set(x, y + 1.5, z);
-    blastLife = 0.45;
-    blastSize = radius * 0.9;
-    spawnParticles(x, y + 0.3, z, 0, 1, 0, 40, 1, 0.55, 0.18, 7);
-    spawnParticles(x, y + 0.3, z, 0, 0.6, 0, 30, 0.25, 0.22, 0.2, 5);
+    blastLife = 0.45; blastSize = radius * 0.9;
+    spawnParticles(x, y + 0.3, z, 0, 1, 0, 50, 1, 0.6, 0.2, 7);
+    spawnParticles(x, y + 0.2, z, 0, 0.6, 0, 40, 0.18, 0.17, 0.16, 5);
+    spawnDecal(x, 0, z, 0, 1, 0, 25);
   }
 
   function update(dt) {
     if (blastLife > 0) {
-      blastLife -= dt;
-      const k = Math.max(0, blastLife / 0.45);
+      const k = Math.max(0, (blastLife -= dt) / 0.45);
       blastSprite.visible = k > 0;
       blastSprite.scale.setScalar(blastSize * (1.4 - k * 0.6));
       blastSprite.material.opacity = k;
@@ -131,15 +97,12 @@ export function createEffects(scene) {
       if (!t.live) continue;
       t.t += dt * TRACER_SPEED;
       const head = Math.min(t.len, t.t), tail = Math.max(0, t.t - STREAK);
-      if (tail >= t.len) { t.live = false; tracerMesh.setMatrixAt(i, hideMatrix); continue; }
-      v.set(t.ox + t.dir.x * tail, t.oy + t.dir.y * tail, t.oz + t.dir.z * tail);
+      if (tail >= t.len) { t.live = false; tracerMesh.setMatrixAt(i, HIDE); continue; }
       q.setFromUnitVectors(zAxis, t.dir);
-      s.set(0.014, 0.014, Math.max(0.01, head - tail));
-      mat4.compose(v, q, s);
+      mat4.compose(v.set(t.ox + t.dir.x * tail, t.oy + t.dir.y * tail, t.oz + t.dir.z * tail), q, s.set(0.014, 0.014, Math.max(0.01, head - tail)));
       tracerMesh.setMatrixAt(i, mat4);
     }
     tracerMesh.instanceMatrix.needsUpdate = true;
-
     for (let i = 0; i < PARTICLES; i++) {
       if (pLife[i] <= 0) continue;
       pLife[i] -= dt;
@@ -149,18 +112,12 @@ export function createEffects(scene) {
       pPos[i * 3 + 2] += pVel[i * 3 + 2] * dt;
       pCol[i * 4 + 3] = Math.max(0, pLife[i] / pMax[i]);
     }
-    pGeo.attributes.position.needsUpdate = true;
-    pGeo.attributes.color.needsUpdate = true;
-
-    for (const f of flashes) {
-      if (f.life <= 0) continue;
-      f.life -= dt;
-      f.sprite.visible = f.life > 0;
-    }
+    pGeo.attributes.position.needsUpdate = pGeo.attributes.color.needsUpdate = true;
+    for (const f of flashes) if (f.life > 0) f.sprite.visible = (f.life -= dt) > 0;
   }
 
   function clearDecals() {
-    for (let i = 0; i < DECALS; i++) decalMesh.setMatrixAt(i, hideMatrix);
+    for (let i = 0; i < DECALS; i++) decalMesh.setMatrixAt(i, HIDE);
     decalMesh.instanceMatrix.needsUpdate = true;
   }
 

@@ -1,79 +1,78 @@
-// Character models: blocky soldiers built from boxes, one rig per actor made once at load.
-// Proportions come from sim/config.js BODY so the head you see is the head hitbox; team colour
-// is on the vest, helmet and visor. Animation (stride, crouch, aim pitch, falling) is view-only.
+// Soldiers: one low-poly rig per actor, built once. Proportions follow BODY (sim/config.js): the head
+// is the head hitbox, legs end at legTop. Harrow wear a hood helmet and respirator, the Saltreeves a
+// brimmed helmet and antenna; glowing team bands read at range. Guns are the viewmodel.js models.
 import * as THREE from 'three';
 import { TEAMS, BODY, MOVE } from '../sim/config.js';
 import { heightOf } from '../sim/actors.js';
 import { wrapAngle } from '../sim/util.js';
+import { MATS, GUNS, build } from './viewmodel.js';
 
-const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
-const GEO = {
-  leg: box(0.17, 1, 0.21).translate(0, -0.5, 0), // unit length, hangs from the hip
-  boot: box(0.19, 0.12, 0.3).translate(0, -0.06, 0.04),
-  torso: box(0.46, 1, 0.27).translate(0, 0.5, 0),
-  vest: box(0.5, 0.62, 0.31).translate(0, 0.42, 0),
-  pack: box(0.34, 0.4, 0.14),
-  head: box(0.25, 0.27, 0.27),
-  helmet: box(0.31, 0.15, 0.33),
-  visor: box(0.27, 0.07, 0.04),
-  arm: box(0.12, 0.12, 0.5).translate(0, 0, -0.25),
-  gun: box(0.07, 0.11, 0.72).translate(0, 0, -0.36),
-};
+// Rig nodes "name parent x y" (cm) with their parts in the format of build(). Hips, trunk and arms
+// are unit-sized and scaled to the body each frame; boots and hands are scaled back to size.
+// Materials: v vest, l team glow, t dark team tint (trousers, hood), h helmet, c cloth, d dark, s steel.
+const LEG = 't 17 93 21 0 -46.5,d 19 12 30 0 -95 4', ARM = 'c 11 11 100 0 0 -50,d 9 9 10 0 0 -100';
+const NODES = [
+  ['body root'], ['hipL body -11', LEG], ['hipR body 11', LEG], ['chest body'], ['neck chest'],
+  ['trunk chest', 'c 44 100 26 0 50,v 50 72 32 0 48,d 32 50 14 0 55 20'],
+  ['arms chest', 'l 3 10 14 -27.5 2 -2,l 3 10 14 27.5 2 -2'], ['armL arms -21 -2', ARM], ['armR arms 21 -2', ARM],
+];
+const HEADS = [ // Harrow, Saltreeves
+  'c 22 20 22 0 -3,t 30 24 12 0 -10 9,h -18 9 16 0 3.5,h -16 7 9 0 11.5,l -18.5 4 18.5 0 1,s 17 11 6 0 -5 -12,s -5 9 5 4 -7 -16 157',
+  'c 24 26 26,h 28 8 30 0 13 1,h 40 2.5 42 0 9,l 28.5 3 30.5 0 11 1,d 22 6 3 0 1 -13.5,d 1.4 26 1.4 10 28 10,l 3 3 3 10 41 10',
+];
 
 function teamMaterials(team) {
-  const color = TEAMS[team].color;
+  const c = new THREE.Color(TEAMS[team].color), m = (color, o) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...o });
   return {
-    suit: new THREE.MeshStandardMaterial({ color: team ? 0x2b3236 : 0x3a302b, roughness: 0.9 }),
-    vest: new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
-    helmet: new THREE.MeshStandardMaterial({ color: new THREE.Color(color).multiplyScalar(0.7), roughness: 0.5, metalness: 0.2 }),
-    visor: new THREE.MeshStandardMaterial({ color: 0x111111, emissive: color, emissiveIntensity: 1.6 }),
-    dark: new THREE.MeshStandardMaterial({ color: 0x1d1d20, roughness: 0.6, metalness: 0.3 }),
+    v: m(c), l: m(c, { emissive: c, emissiveIntensity: 1.5 }), t: m(c.clone().lerp(new THREE.Color(0x56606a), 0.6).multiplyScalar(0.45)),
+    h: m(team ? 0x56616b : 0xc9c4b8, ), c: m(0x4d555c), d: m(0x30353a), s: m(0x7a838b, { metalness: 0.3 }),
   };
 }
 
-function part(geo, mat, parent, x = 0, y = 0, z = 0) {
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(x, y, z);
-  m.castShadow = true;
-  parent.add(m);
-  return m;
+// Point a unit-length arm from its shoulder at a hand position (arms-group space).
+function reach(arm, x, y, z) {
+  const p = arm.position, dx = x - p.x, dy = y - p.y, dz = z - p.z, len = Math.hypot(dx, dy, dz);
+  arm.rotation.set(Math.asin(dy / len), Math.atan2(-dx, -dz), 0, 'YXZ');
+  arm.scale.z = len;
+  arm.children[1].scale.z = 1 / len;
 }
 
-function buildRig(mats) {
-  const root = new THREE.Group();
-  const body = new THREE.Group(); // tipped over when dead
-  root.add(body);
-  const hipL = new THREE.Group(), hipR = new THREE.Group();
-  hipL.position.x = -0.11; hipR.position.x = 0.11;
-  body.add(hipL, hipR);
-  const legL = part(GEO.leg, mats.suit, hipL), legR = part(GEO.leg, mats.suit, hipR);
-  const bootL = part(GEO.boot, mats.dark, legL, 0, -1, 0), bootR = part(GEO.boot, mats.dark, legR, 0, -1, 0);
-  bootL.scale.y = bootR.scale.y = 1; // boots are re-scaled against the leg length each frame
-  const chest = new THREE.Group();
-  body.add(chest);
-  const torso = part(GEO.torso, mats.suit, chest);
-  part(GEO.vest, mats.vest, chest);
-  part(GEO.pack, mats.dark, chest, 0, 0.38, 0.2);
-  const neck = new THREE.Group();
-  chest.add(neck);
-  part(GEO.head, mats.suit, neck);
-  part(GEO.helmet, mats.helmet, neck, 0, 0.12, 0.01);
-  part(GEO.visor, mats.visor, neck, 0, 0.03, -0.14);
-  const arms = new THREE.Group(); // shoulders: pitched with the aim
-  chest.add(arms);
-  part(GEO.arm, mats.suit, arms, -0.2, 0, 0).rotation.y = -0.35;
-  part(GEO.arm, mats.suit, arms, 0.2, 0, 0).rotation.y = 0.25;
-  part(GEO.gun, mats.dark, arms, 0.06, -0.02, -0.25);
-  return { root, body, hipL, hipR, legL, legR, bootL, bootR, chest, torso, neck, arms, stride: 0, fall: 0 };
+// Show the held gun: right hand on the grip, left on the fore-end or beside the pistol grip.
+function hold(rig, id) {
+  if (rig.held) rig.guns[rig.held].visible = false;
+  rig.held = id;
+  if (!id) return;
+  const gun = rig.guns[id], p = gun.position, hand = GUNS[id].hand * 0.75;
+  gun.visible = true;
+  reach(rig.armR, p.x, p.y - 0.04, p.z);
+  reach(rig.armL, hand ? p.x : p.x - 0.05, p.y - 0.03, p.z + hand);
+}
+
+function buildRig(scene, team, mats, gunMats) {
+  const rig = { root: new THREE.Group(), guns: {}, held: '', stride: 0 };
+  for (const [node, parts] of NODES) {
+    const [k, parent, x = 0, y = 0] = node.split(' ');
+    rig[parent].add(rig[k] = parts ? build(parts, new THREE.Group(), mats) : new THREE.Group());
+    rig[k].position.set(x / 100, y / 100, 0);
+  }
+  build(HEADS[team], rig.neck, mats);
+  rig.root.traverse((m) => (m.castShadow = true));
+  rig.hips = [rig.hipL, rig.hipR];
+  for (const id in GUNS) { // all carried, the held one shown
+    const gun = rig.guns[id] = build(GUNS[id].parts, new THREE.Group(), gunMats), pistol = !GUNS[id].hand;
+    gun.scale.setScalar(0.75);
+    gun.position.set(pistol ? 0.03 : 0.1, -0.1, pistol ? -0.45 : -0.32);
+    gun.visible = false;
+    rig.arms.add(gun);
+  }
+  scene.add(rig.root);
+  return rig;
 }
 
 export function createCharacters(scene, state) {
-  const mats = [teamMaterials(0), teamMaterials(1)];
-  const rigs = state.actors.map((a) => {
-    const rig = buildRig(mats[a.team]);
-    scene.add(rig.root);
-    return rig;
-  });
+  const mats = [teamMaterials(0), teamMaterials(1)], gunMats = {};
+  for (const k in MATS) gunMats[k] = MATS[k].clone(); // own copies: the world pass has fog, the gun pass not
+  const rigs = state.actors.map((a) => buildRig(scene, a.team, mats[a.team], gunMats));
 
   // Pose every rig from interpolated sim state. `hideId` is the actor whose eyes we look through.
   function update(alpha, dt, hideId, time) {
@@ -81,36 +80,34 @@ export function createCharacters(scene, state) {
       const rig = rigs[a.id];
       rig.root.visible = a.id !== hideId;
       if (!rig.root.visible) continue;
-      const x = a.prev.x + (a.pos.x - a.prev.x) * alpha;
-      const y = a.prev.y + (a.pos.y - a.prev.y) * alpha;
-      const z = a.prev.z + (a.pos.z - a.prev.z) * alpha;
-      rig.root.position.set(x, y, z);
+      rig.root.position.copy(a.prev).lerp(a.pos, alpha);
       rig.root.rotation.y = a.prevYaw + wrapAngle(a.yaw - a.prevYaw) * alpha;
+      const w = a.slots[a.active], id = w ? w.id : '';
+      if (rig.held !== id) hold(rig, id);
 
-      const h = heightOf(a);
-      const legLen = h * BODY.legTop;
-      const speed = Math.hypot(a.vel.x, a.vel.z);
+      const h = heightOf(a), legLen = h * BODY.legTop, torsoLen = h - legLen - BODY.headRadius * 2;
+      const speed = Math.hypot(a.vel.x, a.vel.z), bend = a.crouch * 0.45;
       rig.stride += speed * dt * 2.6;
       const swing = a.grounded ? Math.sin(rig.stride) * Math.min(1, speed / MOVE.runSpeed) * 0.7 : 0.35;
-      const bend = a.crouch * 0.9;
-      rig.hipL.position.y = rig.hipR.position.y = legLen;
-      rig.legL.scale.y = rig.legR.scale.y = legLen / Math.cos(bend * 0.5);
-      rig.bootL.scale.y = rig.bootR.scale.y = 1 / rig.legL.scale.y;
-      rig.hipL.rotation.x = swing - bend * 0.5;
-      rig.hipR.rotation.x = -swing - bend * 0.5;
+      for (const hip of rig.hips) {
+        hip.position.y = legLen;
+        hip.scale.y = legLen / Math.cos(bend); // legs fold to the crouch but still reach the ground
+        hip.children[1].scale.y = 1 / hip.scale.y;
+      }
+      rig.hipL.rotation.x = swing - bend;
+      rig.hipR.rotation.x = -swing - bend;
       rig.chest.position.y = legLen;
-      const torsoLen = h - legLen - BODY.headRadius * 2;
-      rig.torso.scale.y = torsoLen;
+      rig.chest.rotation.x = a.crouch * 0.15;
+      rig.trunk.scale.y = torsoLen;
       rig.neck.position.y = torsoLen + BODY.headRadius;
       rig.arms.position.y = torsoLen - 0.12;
       rig.arms.rotation.x = a.pitch;
-      rig.chest.rotation.x = a.crouch * 0.15;
 
       // Dying: tip over backwards over a third of a second after the moment of death.
-      rig.fall = a.alive ? 0 : Math.min(1, (time - a.diedAt) * 3);
-      rig.body.rotation.x = rig.fall * rig.fall * 1.45;
-      rig.body.position.y = -rig.fall * 0.1;
+      const fall = a.alive ? 0 : Math.min(1, (time - a.diedAt) * 3);
+      rig.body.rotation.x = fall * fall * 1.45;
+      rig.body.position.y = -fall * 0.1;
     }
   }
-  return { update, rigs };
+  return { update };
 }

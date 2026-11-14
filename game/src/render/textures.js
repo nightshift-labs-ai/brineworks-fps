@@ -1,47 +1,7 @@
-// Procedural textures painted on canvases at load (no image files): sun-bleached concrete,
-// corrugated refinery cladding, crate planks, salt-crusted ground, deck grating, hazard paint.
-// A fixed seed keeps every texture identical between runs (and between screenshots).
+// Every texture is painted on a canvas at load from a fixed seed: no image files.
 import * as THREE from 'three';
+import { createRng } from '../sim/util.js';
 import { PALETTE } from './palette.js';
-
-function rng(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function canvas(size) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  return [c, c.getContext('2d')];
-}
-
-// Speckle the whole canvas with per-pixel noise of +-amount (keeps the base colour's hue).
-function grain(ctx, size, amount, rand) {
-  const img = ctx.getImageData(0, 0, size, size);
-  const d = img.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const n = (rand() - 0.5) * amount;
-    d[i] += n; d[i + 1] += n; d[i + 2] += n;
-  }
-  ctx.putImageData(img, 0, 0);
-}
-
-// Soft blotches (stains, salt crust, water marks).
-function blotches(ctx, size, count, color, maxR, rand) {
-  for (let i = 0; i < count; i++) {
-    const x = rand() * size, y = rand() * size, r = maxR * (0.3 + rand() * 0.7);
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, color);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(x - r, y - r, r * 2, r * 2);
-  }
-}
 
 function finish(c, repeat = true) {
   const tex = new THREE.CanvasTexture(c);
@@ -50,213 +10,152 @@ function finish(c, repeat = true) {
   tex.anisotropy = 4;
   return tex;
 }
+const rect = (ctx, style, x, y, w, h) => { ctx.fillStyle = style; ctx.fillRect(x, y, w, h); };
 
-function concrete(seed, base, stain) {
-  const size = 256, rand = rng(seed);
-  const [c, ctx] = canvas(size);
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, size, size);
-  blotches(ctx, size, 26, stain, 70, rand);
-  // formwork seams and tie holes
-  ctx.fillStyle = 'rgba(40,30,25,0.22)';
-  ctx.fillRect(0, 126, size, 3);
-  ctx.fillRect(126, 0, 2, size);
-  for (const [x, y] of [[40, 60], [214, 60], [40, 190], [214, 190]]) { ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fill(); }
-  // rain streaks from the top
-  for (let i = 0; i < 40; i++) {
-    const x = rand() * size;
-    ctx.fillStyle = `rgba(60,45,35,${0.05 + rand() * 0.08})`;
-    ctx.fillRect(x, 0, 1 + rand() * 3, 40 + rand() * 160);
+// A canvas filled with `base`, painted by draw(ctx, rand), then given a fine grey grain of +-noise/2.
+function paint(size, seed, base, noise, draw, repeat = true) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d'), rand = createRng(seed);
+  rect(ctx, base, 0, 0, size, size);
+  draw(ctx, rand);
+  if (noise) {
+    const img = ctx.getImageData(0, 0, size, size), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { const n = (rand() - 0.5) * noise; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+    ctx.putImageData(img, 0, 0);
   }
-  grain(ctx, size, 26, rand);
-  return finish(c);
+  return finish(c, repeat);
 }
 
-function cladding(seed, base, rust) {
-  const size = 256, rand = rng(seed);
-  const [c, ctx] = canvas(size);
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, size, size);
-  // corrugation: vertical ridges
-  for (let x = 0; x < size; x += 16) {
+function radial(ctx, x, y, r, stops) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  for (const [at, color] of stops) g.addColorStop(at, color);
+  rect(ctx, g, x - r, y - r, r * 2, r * 2);
+}
+
+// Formwork concrete, one tile per wall height (canvas bottom = the wall's foot): panels varying under
+// 4%, seams, tie holes, rust runs under a few fixings, grime at the base, a pale weathered top.
+const concrete = (ctx, rand) => {
+  for (let x = 0; x < 256; x += 64) for (let y = 0; y < 256; y += 128) {
+    rect(ctx, `rgba(${rand() < 0.5 ? '255,255,255' : '0,0,0'},${rand() * 0.04})`, x, y, 64, 128);
+    rect(ctx, '#2a323833', x, y, 1, 128);
+    rect(ctx, '#2a323833', x, y, 64, 1);
+    for (let i = 0; i < 4; i++) rect(ctx, '#2d373e55', x + 15 + (i & 1) * 32, y + 30 + (i >> 1) * 64, 3, 3);
+  }
+  for (let i = 0; i < 3; i++) {
+    const x = 20 + rand() * 216, y = 60 + rand() * 110;
+    rect(ctx, '#3c444a80', x - 2, y - 2, 5, 5);
+    rect(ctx, '#80543c2a', x, y + 3, 2, 14 + rand() * 30);
+  }
+  const g = ctx.createLinearGradient(0, 256, 0, 210);
+  g.addColorStop(0, '#343c4048'); g.addColorStop(1, '#343c4000');
+  rect(ctx, g, 0, 210, 256, 46);
+  rect(ctx, '#ffffff4d', 0, 0, 256, 5);
+};
+
+// Corrugated sheet, near white so each lane's material tint shows true; lap joints with rivets.
+const cladding = (ctx) => {
+  for (let x = 0; x < 256; x += 16) {
     const g = ctx.createLinearGradient(x, 0, x + 16, 0);
-    g.addColorStop(0, 'rgba(0,0,0,0.25)');
-    g.addColorStop(0.45, 'rgba(255,255,255,0.12)');
-    g.addColorStop(1, 'rgba(0,0,0,0.25)');
-    ctx.fillStyle = g;
-    ctx.fillRect(x, 0, 16, size);
+    g.addColorStop(0, '#00000040'); g.addColorStop(0.45, '#ffffff22'); g.addColorStop(1, '#00000040');
+    rect(ctx, g, x, 0, 16, 256);
   }
-  blotches(ctx, size, 18, rust, 50, rand);
-  // panel joints and rust runs below rivets
-  ctx.fillStyle = 'rgba(20,15,12,0.45)';
-  ctx.fillRect(0, 0, size, 3);
-  for (let x = 8; x < size; x += 32) {
-    ctx.fillStyle = 'rgba(30,20,15,0.6)';
-    ctx.fillRect(x, 6, 3, 3);
-    ctx.fillStyle = rust;
-    ctx.globalAlpha = 0.35;
-    ctx.fillRect(x, 9, 2, 20 + rand() * 50);
-    ctx.globalAlpha = 1;
+  for (let y = 0; y < 256; y += 128) {
+    rect(ctx, '#19202673', 0, y, 256, 3);
+    for (let x = 8; x < 256; x += 32) { rect(ctx, '#1e262c99', x, y + 6, 3, 3); rect(ctx, '#6e4a3826', x, y + 9, 2, 22); }
   }
-  grain(ctx, size, 18, rand);
-  return finish(c);
-}
+};
 
-function crate(seed, base, dark) {
-  const size = 128, rand = rng(seed);
-  const [c, ctx] = canvas(size);
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, size, size);
-  for (let y = 0; y < size; y += 21) {
-    ctx.fillStyle = `rgba(0,0,0,${0.08 + rand() * 0.1})`;
-    ctx.fillRect(0, y, size, 20);
-    ctx.fillStyle = dark;
-    ctx.fillRect(0, y + 20, size, 1);
-  }
-  ctx.strokeStyle = dark;
-  ctx.lineWidth = 10;
-  ctx.strokeRect(5, 5, size - 10, size - 10);
-  ctx.lineWidth = 8;
-  ctx.beginPath(); ctx.moveTo(8, 8); ctx.lineTo(size - 8, size - 8); ctx.stroke();
-  grain(ctx, size, 30, rand);
-  return finish(c);
-}
+// A painted steel crate face: frame, cross brace, stencil code.
+const crate = (ctx) => {
+  ctx.strokeStyle = '#2c353b';
+  ctx.lineWidth = 9; ctx.strokeRect(5, 5, 118, 118);
+  ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(10, 118); ctx.lineTo(118, 10); ctx.stroke();
+  rect(ctx, PALETTE.paint, 14, 14, 26, 8);
+  ctx.font = 'bold 13px monospace'; ctx.fillStyle = '#2c353bcc'; ctx.fillText('BW-07', 70, 112);
+};
 
-function ground(seed) {
-  const size = 512, rand = rng(seed);
-  const [c, ctx] = canvas(size);
-  ctx.fillStyle = PALETTE.ground;
-  ctx.fillRect(0, 0, size, size);
-  blotches(ctx, size, 40, 'rgba(255,250,240,0.35)', 90, rand); // salt crust
-  blotches(ctx, size, 30, 'rgba(110,80,60,0.18)', 70, rand); // damp patches
-  // slab joints every 3 m (texture spans 6 m)
-  ctx.fillStyle = 'rgba(70,55,45,0.35)';
-  for (let i = 0; i <= 2; i++) { ctx.fillRect(i * 256 - 1, 0, 3, size); ctx.fillRect(0, i * 256 - 1, size, 3); }
-  for (let i = 0; i < 70; i++) { // cracks
-    let x = rand() * size, y = rand() * size;
-    ctx.strokeStyle = 'rgba(60,45,35,0.25)';
-    ctx.lineWidth = 1;
+// Salt-crusted slabs: 3 m joints, crystal specks, thin grey cracks.
+const ground = (ctx, rand) => {
+  for (let i = 0; i < 2600; i++) rect(ctx, `rgba(255,255,255,${0.35 + rand() * 0.6})`, rand() * 512, rand() * 512, 1 + rand(), 1 + rand());
+  for (let i = 0; i < 24; i++) rect(ctx, '#7d8a9010', rand() * 512, rand() * 512, 40 + rand() * 90, 30 + rand() * 60);
+  for (let i = 0; i <= 2; i++) { rect(ctx, '#5e6a7059', i * 256 - 1, 0, 2, 512); rect(ctx, '#5e6a7059', 0, i * 256 - 1, 512, 2); }
+  ctx.strokeStyle = '#5a666c40';
+  for (let i = 0; i < 60; i++) {
+    let x = rand() * 512, y = rand() * 512;
     ctx.beginPath(); ctx.moveTo(x, y);
-    for (let k = 0; k < 5; k++) { x += (rand() - 0.5) * 30; y += (rand() - 0.5) * 30; ctx.lineTo(x, y); }
+    for (let k = 0; k < 5; k++) { x += (rand() - 0.5) * 34; y += (rand() - 0.5) * 34; ctx.lineTo(x, y); }
     ctx.stroke();
   }
-  grain(ctx, size, 22, rand);
-  return finish(c);
-}
+};
 
-function grating(seed) {
-  const size = 128, rand = rng(seed);
-  const [c, ctx] = canvas(size);
-  ctx.fillStyle = '#3b3d3c';
-  ctx.fillRect(0, 0, size, size);
-  ctx.fillStyle = '#6c706b';
-  for (let i = 0; i < size; i += 8) { ctx.fillRect(i, 0, 3, size); ctx.fillRect(0, i, size, 2); }
-  blotches(ctx, size, 10, 'rgba(160,80,40,0.35)', 30, rand);
-  grain(ctx, size, 20, rand);
-  return finish(c);
-}
+const grating = (ctx) => { for (let i = 0; i < 128; i += 8) { rect(ctx, '#7a8186', i, 0, 3, 128); rect(ctx, '#7a8186', 0, i, 128, 2); } };
 
-function hazard() {
-  const size = 128;
-  const [c, ctx] = canvas(size);
-  ctx.fillStyle = PALETTE.paint;
-  ctx.fillRect(0, 0, size, size);
-  ctx.fillStyle = '#26221f';
-  for (let i = -size; i < size * 2; i += 32) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0); ctx.lineTo(i + 16, 0); ctx.lineTo(i + 16 - size, size); ctx.lineTo(i - size, size);
-    ctx.fill();
-  }
-  return finish(c);
-}
-
-// Painted site marking: a ring and the site letter, seen from above.
-export function siteDecal(letter) {
-  const size = 256;
-  const [c, ctx] = canvas(size);
-  ctx.strokeStyle = PALETTE.paint;
-  ctx.globalAlpha = 0.85;
-  ctx.lineWidth = 12;
-  ctx.strokeRect(14, 14, size - 28, size - 28);
-  ctx.font = 'bold 170px system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = PALETTE.paint;
-  ctx.fillText(letter, size / 2, size / 2 + 8);
-  return finish(c, false);
-}
-
-// Small round mark with a dark core: bullet holes.
-export function holeTexture() {
-  const size = 64;
-  const [c, ctx] = canvas(size);
-  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
-  g.addColorStop(0, 'rgba(10,8,6,1)');
-  g.addColorStop(0.3, 'rgba(25,20,16,0.9)');
-  g.addColorStop(0.6, 'rgba(60,50,40,0.35)');
-  g.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-  return finish(c, false);
-}
-
-// Soft round sprite for particles, flashes and smoke.
-export function softDot() {
-  const size = 64;
-  const [c, ctx] = canvas(size);
-  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  g.addColorStop(0, 'rgba(255,255,255,1)');
-  g.addColorStop(0.4, 'rgba(255,255,255,0.6)');
-  g.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-  return finish(c, false);
-}
-
-// A lumpy smoke puff: overlapping soft blobs inside a round falloff.
-export function puffTexture() {
-  const size = 128, rand = rng(83);
-  const [c, ctx] = canvas(size);
-  for (let i = 0; i < 18; i++) {
-    const a = rand() * 6.28, r = rand() * 34, x = 64 + Math.cos(a) * r, y = 64 + Math.sin(a) * r, R = 18 + rand() * 22;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, R);
-    const v = (200 + rand() * 55) | 0;
-    g.addColorStop(0, `rgba(${v},${v},${v - 6},0.55)`);
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(x - R, y - R, R * 2, R * 2);
-  }
-  return finish(c, false);
-}
-
-// Dusk sky for the background sphere: a vertical gradient with thin lit cloud bands near the horizon.
-export function skyTexture() {
-  const [c, ctx] = canvas(512);
-  const rand = rng(97);
-  const g = ctx.createLinearGradient(0, 0, 0, 512);
-  for (const [at, color] of PALETTE.sky) g.addColorStop(at, color);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 512, 512);
-  for (let i = 0; i < 26; i++) {
-    const y = 150 + rand() * 95, w = 60 + rand() * 220, x = rand() * 512;
-    ctx.fillStyle = `rgba(255,${170 + rand() * 50 | 0},${120 + rand() * 40 | 0},${0.08 + (y - 150) / 95 * 0.18})`;
-    ctx.fillRect(x, y, w, 1 + rand() * 3);
-    ctx.fillRect(x - 512, y, w, 1 + rand() * 3);
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
+const hazard = (ctx) => {
+  ctx.fillStyle = '#20262b';
+  for (let i = -128; i < 256; i += 32) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 16, 0); ctx.lineTo(i - 112, 128); ctx.lineTo(i - 128, 128); ctx.fill(); }
+};
 
 export function createTextures() {
   return {
-    wall: concrete(11, PALETTE.concrete, 'rgba(150,110,80,0.25)'),
-    rustClad: cladding(23, PALETTE.rust, 'rgba(70,30,15,0.5)'),
-    tealClad: cladding(37, PALETTE.teal, 'rgba(120,60,30,0.45)'),
-    crate: crate(41, PALETTE.wood, '#4a2f1c'),
-    container: cladding(53, PALETTE.steel, 'rgba(120,60,30,0.4)'),
-    ground: ground(61),
-    grating: grating(71),
-    hazard: hazard(),
+    wall: paint(256, 11, PALETTE.concrete, 6, concrete),
+    clad: paint(256, 23, '#e9eceb', 8, cladding),
+    crate: paint(128, 41, '#8d9ba5', 10, crate),
+    ground: paint(512, 61, PALETTE.ground, 10, ground),
+    grating: paint(128, 71, '#3e464b', 12, grating),
+    hazard: paint(128, 1, PALETTE.paint, 0, hazard),
   };
 }
+
+// A stencilled board: lines of text on a coloured plate (site letters, zone names, bay numbers).
+export function signTexture(lines, bg = '#22313a', fg = '#e8ecee', w = 256, h = 128) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  rect(ctx, bg, 0, 0, w, h);
+  rect(ctx, PALETTE.paint, 0, h - 10, w, 10);
+  ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  lines.forEach((text, i) => { ctx.font = `bold ${i ? 26 : 48}px monospace`; ctx.fillText(text, w / 2, (h - 10) * (i ? 0.78 : lines.length > 1 ? 0.36 : 0.5)); });
+  return finish(c, false);
+}
+
+// The painted plant-zone marking: a square border and the site letter.
+export function siteDecal(letter) {
+  return paint(256, 3, '#00000000', 0, (ctx) => {
+    ctx.globalAlpha = 0.85; ctx.strokeStyle = ctx.fillStyle = PALETTE.paint;
+    ctx.lineWidth = 12; ctx.strokeRect(14, 14, 228, 228);
+    ctx.font = 'bold 170px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(letter, 128, 136);
+  }, false);
+}
+
+export const holeTexture = () => paint(64, 5, '#00000000', 0, (ctx) => radial(ctx, 32, 32, 30, [[0, '#0a0806'], [0.3, '#191410e6'], [0.6, '#3c322859'], [1, '#0000']]), false);
+
+let dot = null; // one soft round sprite shared by flashes, sparks and the sun
+export function softDot() {
+  return dot ??= paint(64, 7, '#00000000', 0, (ctx) => radial(ctx, 32, 32, 32, [[0, '#fff'], [0.4, '#fff9'], [1, '#fff0']]), false);
+}
+
+// An additive glowing sprite material (muzzle flashes, blasts, the sun).
+export const glow = (color) => new THREE.SpriteMaterial({ map: softDot(), color, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+
+// A lumpy smoke puff: overlapping soft blobs.
+export const puffTexture = () => paint(128, 83, '#00000000', 0, (ctx, rand) => {
+  for (let i = 0; i < 18; i++) {
+    const a = rand() * 6.28, r = rand() * 34, v = (200 + rand() * 55) | 0;
+    radial(ctx, 64 + Math.cos(a) * r, 64 + Math.sin(a) * r, 18 + rand() * 22, [[0, `rgba(${v},${v},${v},.9)`], [0.6, `rgba(${v},${v},${v},.5)`], [1, '#fff0']]);
+  }
+}, false);
+
+// The dusk sky: a vertical gradient with thin lit cloud bands near the horizon.
+export const skyTexture = () => paint(512, 97, '#000', 0, (ctx, rand) => {
+  const g = ctx.createLinearGradient(0, 0, 0, 512);
+  for (const [at, color] of PALETTE.sky) g.addColorStop(at, color);
+  rect(ctx, g, 0, 0, 512, 512);
+  for (let i = 0; i < 26; i++) {
+    const y = 160 + rand() * 88, w = 60 + rand() * 220, x = rand() * 512;
+    ctx.fillStyle = `rgba(255,${190 + rand() * 40 | 0},${150 + rand() * 40 | 0},${0.05 + (y - 160) / 88 * 0.16})`;
+    ctx.fillRect(x, y, w, 1 + rand() * 3);
+    ctx.fillRect(x - 512, y, w, 1 + rand() * 3);
+  }
+}, false);

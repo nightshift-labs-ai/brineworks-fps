@@ -1,115 +1,80 @@
-// Screenshot staging (?shot=N&seed=S). The match is played by the sim with the player slot on the bot
-// brain (autopilot) up to a chosen round; then a few actors are put in place for the composition and
-// the real simulation runs the moment (shots, hits, smoke, arming) before the frame is taken.
-import { DT, SIDE } from './sim/config.js';
+// Screenshot staging (?shot=N&seed=S), dev only: the sim plays the match with the player slot on the
+// bot brain up to a round, the cast below is placed for the frame, and the real sim runs the moment.
+import { DT } from './sim/config.js';
 import { giveWeapon, eyeOf } from './sim/actors.js';
 import { createBrain, think } from './sim/bots.js';
+import { yawTo } from './sim/util.js';
 
-// Advance n ticks; `script` runs before each tick, the last `drawn` ticks are rendered (effects in flight).
-function run(ctx, n, script, drawn = 3) {
-  const { state, view, input, step } = ctx;
+// cast: [who, col, row, faces col, faces row, gun]; who: p player, m0.. teammates, f0.. opponents.
+// fire: opponents already engaging the player [who, reaction s]; shoot: tick the player opens fire.
+// side: the side the player must be on (0 attack, 1 defend); core: 'carry' (arming) or 'armed' (disarming).
+const B_SITE = [['m0', 12, 13, 12, 18, 'ballast'], ['m1', 13, 8, 10, 6, 'skiff'], ['f0', 10, 6, 8, 13, 'ballast']];
+const PLANT = { side: 0, round: 2, clock: 92, core: 'carry', ticks: 110, look: [-0.15, -0.36], cast: [['p', 8, 13, 10, 7, 'ballast'], ...B_SITE] };
+const SCENES = {
+  1: { round: 5, clock: 95, ticks: 24, shoot: 12, fire: [['f0', 0.3], ['f1', 0.25]],
+    cast: [['p', 24, 30, 25, 27, 'ballast'], ['f0', 25, 27, 24, 30, 'ballast'], ['f1', 31, 24, 24, 30, 'skiff']] },
+  2: { round: 7, ticks: 20, buy: true, look: [0.12, -0.03],
+    cast: [['p', 28, 5, 28, 15], ['m0', 24, 4, 26, 9, 'ballast'], ['m1', 31, 2, 28, 8, 'skiff'], ['f0', 28, 16, 28, 9, 'ballast']] },
+  3: PLANT,
+  4: { side: 1, round: 6, clock: 95, core: 'armed', ticks: 240, end: true, look: [-0.15, -0.36], cast: [['p', 8, 13, 10, 7, 'ballast'], ...B_SITE, ['f1', 4, 8, 8, 13, 'skiff']] },
+};
+
+function run(ctx, n, script, drawn = 3) { // n ticks; only the last `drawn` are rendered (effects in flight)
   for (let i = 0; i < n; i++) {
-    input.fill(state.player.cmd);
-    if (script) script(i);
-    step(state);
-    if (i >= n - drawn) view.render(1, DT, input.look);
+    ctx.input.fill(ctx.state.player.cmd);
+    script(i);
+    ctx.step(ctx.state);
+    if (i >= n - drawn) ctx.view.render(1, DT, ctx.input.look);
   }
 }
 
-// Fast-forward with the player on autopilot until `done`, then hand the slot back to the input.
 function autopilot(ctx, done) {
   const { state } = ctx, p = state.player;
   p.isBot = true;
-  for (let i = 0; i < 60 * 60 * 40 && !done(state); i++) {
-    if (p.alive) think(state, p);
-    ctx.step(state);
-  }
+  for (let i = 0; i < 60 * 60 * 40 && !done(state); i++) { if (p.alive) think(state, p); ctx.step(state); }
   p.isBot = false;
+  ctx.view.render(1, 1, ctx.input.look); // consume the fast-forward's events: the scene starts clean
 }
 
-// Put an actor on a map cell facing a cell, optionally with a gun.
 function place(state, a, c, r, fc, fr, gun) {
   const S = state.map.cell;
-  a.alive = true; a.hp = Math.max(a.hp, 1);
-  a.pos.x = a.prev.x = (c + 0.5) * S; a.pos.z = a.prev.z = (r + 0.5) * S;
-  a.pos.y = a.prev.y = state.map.height[r * state.map.w + c];
-  a.vel.x = a.vel.z = 0;
-  a.yaw = a.prevYaw = a.cmd.yaw = Math.atan2(-(fc - c), -(fr - r));
-  a.pitch = a.cmd.pitch = 0;
+  a.alive = true; a.hp = 100;
+  a.pos.x = a.prev.x = (c + 0.5) * S; a.pos.z = a.prev.z = (r + 0.5) * S; a.pos.y = a.prev.y = state.map.height[r * state.map.w + c];
+  a.vel.x = a.vel.z = a.pitch = a.cmd.pitch = a.drawTimer = 0;
+  a.yaw = a.prevYaw = a.cmd.yaw = yawTo(c, r, fc, fr);
   if (gun) giveWeapon(a, gun);
   a.drawTimer = 0;
   if (a.brain) Object.assign(a.brain, { plan: 'hold', holdX: a.pos.x, holdZ: a.pos.z, lookX: (fc + 0.5) * S, lookZ: (fr + 0.5) * S, target: -1 });
 }
 
-// The player looks at an actor's chest (yaw offset dx).
-function look(ctx, t, dx = 0) {
-  const p = ctx.state.player, ey = p.pos.y + eyeOf(p);
-  ctx.input.face(Math.atan2(-(t.pos.x - p.pos.x), -(t.pos.z - p.pos.z)) + dx, Math.atan2(t.pos.y + 1.25 - ey, Math.hypot(t.pos.x - p.pos.x, t.pos.z - p.pos.z)));
-}
-
-// A bot that has already seen `target` and fires after `react` seconds.
-function engage(bot, target, react) {
-  Object.assign(bot.brain, { target: target.id, reactTimer: react, errYaw: 0.02, errPitch: 0.01, aimHead: false, lastSeenId: target.id, lastSeenTime: 1e9 });
-}
-
-const side = (state, s) => state.actors.filter((a) => state.teams[a.team].side === s && a !== state.player);
-// Everyone not in the shot waits in their own spawn, out of sight.
-const park = (state, list) => list.forEach((a, i) => { const s = state.map.spawns[state.teams[a.team].side][i % 5]; place(state, a, Math.floor(s.x / 1.5), Math.floor(s.z / 1.5), 27, 20); });
-const kit = (a) => { a.grenades.frag = 1; a.grenades.smoke = 1; a.armor = 100; a.helm = true; };
-
-const SCENES = {
-  // Cover (seed 9): round 5 of a real match, where two Saltreeve frags have just landed (kill feed).
-  // In Conveyor Court a Saltreeve 5 m ahead fires at you and another flanks from the right.
-  1(ctx) {
-    const { state } = ctx, p = state.player;
-    autopilot(ctx, (s) => s.round.number === 5 && s.round.phase === 'live' && s.round.clock < 95);
-    const foes = side(state, SIDE.DEFEND);
-    park(state, [...side(state, SIDE.ATTACK), ...foes]);
-    place(state, p, 24, 30, 25, 27, 'ballast'); kit(p); p.hp = 100;
-    place(state, foes[0], 25, 27, 24, 30, 'ballast'); foes[0].armor = 100; foes[0].hp = 100;
-    place(state, foes[1], 31, 24, 24, 30, 'skiff');
-    engage(foes[0], p, 0.3); engage(foes[1], p, 0.25);
-    look(ctx, foes[0], 0.02);
-    run(ctx, 24, (i) => { p.cmd.fire = i > 12; });
-  },
-  // Requisition at the pumphouse during the buy window of a later round; an attacker shows at Tower Foot.
-  2(ctx) {
-    const { state } = ctx, p = state.player;
-    autopilot(ctx, (s) => s.round.number >= 7 && s.round.phase === 'live');
-    p.money = Math.max(p.money, 3150);
-    const mates = side(state, SIDE.DEFEND), foes = side(state, SIDE.ATTACK);
-    park(state, [...mates, ...foes]);
-    place(state, p, 27, 3, 28, 15);
-    place(state, mates[0], 25, 5, 26, 9, 'ballast'); place(state, mates[1], 30, 4, 28, 8, 'skiff');
-    place(state, foes[0], 28, 16, 28, 9, 'ballast');
-    ctx.input.face(p.yaw + 0.12, -0.03);
-    run(ctx, 20);
-    ctx.hud.toggleBuy(true);
-  },
-  // Arming the core on B under a teammate's smoke on Hall Gate; a Saltreeve presses from the north-west.
-  3(ctx) { stagePlant(ctx); run(ctx, 110, () => { ctx.state.player.cmd.use = true; }); },
-  // The same round played out: the round-end banner, scores and the camera pulled up over the site.
-  4(ctx) {
-    stagePlant(ctx);
-    run(ctx, 200, () => { ctx.state.player.cmd.use = true; }, 0);
+function stage(ctx, sc) {
+  const { state } = ctx, p = state.player, mySide = state.teams[p.team].side;
+  autopilot(ctx, (s) => s.round.number >= sc.round && s.teams[p.team].side === (sc.side ?? s.teams[p.team].side) && s.round.phase === 'live' && s.round.clock < (sc.clock ?? 999));
+  const team = (side) => state.actors.filter((a) => a !== p && state.teams[a.team].side === side);
+  const mates = team(mySide), foes = team(1 - mySide), who = (k) => (k === 'p' ? p : (k[0] === 'm' ? mates : foes)[+k[1]]);
+  // Everyone not cast waits in their own spawn, out of sight.
+  [...mates, ...foes].forEach((a, i) => { const s = state.map.spawns[state.teams[a.team].side][i % 5]; place(state, a, s.c, s.r, 27, 20); });
+  for (const [k, c, r, fc, fr, gun] of sc.cast) place(state, who(k), c, r, fc, fr, gun);
+  Object.assign(p.grenades, { frag: 1, smoke: 1 });
+  p.armor = 100; p.helm = true; p.money = Math.max(p.money, 3150);
+  if (sc.core) { // a teammate's smoke sits in front of Hall Gate; a Saltreeve behind it cannot see out
+    if (sc.core === 'carry') Object.assign(state.core, { state: 'carried', carrier: p.id });
+    else Object.assign(state.core, { state: 'planted', site: 'B', fuse: 30, carrier: -1, x: p.pos.x - Math.sin(p.yaw) * 1.2, y: 0, z: p.pos.z - Math.cos(p.yaw) * 1.2 });
+    state.round.planted = sc.core === 'armed';
+    p.kit = true;
+    Object.assign(state.smokes[0], { live: true, x: 10.5 * state.map.cell, y: 0, z: 7.8 * state.map.cell, age: 2 });
+  }
+  for (const [k, react] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: 0.01, aimHead: false, lastSeenId: p.id, lastSeenTime: 1e9 });
+  const f = who(sc.cast[1][0]), ey = p.pos.y + eyeOf(p);
+  if (sc.fire) ctx.input.face(yawTo(p.pos.x, p.pos.z, f.pos.x, f.pos.z) + 0.02, Math.atan2(f.pos.y + 1.25 - ey, Math.hypot(f.pos.x - p.pos.x, f.pos.z - p.pos.z)));
+  else ctx.input.face(p.yaw + sc.look[0], sc.look[1]);
+  run(ctx, sc.ticks, (i) => { p.cmd.fire = i >= (sc.shoot ?? 1e9); p.cmd.use = !!sc.core; }, sc.end ? 0 : 3);
+  if (sc.end) { // the same round played out: banner, scores, the camera up over the site
     autopilot(ctx, (s) => s.round.phase === 'over' && s.time - s.round.endedAt > 2.2);
     ctx.hud.showBoard(true);
-    run(ctx, 2);
-  },
-};
-
-function stagePlant(ctx) {
-  const { state } = ctx, p = state.player;
-  autopilot(ctx, (s) => s.round.number === 4 && s.round.phase === 'live' && s.round.clock < 92);
-  const mates = side(state, SIDE.ATTACK), foes = side(state, SIDE.DEFEND);
-  park(state, [...mates, ...foes]);
-  place(state, p, 8, 13, 10, 7, 'ballast'); kit(p); p.hp = 100;
-  Object.assign(state.core, { state: 'carried', carrier: p.id });
-  place(state, mates[0], 12, 13, 12, 18, 'ballast'); place(state, mates[1], 13, 8, 10, 6, 'skiff');
-  // Rook's smoke sits on Hall Gate; a Saltreeve inside it cannot see out (smokeBlocks).
-  Object.assign(state.smokes[0], { live: true, x: 10.5 * 1.5, y: 0, z: 6.6 * 1.5, age: 2 });
-  place(state, foes[0], 10, 6, 8, 13, 'ballast');
-  ctx.input.face(p.yaw - 0.15, -0.36);
+    run(ctx, 2, () => {});
+  }
+  if (sc.buy) ctx.hud.toggleBuy(true);
 }
 
 // ?shot=N stages scene N and sets window.__shotReady; ?test exposes the sim to tools/playtest.mjs.
@@ -122,7 +87,7 @@ export function dev(name, ctx, setRunning) {
   }
   const go = () => setTimeout(() => {
     ctx.state.player.brain = createBrain(0.7, 'entry');
-    (SCENES[name] ?? SCENES[1])(ctx);
+    stage(ctx, SCENES[name] ?? SCENES[1]);
     ctx.hud.update();
     requestAnimationFrame(() => { ctx.hud.update(); window.__shotReady = true; });
   }, 50);

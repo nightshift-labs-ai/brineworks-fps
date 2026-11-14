@@ -1,34 +1,29 @@
-// The first-person gun: one box-built model per weapon (parts listed as data), drawn in its own
-// pass over the world so it never clips into walls. Kick, bob, look sway, draw, reload and the
-// arm/disarm crouch are animated from the player's state.
+// The first-person gun and arms, drawn in a pass of their own over the world so they never clip into
+// walls. Guns are part lists (GUNS, also carried by the soldiers): polymer or enamel shells, gunmetal,
+// one signal-yellow band. Kick, bob, sway, draw, reload and the arm/disarm dip follow the player.
 import * as THREE from 'three';
-import { WEAPONS } from '../sim/config.js';
+import { WEAPONS, TEAMS } from '../sim/config.js';
 import { wrapAngle } from '../sim/util.js';
-import { softDot } from './textures.js';
+import { glow } from './textures.js';
 
-const MATS = {
-  m: new THREE.MeshStandardMaterial({ color: 0x4a5058, roughness: 0.45, metalness: 0.25 }), // gunmetal
-  f: new THREE.MeshStandardMaterial({ color: 0xa88a62, roughness: 0.75 }), // sand furniture
-  p: new THREE.MeshStandardMaterial({ color: 0xefc94c, roughness: 0.6 }), // paint mark
-  g: new THREE.MeshStandardMaterial({ color: 0x2e2a26, roughness: 0.9 }), // gloves
-  s: new THREE.MeshStandardMaterial({ color: 0x4a4b40, roughness: 0.95 }), // sleeves
+const mat = (color, roughness, metalness = 0.1, emissive = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive });
+export const MATS = {
+  k: mat(0x2b2f33, 0.7), // dark polymer
+  e: mat(0x4a5560, 0.5, 0.2), // slate enamel
+  b: mat(0xd9d6cc, 0.55), // bone-white enamel
+  m: mat(0x666d74, 0.35, 0.35), // gunmetal
+  p: mat(0xefc94c, 0.5), // signal-yellow band
+  r: mat(0x0c3a34, 0.3, 0, 0x3fe0c0), // optic reticle dot
+  g: mat(0x2f3236, 0.85), s: mat(0x3c4147, 0.95), // gloves, sleeves
+  c: mat(0xffffff, 0.8), // cuff band in the player's team colour
 };
 
-// [material, width, height, depth, x, y, z, pitch]; origin at the grip, barrel along -z.
-const MODELS = {
-  ballast: { muzzle: -0.84, parts: [['m', 0.075, 0.1, 0.44, 0, 0.04, -0.12], ['f', 0.08, 0.085, 0.26, 0, 0.035, -0.45], ['m', 0.03, 0.03, 0.22, 0, 0.05, -0.68], ['m', 0.045, 0.045, 0.06, 0, 0.05, -0.8], ['m', 0.05, 0.2, 0.085, 0, -0.08, -0.2, 0.25], ['f', 0.06, 0.13, 0.07, 0, -0.06, 0.02, -0.3], ['f', 0.065, 0.1, 0.24, 0, 0.02, 0.2], ['m', 0.05, 0.05, 0.12, 0, 0.12, -0.1], ['p', 0.081, 0.02, 0.05, 0, 0.06, -0.52]] },
-  skiff: { muzzle: -0.41, parts: [['m', 0.07, 0.1, 0.34, 0, 0.04, -0.1], ['m', 0.035, 0.035, 0.14, 0, 0.05, -0.33], ['m', 0.045, 0.26, 0.06, 0, -0.12, -0.12], ['f', 0.06, 0.12, 0.07, 0, -0.06, 0.04, -0.25], ['m', 0.02, 0.02, 0.22, 0.025, 0.06, 0.18], ['m', 0.02, 0.02, 0.22, -0.025, 0.06, 0.18], ['p', 0.071, 0.02, 0.04, 0, 0.07, -0.2]] },
-  bollard: { muzzle: -0.7, parts: [['m', 0.08, 0.1, 0.36, 0, 0.04, -0.1], ['m', 0.045, 0.045, 0.42, 0, 0.07, -0.48], ['f', 0.07, 0.07, 0.24, 0, 0, -0.42], ['f', 0.065, 0.13, 0.07, 0, -0.06, 0.04, -0.3], ['f', 0.07, 0.11, 0.26, 0, 0, 0.22], ['p', 0.071, 0.02, 0.24, 0, 0.036, -0.42]] },
-  capstan: { muzzle: -0.9, parts: [['m', 0.075, 0.1, 0.46, 0, 0.04, -0.12], ['m', 0.032, 0.032, 0.5, 0, 0.05, -0.58], ['m', 0.05, 0.05, 0.08, 0, 0.05, -0.86], ['m', 0.06, 0.07, 0.3, 0, 0.14, -0.12], ['m', 0.075, 0.08, 0.05, 0, 0.14, -0.28], ['m', 0.05, 0.12, 0.07, 0, -0.06, -0.14, 0.15], ['f', 0.065, 0.13, 0.07, 0, -0.06, 0.03, -0.3], ['f', 0.07, 0.13, 0.28, 0, 0, 0.24]] },
-  rivet: { muzzle: -0.18, parts: [['m', 0.06, 0.07, 0.22, 0, 0.06, -0.06], ['f', 0.055, 0.15, 0.07, 0, -0.04, 0.02, -0.2], ['p', 0.061, 0.015, 0.03, 0, 0.09, 0.03]] },
-};
-const ARMS = [['g', 0.07, 0.09, 0.1, 0, -0.05, 0.03], ['s', 0.11, 0.11, 0.4, 0.03, -0.09, 0.25, 0.15]];
-const SUPPORT = [['g', 0.08, 0.08, 0.11, -0.01, -0.01, -0.42], ['s', 0.1, 0.1, 0.45, -0.13, -0.08, -0.2, 0.1, -0.45]];
-const PISTOL_HAND = [['g', 0.07, 0.08, 0.09, -0.04, -0.06, 0.04]];
-
-function build(parts, group) {
-  for (const [mat, w, h, d, x, y, z, rx = 0, ry = 0] of parts) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), MATS[mat]);
+// Parts, comma separated: "material width height depth x y z pitch yaw" in cm and centiradians,
+// missing ones 0. A negative width makes an 8-sided cylinder: bottom radius -width, top radius depth.
+export function build(parts, group, mats = MATS) {
+  for (const part of parts.split(',')) {
+    const [m, w, h, d, x = 0, y = 0, z = 0, rx = 0, ry = 0] = part.split(' ').map((v, i) => (i ? v / 100 : v));
+    const mesh = new THREE.Mesh(w < 0 ? new THREE.CylinderGeometry(d, -w, h, 8) : new THREE.BoxGeometry(w, h, d), mats[m]);
     mesh.position.set(x, y, z);
     mesh.rotation.set(rx, ry, 0);
     group.add(mesh);
@@ -36,27 +31,35 @@ function build(parts, group) {
   return group;
 }
 
+// Origin at the grip, barrel along -z. muzzle: [y, z] in metres; hand: z of the support hand,
+// 0 for the pistol (held two-handed at the grip).
+export const GUNS = {
+  rivet: { muzzle: [0.08, -0.2], hand: 0, parts: 'b 5 5 22 0 8 -8,k 4.6 3.6 18 0 4 -10,k 4.6 15 6.5 0 -4 1.5 -25,k 3 1.2 7 0 0 -7,m 2.4 2.4 1 0 8.5 -19.3,p 5.2 1.2 2 0 10.9 1.5' },
+  skiff: { muzzle: [0.04, -0.43], hand: -0.2, parts: 'b 8 11 34 0 3 -8,k 8.2 3 34 0 -3.5 -8,m 6 6 14 0 4 -31,m 2.8 2.8 6 0 4 -40,k 4.5 20 6 0 -12 -15,k 5 12 6 0 -7 2 -25,m 1.6 1.6 24 3 5 20,m 1.6 1.6 24 -3 5 20,k 8 10 2 0 3 32,k 3 3.5 4 0 10 4,p 8.4 11.4 2.5 0 3 -22' },
+  // the Ballast: a bullpup, magazine behind the grip, squared shroud, rail and box optic
+  ballast: { muzzle: [0.04, -0.64], hand: -0.36, parts: 'e 9 12 54 0 2 3,k 9.4 15 6 0 1 29,k 9.2 4 30 0 9.5 11,b 7.5 8.5 24 0 3.5 -36,m 3 3 12 0 4 -54,m 4.5 4.5 5 0 4 -61,m 3 1.6 44 0 8.8 -20,k 6 6.5 11 0 13 -10,r 1.4 1.4 .5 0 13.5 -4.2,k 5 13 6 0 -8 -2 -25,k 5.5 17 8.5 0 -10 16,p 9.6 12.6 3 0 2 -20' },
+  bollard: { muzzle: [0.065, -0.67], hand: -0.42, parts: 'e 9 12 34 0 3 -6,m 5 5 44 0 6.5 -45,k 5 5 36 0 0 -40,b 8.5 8.5 20 0 1.5 -42,m 2 1.2 44 0 9.6 -45,k 5.5 13 6.5 0 -7 3 -30,k 7.5 12 26 0 -1 24 8,p 8.8 8.8 3 0 1.5 -48' },
+  capstan: { muzzle: [0.04, -1.01], hand: -0.42, parts: 'k 8 10 42 0 3 -8,e 7 7.5 36 0 3.5 -47,m 3 3 30 0 4 -80,m 5 5 8 0 4 -97,k -2.8 42 2.8 0 14 -12 157,k -3.8 8 3.8 0 14 -35 157,k -3.3 6 3.3 0 14 10 157,m 3 3 3 0 9.5 -22,m 3 3 3 0 9.5,k 5 12 6.5 0 -7 2 -30,k 5 11 7 0 -6 -15,e 6 4 30 0 6 28,e 6 4 26 0 -6 27,k 7 17 4 0 0 42,p 7.4 8 3 0 3.5 -60' },
+};
+const ARMS = 'g 7 9 10 0 -5 3,c 11.5 11.5 5 1.5 -7 9 15,s 11 11 40 3 -10 30 15';
+const SUPPORT = 'g 8 8 11 -1 -2,c 10.5 10.5 5 -4 -4 6 10 -45,s 10 10 45 -13 -8 22 10 -45'; // at hand z, or beside the pistol grip
+
 export function createViewModel() {
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(64, 1, 0.01, 10);
-  scene.add(new THREE.HemisphereLight(0xd6e0f2, 0x7a604c, 2.2));
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(64, 1, 0.01, 10), holder = new THREE.Group();
   const sun = new THREE.DirectionalLight(0xffd2a0, 2.6);
   sun.position.set(-1, 3, 2);
-  scene.add(sun);
-  const holder = new THREE.Group();
-  scene.add(holder);
+  scene.add(new THREE.HemisphereLight(0xd6e0f2, 0x868d94, 2.2), sun, holder);
   const models = {};
-  for (const [id, spec] of Object.entries(MODELS)) {
-    const group = build(spec.parts, new THREE.Group());
-    build(ARMS, group);
-    build(WEAPONS[id].kind === 'pistol' ? PISTOL_HAND : SUPPORT, group);
+  for (const id in GUNS) {
+    const { muzzle, hand, parts } = GUNS[id], group = build(ARMS, build(parts, new THREE.Group()));
+    group.add(build(SUPPORT, new THREE.Group()).translateZ(hand || 0.03).translateX(hand ? 0 : -0.035).translateY(hand ? 0 : -0.03));
     group.visible = false;
     group.scale.setScalar(0.5);
     holder.add(group);
-    models[id] = { group, muzzle: new THREE.Vector3(0, 0.05, spec.muzzle) };
+    models[id] = { group, muzzle: new THREE.Vector3(0, ...muzzle) };
   }
-  const flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot(), color: 0xffc070, blending: THREE.AdditiveBlending, depthWrite: false }));
-  const light = new THREE.PointLight(0xffb060, 0, 4);
+  const flash = new THREE.Sprite(glow(0xffc070));
+  const light = new THREE.PointLight(0xffb060, 0, 4), fx = new THREE.Group().add(flash, light);
   let current = null, kick = 0, flashTime = 0, bob = 0, swayX = 0, swayY = 0, lastYaw = 0, lastPitch = 0, low = 0;
 
   function fired() {
@@ -69,33 +72,31 @@ export function createViewModel() {
   function update(dt, a, look, working) {
     const w = a.slots[a.active];
     if (!w) return;
-    const def = WEAPONS[w.id];
+    const def = WEAPONS[w.id], pistol = def.kind === 'pistol'; // the pistol sits lower and turned in
     if (current !== models[w.id]) {
       if (current) current.group.visible = false;
       current = models[w.id];
       current.group.visible = true;
-      current.group.add(flash, light);
-      flash.position.copy(current.muzzle);
-      light.position.copy(current.muzzle);
+      current.group.add(fx);
+      fx.position.copy(current.muzzle);
     }
+    MATS.c.color.setHex(TEAMS[a.team].color);
     kick *= Math.exp(-dt * 14);
     low += ((working ? 1 : 0) - low) * Math.min(1, dt * 8);
-    const speed = Math.hypot(a.vel.x, a.vel.z);
+    const speed = Math.hypot(a.vel.x, a.vel.z), bobAmt = a.grounded ? Math.min(1, speed / 5) : 0, lag = Math.min(1, dt * 10);
     bob += dt * speed * 1.9;
-    const bobAmt = a.grounded ? Math.min(1, speed / 5) : 0;
-    // Look sway: the gun lags a little behind fast turns.
-    swayX += (wrapAngle(look.yaw - lastYaw) * 0.6 - swayX) * Math.min(1, dt * 10);
-    swayY += ((look.pitch - lastPitch) * 0.6 - swayY) * Math.min(1, dt * 10);
+    swayX += (wrapAngle(look.yaw - lastYaw) * 0.6 - swayX) * lag; // the gun lags behind fast turns
+    swayY += ((look.pitch - lastPitch) * 0.6 - swayY) * lag;
     lastYaw = look.yaw; lastPitch = look.pitch;
     const reload = a.reloadTimer > 0 ? Math.sin((1 - a.reloadTimer / def.reload) * Math.PI) : 0;
     const draw = a.drawTimer > 0 ? Math.min(1, a.drawTimer / def.draw) : 0;
     const dip = reload * 0.08 + draw * 0.18 + low * 0.16;
     current.group.position.set(
-      0.16 + Math.sin(bob) * 0.008 * bobAmt + swayX * 0.25,
-      -0.14 - Math.abs(Math.cos(bob)) * 0.007 * bobAmt - dip - a.crouch * 0.008 - swayY * 0.18,
+      (pistol ? 0.19 : 0.16) + Math.sin(bob) * 0.008 * bobAmt + swayX * 0.25,
+      (pistol ? -0.165 : -0.14) - Math.abs(Math.cos(bob)) * 0.007 * bobAmt - dip - a.crouch * 0.008 - swayY * 0.18,
       -0.34 + kick * 0.02,
     );
-    current.group.rotation.set(kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX, reload * 0.4);
+    current.group.rotation.set(kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX + (pistol ? 0.12 : 0), reload * 0.4);
     flashTime -= dt;
     flash.visible = flashTime > 0;
     flash.scale.setScalar(0.16 + kick * 0.05);
@@ -105,11 +106,9 @@ export function createViewModel() {
   function resize(aspect) { camera.aspect = aspect; camera.updateProjectionMatrix(); }
 
   // World-space muzzle of the player's gun, for tracers: viewmodel space -> camera space -> world.
-  const tmp = new THREE.Vector3();
   function muzzleWorld(worldCamera, out) {
     if (!current) return out.copy(worldCamera.position);
-    tmp.copy(current.muzzle).applyMatrix4(current.group.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
-    return out.copy(tmp).applyMatrix4(worldCamera.matrixWorld);
+    return out.copy(current.muzzle).applyMatrix4(current.group.matrixWorld).applyMatrix4(camera.matrixWorldInverse).applyMatrix4(worldCamera.matrixWorld);
   }
   return { scene, camera, update, fired, resize, muzzleWorld, setVisible: (v) => { holder.visible = v; } };
 }
