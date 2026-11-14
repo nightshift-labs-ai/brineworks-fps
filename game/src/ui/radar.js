@@ -47,7 +47,7 @@ export function createRadar(state, canvas) {
       ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(ox + (intel.heardX / map.cell) * scale, oy + (intel.heardZ / map.cell) * scale, 4 + (1 - heard) * 6, 0, 7); ctx.stroke();
     }
-    // Teammates with a short facing cone; enemies only while a teammate has eyes on them.
+    // Teammates with a small facing cone; enemies only while a teammate has eyes on them.
     for (const a of state.actors) {
       if (!a.alive || a === p) continue;
       if (a.team === p.team) { cone(a, 'rgba(255,255,255,0.22)', 16); dot(a, TEAMS[a.team].css, 5); }

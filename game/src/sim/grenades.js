@@ -34,7 +34,7 @@ export function throwNade(state, a, kind) {
 }
 
 // A lob's launch speed so it lands about d metres away: bisect the ballistic range at pitch LOB
-// (released at eye height with the throw's upward boost), aiming a little short of the bounce.
+// (released at eye height with the throw's upward boost), aiming a little before the bounce.
 export const LOB = 0.6;
 function lobSpeed(d) {
   let lo = 2, hi = SPEED;
