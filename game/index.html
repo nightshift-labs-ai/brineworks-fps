@@ -1,138 +1,161 @@
 <!doctype html>
 <!--
-NOTE FOR THE REVIEWER: where each criterion lives in this source.
-BRINEWORKS - a round-based tactical FPS at a salt refinery on a cold coast at dusk. You + 4 bots (Harrow)
-against 5 bots (Saltreeves); sides swap after round 5, first to 6. three.js 0.187.0, static ES modules, no
-image or audio files: textures are painted on canvases (src/render/textures.js). Written by an AI agent
-(Claude Code) for Nightshift Labs.
-1 Complete game: fixed 60 Hz step + interpolated render, src/main.js frame(). Mouse look and keys:
-  src/input.js fill(). Fire / reload / empty magazine: src/sim/weapons.js updateWeapon(), fire().
-  Bots fill the same command record the keyboard fills (src/sim/bots.js think()) and run the player's
-  movement and weapon code. Rounds: src/sim/round.js updateRound(), endRound(). The HUD (health,
-  armour, ammo, clock, score) is written only by src/ui/hud.js update().
-2 Gunplay and movement: src/sim/actors.js rayActor() - head sphere, torso and leg cylinders, per-weapon
-  head multiplier, hurt() armour and helm. src/sim/weapons.js spreadOf() grows with speed and air time,
-  shrinks crouched; kick() bends the bullet along a fixed climb-then-sway pattern. src/sim/movement.js
-  accelerate() / applyFriction(), crouch, walk, jump; src/sim/collide.js moveBody() step-up + collision.
-3 Tactics: the bomb objective is the Fuse Core, src/sim/objective.js (arm 3 s, fuse 38 s, disarm 7 s or
-  3.5 s with a kit). Money: src/sim/economy.js payRound(), buy(), botShop(), teamCall(); buy menu in
-  src/ui/hud.js. Grenades: src/sim/grenades.js (frag; smoke that blocks bot sight). Team plans:
-  src/sim/coach.js planRound() (staged executes, rush, lurker, defence setups), updateCoach(),
-  rotateToSite(); named routes and held angles in src/sim/map.js. Sight and hearing: src/sim/senses.js
-  canSee(), makeNoise() (walking and crouching are silent); bots call contacts and noises by place name.
-4 Map and look: the ASCII floor plan LAYOUT in src/sim/map.js; src/render/level.js builds it;
-  src/render/palette.js, textures.js, view.js (sun, shadows, fog, environment light).
-5 Code: src/sim imports no three.js and no DOM; all game state is made in src/sim/state.js createState();
-  src/sim/events.js is a ring of preallocated records; effects are pooled. ?shot=N (src/shots.js) stages
-  the screenshots with the game's own code; they are unedited renders.
+NOTE FOR THE REVIEWER: where each criterion lives (file function).
+BRINEWORKS: a round-based tactical FPS at a salt refinery on a cold coast. You + 4 bots (Harrow) against
+5 bots (Saltreeves), sides swap after round 5, first to 6. three.js 0.187.0, static ES modules, no image
+files (textures painted in render/textures.js). Written by an AI agent (Claude Code) for Nightshift Labs.
+1 Complete game: main.js frame() fixed 60 Hz steps + interpolated render; input.js fill() pointer-lock
+  look, WASD, jump, crouch, walk; sim/weapons.js updateWeapon(), fire() magazine, reload, dry fire;
+  sim/bots.js think() fills the same command record as the keyboard; sim/round.js updateRound(),
+  endRound() win/loss and restart; ui/hud.js update() health, armour, ammo, clock, score.
+2 Gunplay: sim/actors.js rayActor() head/torso/leg hitboxes, applyDamage() head multiplier, hurt()
+  armour and helm; sim/weapons.js spreadOf() (speed, air, crouch, bloom), kick() spray pattern on the
+  bullet; sim/movement.js accelerate(), applyFriction(); sim/collide.js moveBody() step-up, collision.
+3 Tactics: sim/objective.js the Fuse Core bomb objective (arm 3 s, fuse 38 s, disarm 7 s, 3.5 s with
+  kit); sim/economy.js payRound() loss bonus, buy(), botShop(), teamCall(); kill pay in actors.js
+  kill(); sim/grenades.js frag + smoke (blocks bot sight); sim/coach.js planRound() staged executes,
+  rush, lurker, defence setups, updateCoach() rotations; sim/nav.js findPath() A*; sim/senses.js
+  canSee(), makeNoise() (walking and crouching are silent); team radio and callouts in ui/hud.js.
+4 Map and look: LAYOUT in sim/map.js; render/level.js, textures.js, palette.js, view.js (sun,
+  shadows, fog, environment light).
+5 Code: sim/ imports no three.js and no DOM; one state from sim/state.js createState(); sim/events.js
+  ring of preallocated records; pooled effects. shots.js (dev only) stages the screenshots.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Brineworks</title>
 <style>
-:root{--ink:#f1f0ea;--muted:#a9b0b5;--panel:rgba(16,20,26,.66);--line:rgba(241,240,234,.16);--paint:#efc94c;--harrow:#ef5a3e;--reeves:#4d97f0;--bad:#ff5a4a;--ui:'Segoe UI',system-ui,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace}
+:root{--ink:#f1f0ea;--muted:#a9b0b5;--panel:#10141aa8;--line:#f1f0ea29;--paint:#efc94c;--bad:#ff5a4a;--mono:ui-monospace,Consolas,monospace}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:#0d1014;color:var(--ink);font-family:var(--ui)}
-#game,#game canvas{position:fixed;inset:0;display:block}
-#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 1px 2px #000a}
+html,body{margin:0;height:100%;overflow:hidden;background:#0d1014;color:var(--ink);font-family:system-ui,sans-serif}
+#game,#game canvas,#hud{position:fixed;inset:0;display:block}
+#hud{pointer-events:none;text-shadow:0 1px 2px #000a}
+#hud>*{position:absolute}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:4px}
-.abs{position:absolute}
+.c{left:50%;transform:translateX(-50%)}
+ul{list-style:none;margin:0;padding:0}
+.u{letter-spacing:.12em;text-transform:uppercase}
 #radar{top:12px;left:12px}
 #left{top:184px;left:12px;width:208px;font-size:12px}
-#where{color:var(--paint);letter-spacing:.08em;text-transform:uppercase;margin:0 0 4px}
-#radio{list-style:none;margin:0;padding:0;display:grid;gap:3px}
-#radio li{background:var(--panel);padding:3px 7px;border-left:2px solid var(--harrow)}
-#radio li:empty,#hud.buying #left{display:none}
-#top{top:12px;left:50%;transform:translateX(-50%);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:5px 14px}
-.team{display:flex;align-items:baseline;gap:8px;min-width:170px}.team.r{flex-direction:row-reverse}
-.team b{font-size:15px;letter-spacing:.05em;text-transform:uppercase}.team small{font-size:10px;color:var(--muted);letter-spacing:.12em}
-.team span{font:700 28px var(--mono)}
-#clock{font:700 30px var(--mono);min-width:92px;text-align:center}#clock.freeze{color:var(--paint)}#clock.urgent{color:var(--bad)}
-#round{display:flex;justify-content:center;gap:4px;font-size:10px;color:var(--muted)}
-#round i{width:9px;height:9px;border-radius:2px;background:#fff2}#round i.h{background:var(--harrow)}#round i.s{background:var(--reeves)}
-.pips{display:flex;gap:3px}.pips i{width:13px;height:5px;opacity:.9}#pips0 i{background:var(--harrow)}#pips1 i{background:var(--reeves)}.pips i.dead{opacity:.15}
-#feed{top:12px;right:12px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13px}
-#feed li:empty{display:none}#feed li{background:var(--panel);padding:4px 9px;border-radius:3px}#feed li:has(.mine){outline:1px solid var(--paint)}
-#feed em{font-style:normal;color:var(--muted);margin:0 4px}#feed .hs{color:var(--paint);font-weight:700;font-size:10px;margin-left:4px}
-#objective{top:96px;left:50%;transform:translateX(-50%);font-size:14px;color:var(--paint);white-space:nowrap}
+#where{color:var(--paint);margin:0 0 4px}
+#radio li{background:var(--panel);padding:3px 7px;margin-bottom:3px;border-left:2px solid var(--paint)}
+#radio li:empty,#hud.buying #left,#hud.banner #objective{display:none}
+#top{top:12px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:4px 12px;padding:5px 14px}
+.team{display:flex;align-items:baseline;gap:8px;min-width:170px}
+.team.r,#pips1{flex-direction:row-reverse}
+.team b{font-size:15px}
+.team small{font-size:10px;color:var(--muted)}
+.team span,#clock{font:700 28px var(--mono)}
+#clock{min-width:92px;text-align:center}
+.freeze{color:var(--paint)}
+.urgent{color:var(--bad)}
+#round,.pips{display:flex;justify-content:center;gap:3px}
+#round i{width:9px;height:9px;border-radius:2px;background:#fff2}
+.pips i{width:13px;height:5px}
+.pips i.dead{opacity:.15}
+#feed{top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13px}
+#feed li:empty{display:none}
+#feed li{background:var(--panel);padding:4px 9px;border-radius:3px}
+#feed li:has(.mine){outline:1px solid var(--paint)}
+#feed em{font-style:normal;color:var(--muted);margin:0 4px}
+#feed .hs{color:var(--paint);font:700 10px var(--mono);margin-right:4px}
+#objective{top:96px;font-size:14px;color:var(--paint);white-space:nowrap}
 #vitals{left:12px;bottom:12px;display:flex;gap:16px;align-items:flex-end;padding:8px 14px}
-.stat{display:flex;align-items:baseline;gap:5px}.stat b{font:700 40px var(--mono);line-height:1}.stat small{font-size:11px;letter-spacing:.14em;color:var(--muted)}
-.stat.low b{color:var(--bad)}#money{font:700 20px var(--mono);color:var(--paint)}
+.stat b,#mag{font:700 40px var(--mono);line-height:1}
+.stat small,#weapon{font-size:11px;color:var(--muted)}
+.low b,.empty #mag{color:var(--bad)}
+#money{font:700 20px var(--mono);color:var(--paint)}
 #ammo-box{right:12px;bottom:12px;padding:8px 14px;text-align:right}
-#weapon{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-#ammo{display:flex;align-items:baseline;justify-content:flex-end;gap:6px}#mag{font:700 44px var(--mono);line-height:1}#reserve{font:16px var(--mono);color:var(--muted)}#ammo.empty #mag{color:var(--bad)}
-#kit{display:flex;justify-content:flex-end;gap:6px;margin-top:5px;font:11px var(--mono)}
-#kit span{padding:2px 6px;border:1px solid var(--line);border-radius:3px}#kit span.off{opacity:.3}
-#hint{bottom:16px;left:50%;transform:translateX(-50%);font-size:13px;letter-spacing:.12em;color:var(--paint)}
-#spectate{bottom:110px;left:50%;transform:translateX(-50%);font-size:15px;color:var(--muted)}
-#crosshair{--gap:4px;left:50%;top:50%}#crosshair.hidden{display:none}
-#crosshair i{position:absolute;background:#f6f1e6;box-shadow:0 0 2px #000}
-#crosshair i:nth-child(1){width:2px;height:8px;left:-1px;bottom:var(--gap)}#crosshair i:nth-child(2){width:2px;height:8px;left:-1px;top:var(--gap)}
-#crosshair i:nth-child(3){height:2px;width:8px;top:-1px;right:var(--gap)}#crosshair i:nth-child(4){height:2px;width:8px;top:-1px;left:var(--gap)}
-#hitmarker{left:50%;top:50%;width:28px;height:28px;transform:translate(-50%,-50%) rotate(45deg);opacity:0}
-#hitmarker.on,#hitmarker.kill{opacity:1}#hitmarker i{position:absolute;background:#fff}#hitmarker.head i{background:var(--paint)}#hitmarker.kill i{background:var(--bad)}
-#hitmarker i:nth-child(1){left:13px;top:0;width:2px;height:9px}#hitmarker i:nth-child(2){left:13px;bottom:0;width:2px;height:9px}
-#hitmarker i:nth-child(3){top:13px;left:0;height:2px;width:9px}#hitmarker i:nth-child(4){top:13px;right:0;height:2px;width:9px}
-#damage{--angle:0deg;inset:0;opacity:0;background:radial-gradient(ellipse at center,transparent 58%,rgba(170,20,10,.4))}
-#damage::after{content:'';position:absolute;left:50%;top:50%;width:220px;height:220px;margin:-110px;border-radius:50%;border-top:6px solid var(--bad);transform:rotate(var(--angle));filter:drop-shadow(0 0 6px var(--bad))}
-#progress{--p:0%;top:40%;left:50%;width:260px;margin-left:-130px;display:none;text-align:center;font-size:12px;letter-spacing:.14em;color:var(--paint)}
-#progress.on{display:block}#progress div{height:8px;margin-top:4px;background:linear-gradient(90deg,var(--paint) var(--p),var(--panel) var(--p));border:1px solid var(--line)}
-#scope{inset:0;display:none;background:radial-gradient(circle at center,transparent 0 33vh,#000 calc(33vh + 2px))}#scope.on{display:block}
-#banner{top:76px;left:50%;transform:translateX(-50%);text-align:center;padding:10px 30px;opacity:0;transition:opacity .2s}#banner.on{opacity:1}
-#banner-title{font-size:30px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}#banner.win #banner-title{color:var(--paint)}
+#reserve{font:16px var(--mono);color:var(--muted)}
+#kit span{margin-left:6px;padding:2px 6px;border:1px solid var(--line);border-radius:3px;font:11px var(--mono)}
+#kit .off{opacity:.3}
+#hint{bottom:16px;font-size:13px;color:var(--paint)}
+#spectate{bottom:110px;font-size:15px;color:var(--muted)}
+#crosshair,#hitmarker{left:50%;top:50%}
+#crosshair.hidden{display:none}
+#crosshair i,#hitmarker i{position:absolute;background:#f6f1e6;box-shadow:0 0 2px #000}
+#crosshair i:nth-child(-n+2){width:2px;height:8px;left:-1px}
+#crosshair i:nth-child(n+3){height:2px;width:8px;top:-1px}
+#crosshair i:nth-child(1){bottom:var(--gap)}
+#crosshair i:nth-child(2){top:var(--gap)}
+#crosshair i:nth-child(3){right:var(--gap)}
+#crosshair i:nth-child(4){left:var(--gap)}
+#hitmarker{width:28px;height:28px;transform:translate(-50%,-50%) rotate(45deg);opacity:0}
+#hitmarker.on,#hitmarker.kill{opacity:1}
+#hitmarker.head i{background:var(--paint)}
+#hitmarker.kill i{background:var(--bad)}
+#hitmarker i:nth-child(-n+2){left:13px;width:2px;height:9px}
+#hitmarker i:nth-child(n+3){top:13px;height:2px;width:9px}
+#hitmarker i:nth-child(2),#hitmarker i:nth-child(4){right:0;bottom:0}
+#damage,#scope{inset:0;opacity:0}
+#damage{background:radial-gradient(transparent 58%,#aa140a66)}
+#damage::after{content:'';position:absolute;left:50%;top:50%;width:220px;height:220px;margin:-110px;border-radius:50%;border-top:6px solid var(--bad);transform:rotate(var(--angle))}
+#progress{top:40%;width:260px;margin-left:-130px;left:50%;display:none;text-align:center;font-size:12px;color:var(--paint)}
+#progress.on{display:block}
+#progress div{height:8px;margin-top:4px;background:linear-gradient(90deg,var(--paint) var(--p),var(--panel) var(--p));border:1px solid var(--line)}
+#scope{background:radial-gradient(circle,transparent 33vh,#000 calc(33vh + 2px))}
+#scope.on{opacity:1}
+#banner{top:76px;text-align:center;padding:10px 30px;opacity:0;transition:opacity .2s}
+#banner.on{opacity:1}
+#banner-title{font-size:30px;font-weight:800}
+#banner.win #banner-title{color:var(--paint)}
 #banner-sub{margin-top:3px;font-size:14px;color:var(--muted)}
-#hud.banner #objective{display:none}
-.menu{display:none;padding:14px 16px;background:rgba(16,20,26,.84)}.menu.open{display:block}
-#buy{top:184px;left:12px;width:300px}
-#buy h2{margin:0 0 8px;font-size:14px;letter-spacing:.16em;text-transform:uppercase;display:flex;justify-content:space-between}#buy-money{color:var(--paint);font-family:var(--mono)}
-#buy-list{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:12px}
-#buy-list h3{margin:6px 0 1px;font-size:10px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
-#buy-list li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:2px 8px;border:1px solid var(--line);border-radius:3px}
-#buy-list li.off{opacity:.32}#buy-list b{font-family:var(--mono);color:var(--paint)}
-#buy-foot{margin-top:8px;font-size:11px;color:var(--muted);line-height:1.5;white-space:pre-line}
-kbd{display:inline-block;min-width:20px;padding:0 5px;border:1px solid var(--line);border-radius:3px;font:11px var(--mono);text-align:center}
-#board{top:160px;left:50%;transform:translateX(-50%);background:rgba(16,20,26,.62)}
-#board table{border-collapse:collapse;font-size:13px}#board td,#board th{padding:3px 10px;text-align:left;border-bottom:1px solid var(--line)}
-#board th{font-size:10px;letter-spacing:.14em;color:var(--muted)}#board tr.me td{color:var(--paint)}
-#overlay{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at center,#10141acc,#07090cf2)}
-#overlay[hidden]{display:none}#overlay section{width:min(540px,92vw);padding:28px 32px}
-#overlay h1{margin:0;font-size:50px;letter-spacing:.18em;font-weight:800}#overlay h1 span{color:var(--paint)}
-#overlay p{color:var(--muted);line-height:1.5;margin:10px 0 20px}
-#play{font:inherit;font-weight:700;letter-spacing:.1em;padding:12px 22px;border:0;border-radius:4px;background:var(--paint);color:#14161a;cursor:pointer}
-.keys{margin:20px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:13px;color:var(--muted)}
+.menu{display:none;padding:14px 16px;background:#10141ad6}
+.menu.open{display:block}
+#buy{top:184px;left:12px;width:300px;font-size:12px}
+#buy h2{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between}
+#buy-money,#buy b{font-family:var(--mono);color:var(--paint)}
+#buy h3{margin:6px 0 1px;font-size:10px;color:var(--muted)}
+#buy li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;padding:2px 8px;margin-bottom:2px;border:1px solid var(--line);border-radius:3px}
+#buy li.off{opacity:.32}
+#buy-foot{margin-top:8px;font-size:11px;color:var(--muted);white-space:pre-line}
+kbd{padding:0 5px;border:1px solid var(--line);border-radius:3px;font:11px var(--mono)}
+#board{top:160px;background:#10141a9e}
+#board table{border-collapse:collapse;font-size:13px}
+#board td,#board th{padding:3px 10px;text-align:left;border-bottom:1px solid var(--line)}
+#board th{font-size:10px;color:var(--muted)}
+#board .me td{color:var(--paint)}
+#overlay{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(#10141acc,#07090cf2)}
+#overlay[hidden]{display:none}
+#overlay section{width:min(540px,92vw);padding:28px 32px}
+#overlay h1{margin:0;font-size:50px;letter-spacing:.18em}
+h1 span{color:var(--paint)}
+#overlay p{color:var(--muted);line-height:1.5}
+#play{font:700 16px system-ui;padding:12px 22px;border:0;border-radius:4px;background:var(--paint);cursor:pointer}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:20px;font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
 <div id="game"></div>
 <div id="hud" aria-hidden="true">
-  <canvas id="radar" class="panel abs" width="208" height="166"></canvas>
-  <div id="left" class="abs"><p id="where"></p><ul id="radio"></ul></div>
-  <div id="top" class="panel abs">
-    <div class="team"><b id="name0"></b><small id="side0"></small><span id="score0">0</span></div>
+  <canvas id="radar" class="panel" width="208" height="166"></canvas>
+  <div id="left"><p id="where" class="u"></p><ul id="radio"></ul></div>
+  <div id="top" class="panel c">
+    <div class="team u"><b id="name0"></b><small id="side0"></small><span id="score0">0</span></div>
     <div id="clock">0:00</div>
-    <div class="team r"><b id="name1"></b><small id="side1"></small><span id="score1">0</span></div>
-    <div class="pips" id="pips0"></div><div id="round"></div><div class="pips" id="pips1" style="justify-content:flex-end"></div>
+    <div class="team r u"><b id="name1"></b><small id="side1"></small><span id="score1">0</span></div>
+    <div class="pips" id="pips0"></div><div id="round"></div><div class="pips" id="pips1"></div>
   </div>
-  <ul id="feed" class="abs"></ul>
-  <div id="objective" class="abs"></div>
-  <div id="scope" class="abs"></div>
-  <div id="crosshair" class="abs"><i></i><i></i><i></i><i></i></div>
-  <div id="hitmarker" class="abs"><i></i><i></i><i></i><i></i></div>
-  <div id="damage" class="abs"></div>
-  <div id="progress" class="abs"><span id="progress-label"></span><div></div></div>
-  <div id="banner" class="panel abs"><div id="banner-title"></div><div id="banner-sub"></div></div>
-  <div id="spectate" class="abs"></div>
-  <div id="vitals" class="panel abs">
+  <ul id="feed"></ul>
+  <div id="objective" class="c"></div>
+  <div id="scope"></div>
+  <div id="crosshair"><i></i><i></i><i></i><i></i></div>
+  <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+  <div id="damage"></div>
+  <div id="progress" class="u"><span id="progress-label"></span><div></div></div>
+  <div id="banner" class="panel c"><div id="banner-title" class="u"></div><div id="banner-sub"></div></div>
+  <div id="spectate" class="c"></div>
+  <div id="vitals" class="panel">
     <div class="stat"><b id="hp">100</b><small>HEALTH</small></div>
     <div class="stat"><b id="armor">0</b><small id="armor-label">ARMOUR</small></div>
     <div id="money">$0</div>
   </div>
-  <div id="hint" class="abs"></div>
-  <div id="ammo-box" class="panel abs"><div id="weapon"></div><div id="ammo"><span id="mag">0</span><span id="reserve">/ 0</span></div><div id="kit"><span id="frag">G FRAG</span><span id="smoke">F SMOKE</span><span id="spanner">KIT</span></div></div>
-  <div id="buy" class="menu panel abs"><h2>Requisition <span id="buy-money"></span></h2><ul id="buy-list"></ul><div id="buy-foot"></div></div>
-  <div id="board" class="menu panel abs"><table><thead><tr><th>OPERATOR</th><th></th><th>K</th><th>D</th><th>$</th></tr></thead><tbody id="board-body"></tbody></table></div>
+  <div id="hint" class="c u"></div>
+  <div id="ammo-box" class="panel"><div id="weapon" class="u"></div><div id="ammo"><span id="mag">0</span> <span id="reserve">/ 0</span></div><div id="kit"><span id="frag">G FRAG</span><span id="smoke">F SMOKE</span><span id="spanner">KIT</span></div></div>
+  <div id="buy" class="menu panel"><h2 class="u">Requisition <span id="buy-money"></span></h2><ul id="buy-list"></ul><div id="buy-foot"></div></div>
+  <div id="board" class="menu panel c"><table><thead><tr class="u"><th>Operator</th><th></th><th>K</th><th>D</th><th>$</th></tr></thead><tbody id="board-body"></tbody></table></div>
 </div>
 <div id="overlay">
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">

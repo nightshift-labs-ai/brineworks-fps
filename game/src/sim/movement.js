@@ -1,6 +1,4 @@
-// Movement for every actor (player and bots run the same code): Quake-style acceleration and
-// friction, so speed builds up and bleeds off instead of snapping; crouch, walk, jump, gravity,
-// map collision with step-up, and running footsteps that enemies can hear.
+// Movement for every actor: Quake-style accelerate/friction, crouch, walk, jump, collision, footsteps.
 import { DT, GRAVITY, MOVE } from './config.js';
 import { moveBody, nudgeBody } from './collide.js';
 import { weaponDef } from './actors.js';
@@ -9,7 +7,7 @@ import { makeNoise } from './senses.js';
 
 export function moveActor(state, a, cmd, frozen) {
   a.prev.x = a.pos.x; a.prev.y = a.pos.y; a.prev.z = a.pos.z;
-  a.prevYaw = a.yaw; a.prevPitch = a.pitch;
+  a.prevYaw = a.yaw;
   a.yaw = cmd.yaw;
   a.pitch = Math.max(-1.45, Math.min(1.45, cmd.pitch));
 
@@ -17,7 +15,6 @@ export function moveActor(state, a, cmd, frozen) {
   const rate = MOVE.crouchRate * DT;
   a.crouch += Math.max(-rate, Math.min(rate, wantCrouch - a.crouch));
 
-  // Wish direction in world space: forward is -z at yaw 0.
   let mx = frozen ? 0 : cmd.moveX, mz = frozen ? 0 : cmd.moveZ;
   const len = Math.hypot(mx, mz);
   if (len > 1) { mx /= len; mz /= len; }
@@ -79,7 +76,7 @@ function accelerate(a, wx, wz, wishSpeed, accel) {
   a.vel.z += wz * gain;
 }
 
-// Bodies do not overlap: push each close pair apart along the line between them.
+// Push each overlapping pair of bodies apart.
 export function separateActors(state) {
   const list = state.actors;
   const min = MOVE.radius * 2;

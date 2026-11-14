@@ -1,6 +1,5 @@
-// Keyboard and mouse -> the player's command record (the same record bots fill in bots.js).
-// Mouse look accumulates between ticks and is applied at full rate to the camera; buttons that
-// act once per press (jump, reload, weapon keys) are latched until the next tick consumes them.
+// Pointer-lock mouse look and keys -> the player's command record (the one bots fill in bots.js).
+// Look is applied at frame rate; one-shot keys (jump, reload, weapons) are latched until a tick reads them.
 const SENSITIVITY = 0.0022;
 
 export function createInput(canvas, handlers) {
@@ -44,7 +43,6 @@ export function createInput(canvas, handlers) {
   });
   document.addEventListener('keyup', (e) => { held.delete(e.code); handlers.onKey(e.code, false); });
 
-  // Copy the current input into a command for one simulation tick.
   function fill(cmd) {
     cmd.moveZ = axis(held, 'KeyW', 'KeyS');
     cmd.moveX = axis(held, 'KeyD', 'KeyA');
@@ -64,10 +62,9 @@ export function createInput(canvas, handlers) {
     toss = '';
   }
 
-  // Snap the view to an actor's facing (new round spawn).
   function face(yaw, pitch) { look.yaw = yaw; look.pitch = pitch; }
 
-  return { fill, face, look, held, isLocked: () => locked, unlock: () => document.exitPointerLock() };
+  return { fill, face, look };
 }
 
 function axis(held, pos, neg) { return (held.has(pos) ? 1 : 0) - (held.has(neg) ? 1 : 0); }

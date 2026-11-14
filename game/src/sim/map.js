@@ -1,14 +1,10 @@
-// The Brineworks map: a salt refinery on the coast at dusk. One ASCII grid is the single source of truth
-// for collision, line of sight, bot navigation and the rendered level. North is up; one cell is CELL metres.
-//
+// The Brineworks map, a salt refinery on a cold coast: one ASCII grid drives collision, sight,
+// bot navigation and the rendered level. North is up; a cell is CELL metres.
 //   #  perimeter wall     H  refinery building   X  stacked crates (2.6 m)   x  crate (1.1 m, vaultable)
 //   -  low wall (1 m)     1 2 3  stair / deck heights 0.4, 0.8, 1.2 m        .  floor
 //   A B  Fuse Core sites  a d  attacker / defender spawns      other letters: named waypoints (floor)
-//
-// Sites: A = the Brine Tanks (a raised steel deck), B = the Evaporator Hall. Lanes: the west Brine
-// Channel to B; the open Conveyor Court in the middle (its tower blocks the spawn-to-spawn line) with
-// the Pan House to B and the Brine Bridge to A; the east Quay to A. Harrow start in the railhead
-// (south), the Saltreeves in the pumphouse (north).
+// Lanes: west Brine Channel to B; Conveyor Court in the middle (its tower blocks spawn-to-spawn
+// sight) with the Pan House to B and the Brine Bridge to A; the east Quay to A.
 export const CELL = 1.5;
 
 const LAYOUT = `
@@ -59,17 +55,15 @@ const LAYOUT = `
 `;
 
 const HEIGHTS = { '#': 4.8, H: 9, X: 2.6, x: 1.1, '-': 1, 1: 0.4, 2: 0.8, 3: 1.2 };
-// Callouts: every waypoint letter is a named place (the HUD shows where you stand, bots call by name).
 const CALLOUTS = {
   e: 'Rail Cut', f: 'Weighbridge', g: 'Conveyor Court', h: 'Tower Foot', i: 'Pump Gate', j: 'Brine Bridge',
   k: 'Dock Gate', l: 'Bollard Corner', m: 'Quay', n: 'Channel Foot', o: 'Brine Channel', p: 'Channel Gate',
   q: 'Pan House', r: 'Pan Door', s: 'Office Row', t: 'Tank Walk', u: 'Tank Gate', v: 'Hall Gate', w: 'Tank Apron',
   y: 'Pumphouse East', z: 'Pumphouse West',
 };
-export const SITE_NAMES = { A: 'Brine Tanks', B: 'Evaporator Hall' };
+const SITE_NAMES = { A: 'Brine Tanks', B: 'Evaporator Hall' };
 
-// Attack routes: waypoints walked in order from the railhead. The group gathers at `stage`, then
-// pushes the last waypoint into the site together.
+// Attack routes from the railhead: the group gathers at `stage`, then pushes the last leg together.
 export const ATTACK_ROUTES = [
   { site: 'A', name: 'quay', path: 'lmk', stage: 'm' },
   { site: 'A', name: 'bridge', path: 'efghj', stage: 'h' },
@@ -77,47 +71,39 @@ export const ATTACK_ROUTES = [
   { site: 'B', name: 'pan house', path: 'efgqr', stage: 'q' },
 ];
 
-// Held angles: stand at a cell, aim at a waypoint. Defenders anchor these; attackers hold post-plant ones.
-export const HOLDS = {
-  A: [{ at: [43, 10], look: 'k' }, { at: [40, 9], look: 'j' }, { at: [52, 12], look: 'k' }],
-  B: [{ at: [12, 13], look: 'p' }, { at: [4, 11], look: 'r' }, { at: [14, 8], look: 'p' }],
-  tower: [{ at: [28, 9], look: 'h' }],
+// Held angles (stand on a cell, aim at a waypoint): defenders anchor HOLDS, attackers hold POSTPLANT.
+const HOLDS = {
+  A: [[43, 10, 'k'], [40, 9, 'j'], [52, 12, 'k']],
+  B: [[12, 13, 'p'], [4, 11, 'r'], [14, 8, 'p']],
+  tower: [[28, 9, 'h']],
 };
-export const POSTPLANT = {
-  A: [{ at: [43, 10], look: 'u' }, { at: [51, 15], look: 'j' }, { at: [42, 16], look: 'u' }],
-  B: [{ at: [5, 15], look: 'v' }, { at: [15, 9], look: 'r' }, { at: [3, 8], look: 'v' }],
+const POSTPLANT = {
+  A: [[43, 10, 'u'], [51, 15, 'j'], [42, 16, 'u']],
+  B: [[5, 15, 'v'], [15, 9, 'r'], [3, 8, 'v']],
 };
 
-// Parse the layout into flat typed arrays (index = row * w + col) plus named places.
+// Parse the layout into flat typed arrays (index = row * w + col), named places and world-space holds.
 export function buildMap() {
   const rows = LAYOUT.trim().split('\n');
-  const h = rows.length;
-  const w = rows[0].length;
+  const h = rows.length, w = rows[0].length;
   const map = {
-    w, h, cell: CELL,
-    width: w * CELL, depth: h * CELL,
+    w, h, cell: CELL, width: w * CELL, depth: h * CELL,
     kind: new Uint8Array(w * h), // char code of the cell
     height: new Float32Array(w * h), // top of whatever stands on the cell (0 = open floor)
     walk: new Uint8Array(w * h), // 1 = bots may path through
-    spawns: [[], []], // by side: attack, defend
-    sites: {},
-    marks: {},
+    spawns: [[], []], sites: {}, marks: {},
   };
   for (let r = 0; r < h; r++) {
     if (rows[r].length !== w) throw new Error(`map row ${r} is ${rows[r].length} wide, expected ${w}`);
     for (let c = 0; c < w; c++) {
-      const ch = rows[r][c];
-      const i = r * w + c;
+      const ch = rows[r][c], i = r * w + c;
       map.kind[i] = ch.charCodeAt(0);
       map.height[i] = HEIGHTS[ch] ?? 0;
       map.walk[i] = map.height[i] < 1.25 && ch !== 'x' && ch !== '-' ? 1 : 0;
       const place = { c, r, x: (c + 0.5) * CELL, z: (r + 0.5) * CELL };
-      if (ch === 'a') map.spawns[0].push(place);
-      else if (ch === 'd') map.spawns[1].push(place);
-      else if (ch === 'A' || ch === 'B') {
-        const site = map.sites[ch] ?? (map.sites[ch] = { name: ch, cells: [], x: 0, z: 0, radius: 0 });
-        site.cells.push(place);
-      } else if (CALLOUTS[ch]) map.marks[ch] = { ...place, name: CALLOUTS[ch] };
+      if (ch === 'a' || ch === 'd') map.spawns[ch === 'a' ? 0 : 1].push(place);
+      else if (ch === 'A' || ch === 'B') (map.sites[ch] ??= { name: ch, title: SITE_NAMES[ch], cells: [], x: 0, z: 0, radius: 0 }).cells.push(place);
+      else if (CALLOUTS[ch]) map.marks[ch] = { ...place, name: CALLOUTS[ch] };
     }
   }
   map.markList = Object.values(map.marks);
@@ -126,12 +112,23 @@ export function buildMap() {
     for (const p of site.cells) { site.x += p.x / site.cells.length; site.z += p.z / site.cells.length; }
     site.radius = Math.sqrt(site.cells.length) * CELL * 0.5 + 0.9;
   }
+  const spot = ([c, r, look]) => ({ x: (c + 0.5) * CELL, z: (r + 0.5) * CELL, lookX: map.marks[look].x, lookZ: map.marks[look].z });
+  map.holds = {}; map.postplant = {};
+  for (const k in HOLDS) map.holds[k] = HOLDS[k].map(spot);
+  for (const k in POSTPLANT) map.postplant[k] = POSTPLANT[k].map(spot);
   return map;
 }
 
-// The callout for a point: the site's name inside a site, else the nearest named waypoint.
+// The site within `pad` metres of its edge from (x, z), or null.
+export function siteNear(map, x, z, pad) {
+  for (const site of map.siteList) if (Math.hypot(x - site.x, z - site.z) < site.radius + pad) return site;
+  return null;
+}
+
+// A point's callout: the site inside a site, else the nearest named waypoint.
 export function placeName(map, x, z) {
-  for (const site of map.siteList) if (Math.hypot(x - site.x, z - site.z) < site.radius + 1) return `${SITE_NAMES[site.name]} (${site.name})`;
+  const site = siteNear(map, x, z, 1);
+  if (site) return `${site.title} (${site.name})`;
   let best = '', bestD = Infinity;
   for (const m of map.markList) {
     const d = (m.x - x) ** 2 + (m.z - z) ** 2;

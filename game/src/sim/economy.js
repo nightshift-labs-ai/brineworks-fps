@@ -1,17 +1,9 @@
-// Money: round pay (objective wins pay more; a losing streak raises the loss pay; arming the core
-// pays even in defeat), the requisition rules shared by the player's buy menu and the bots, and the
-// bots' team buy call (full buy, force, or save). Kill rewards are paid in actors.js kill().
+// Money: round pay with the loss bonus, the buy rules the menu and bots share, the bots' buy calls.
 import { ECON, WEAPONS, GRENADES, GEAR, OBJECTIVE, SIDE, ROUND } from './config.js';
 import { giveWeapon } from './actors.js';
 
-// The requisition list, in menu order; `key` is the menu hotkey.
-export const SHOP = [
-  { id: 'rivet', key: '1', group: 'Sidearm' }, { id: 'skiff', key: '2', group: 'Primary' },
-  { id: 'bollard', key: '3', group: 'Primary' }, { id: 'ballast', key: '4', group: 'Primary' },
-  { id: 'capstan', key: '5', group: 'Primary' }, { id: 'vest', key: '6', group: 'Gear' },
-  { id: 'helm', key: '7', group: 'Gear' }, { id: 'kit', key: '8', group: 'Gear' },
-  { id: 'frag', key: '9', group: 'Grenade' }, { id: 'smoke', key: '0', group: 'Grenade' },
-];
+// The requisition list in menu order; keys 1..9, 0.
+export const SHOP = ['rivet', 'skiff', 'bollard', 'ballast', 'capstan', 'vest', 'helm', 'kit', 'frag', 'smoke'].map((id, i) => ({ id, key: String((i + 1) % 10) }));
 const DEFS = { ...WEAPONS, ...GRENADES, ...GEAR };
 export const itemDef = (item) => DEFS[item.id];
 
@@ -37,7 +29,6 @@ export function buy(state, a, item) {
   return true;
 }
 
-// What a team would be paid for losing the next round.
 export function lossPay(team) { return Math.min(ECON.lossMax, ECON.lossBase + ECON.lossStep * team.lossStreak); }
 
 export function payRound(state, winnerTeam, reason) {
@@ -51,17 +42,15 @@ export function payRound(state, winnerTeam, reason) {
   }
 }
 
-// Bots shop by a team call: full buy when the team can afford rifles, force when a losing streak
-// makes saving pointless, otherwise save (sidearm and maybe a vest). Then armour, the role's gun
-// (one marksman per team), grenades, and a disarm kit for defenders.
+// A bot's shopping under its team's call (pistol, save, force or full): gun, armour, grenades, kit.
 export function botShop(state, a, call, marksman) {
   const get = (id) => buy(state, a, SHOP.find((s) => s.id === id));
   const primary = a.slots[0] ? a.slots[0].id : '';
   if (call === 'pistol') { get('vest'); return; }
   if (call === 'save') { if (a.money >= 1600) get('vest'); return; }
   if (primary !== 'ballast' && primary !== 'capstan') {
-    if (call === 'full' && marksman && a.money >= 4500 + 600) get('capstan');
-    else if (call === 'full' && a.money >= 2600 + 600) get('ballast');
+    if (call === 'full' && marksman && a.money >= WEAPONS.capstan.price + GEAR.vest.price) get('capstan');
+    else if (call === 'full' && a.money >= WEAPONS.ballast.price + GEAR.vest.price) get('ballast');
     else if (!primary) get(state.rng() < 0.6 ? 'skiff' : 'bollard');
   }
   if (a.money >= 600) get('vest');
@@ -71,7 +60,7 @@ export function botShop(state, a, call, marksman) {
   if (a.money >= 350 && state.teams[a.team].side === SIDE.DEFEND) get('kit');
 }
 
-// The team's buy call for this round, from its average money and losing streak.
+// The team's buy call: full when it can afford rifles, force on a losing streak, else save.
 export function teamCall(state, team) {
   const n = state.round.number;
   if (n === 1 || n === ROUND.half + 1) return 'pistol';

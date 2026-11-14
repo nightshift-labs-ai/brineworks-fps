@@ -1,6 +1,5 @@
-// Small shared helpers: seeded random numbers (mulberry32, so a seed replays the same match) and
-// angle wrapping. Used by the simulation and the view alike.
-export function createRng(seed) {
+// Small helpers shared by the sim and the view: seeded random numbers, angles, distances.
+export function createRng(seed) { // mulberry32: a seed replays the same match
   let a = seed >>> 0;
   const next = () => {
     a = (a + 0x6d2b79f5) | 0;
@@ -13,10 +12,13 @@ export function createRng(seed) {
   return next;
 }
 
-// An angle brought into (-PI, PI].
-export function wrapAngle(angle) {
+export function wrapAngle(angle) { // into (-PI, PI]
   let x = angle;
   while (x > Math.PI) x -= Math.PI * 2;
   while (x <= -Math.PI) x += Math.PI * 2;
   return x;
 }
+
+export const yawTo = (ax, az, bx, bz) => Math.atan2(ax - bx, az - bz); // facing yaw from a to b (-z is yaw 0)
+export const dist2 = (ax, az, bx, bz) => (ax - bx) ** 2 + (az - bz) ** 2;
+export const lerp = (a, b, t) => a + (b - a) * t;

@@ -1,6 +1,4 @@
-// Gunplay for every actor: trigger, magazine and reserve, reload, draw time, spread that grows with
-// speed, air time and sustained fire, and a fixed spray pattern (climb, then sway) that the shooter
-// must pull against. Bullets are hitscan: the map ray first, then each body's head/torso/leg boxes.
+// Gunplay for every actor: trigger, magazine, reload, spread, spray pattern, hitscan bullets.
 import { DT, MOVE, WEAPONS } from './config.js';
 import { raycast } from './collide.js';
 import { eyeOf, rayActor, applyDamage } from './actors.js';
@@ -16,7 +14,7 @@ export function spreadOf(a, def) {
   const speed = Math.hypot(a.vel.x, a.vel.z);
   const moving = Math.max(0, Math.min(1, (speed - 0.5) / (MOVE.runSpeed - 0.5)));
   const s = def.spread;
-  const base = def.scope && !a.scoped ? s.unscoped : s.base; // a marksman rifle is only precise scoped
+  const base = def.scope && !a.scoped ? s.unscoped : s.base;
   const cone = base + s.move * moving + (a.grounded ? 0 : s.air) + a.bloom;
   return cone * (1 + (s.crouch - 1) * a.crouch);
 }
@@ -26,7 +24,7 @@ export function updateWeapon(state, a, cmd, canFire) {
   const w = a.slots[a.active];
   const def = WEAPONS[w.id];
 
-  if (a.fireCooldown > 0) a.fireCooldown -= DT; // may go slightly negative: fire() carries it over
+  if (a.fireCooldown > 0) a.fireCooldown -= DT;
   if (a.drawTimer > 0) a.drawTimer -= DT;
   if (a.reloadTimer > 0) {
     a.reloadTimer -= DT;
@@ -54,8 +52,7 @@ export function updateWeapon(state, a, cmd, canFire) {
   }
   a.triggerHeld = cmd.fire;
 
-  // Punch and bloom fade off the trigger, while reloading, and through a slow gun's cooldown;
-  // the spray pattern restarts once the muzzle has settled.
+  // Punch and bloom fade off the trigger, while reloading and through a slow gun's cooldown.
   const idle = !cmd.fire || a.reloadTimer > 0 || w.mag === 0;
   if (idle && (a.fireCooldown <= 0 || def.interval > 0.3)) {
     const fade = Math.exp(-def.recoil.recover * DT);
@@ -81,8 +78,7 @@ function startReload(state, a, w, def) {
   makeNoise(state, a, 'reload');
 }
 
-// Spray pattern: the first `settle` shots climb straight up, then the climb flattens and the
-// muzzle swings left and right. Deterministic, so it can be learned and pulled against.
+// Spray pattern: `settle` shots climb straight up, then the muzzle sways; fixed, so it can be learned.
 function kick(a, def) {
   const rc = def.recoil;
   const n = a.shotsFired;

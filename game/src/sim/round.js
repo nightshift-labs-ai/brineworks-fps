@@ -1,5 +1,4 @@
-// Round and match flow: freeze (buy) -> live (clock runs) -> over (result shown) -> next round,
-// teams swap sides at half time, first to ROUND.winsNeeded takes the match, then a new match starts.
+// Round and match flow: freeze (buy) -> live -> over -> next round; halves; first to 6; new match.
 import { DT, ROUND, ECON, SIDE } from './config.js';
 import { respawn } from './actors.js';
 import { payRound, botShop, teamCall } from './economy.js';
@@ -39,7 +38,6 @@ export function startRound(state) {
     a.cmd.yaw = a.yaw; a.cmd.pitch = 0;
     if (a.isBot) botShop(state, a, calls[a.team], a.brain.role === 'marksman');
   }
-  round.calls = calls;
   // The Fuse Core goes to the player when attacking, else to a random attacking bot.
   const attackers = state.actors.filter((a) => state.teams[a.team].side === SIDE.ATTACK);
   const carrier = attackers.includes(state.player) ? state.player : state.rng.pick(attackers);
@@ -63,14 +61,14 @@ export function teamOnSide(state, side) { return state.teams[0].side === side ? 
 
 export function updateRound(state) {
   const round = state.round;
+  round.timer -= DT;
   switch (round.phase) {
     case 'freeze':
-      round.timer -= DT;
       if (round.timer <= 0) { round.phase = 'live'; round.timer = 0; }
       break;
     case 'live': {
-      // Win conditions. Once the core is armed the clock stops mattering: the attackers win if it
-      // detonates or every defender is down; the defenders must disarm it, even if no attacker is left.
+      // Win conditions. Once the core is armed the clock stops: attackers win on detonation or with
+      // every defender down; defenders must disarm it even if no attacker is left.
       const atk = teamOnSide(state, SIDE.ATTACK), def = 1 - atk;
       const core = state.core.state;
       if (core !== 'planted') round.clock -= DT;
@@ -83,14 +81,12 @@ export function updateRound(state) {
       break;
     }
     case 'over':
-      round.timer -= DT;
       if (round.timer <= 0) {
         if (state.match.winner >= 0) { round.phase = 'matchover'; round.timer = ROUND.matchOver; }
         else startRound(state);
       }
       break;
     case 'matchover':
-      round.timer -= DT;
       if (round.timer <= 0) startMatch(state);
       break;
   }

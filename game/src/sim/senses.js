@@ -1,12 +1,10 @@
-// What bots can know: sight (view cone, range, line of sight, smoke) and hearing (noises with a
-// radius from config.js HEARING, shortened through walls). A noise goes straight into the memory
-// of every enemy bot in range, so nothing is queued. Walking and crouching make no noise at all.
+// What bots can know: sight (cone, range, line of sight, smoke) and hearing (noises, muffled by walls).
 import { BOT, HEARING } from './config.js';
 import { clearLine } from './collide.js';
 import { eyeOf, heightOf } from './actors.js';
 import { smokeBlocks } from './grenades.js';
 
-// `kind` names the noise and its range in HEARING (step, land, shot, reload, bounce, work, alarm).
+// A noise of `kind` (its range is HEARING[kind]) goes straight into every enemy bot's memory in range.
 export function makeNoise(state, source, kind) {
   noiseAt(state, source.team, source.pos.x, source.pos.y, source.pos.z, kind);
 }

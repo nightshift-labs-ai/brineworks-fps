@@ -1,13 +1,10 @@
-// The Fuse Core, this game's bomb objective. The attackers carry it to site A or B and arm it
-// (hold E for plantTime, standing still); once armed it burns for `fuse` seconds and detonates
-// unless a defender holds E on it for defuseTime (halved with a Spanner kit). A dead carrier drops
-// it; an attacker walking over it picks it up. Arming and disarming are loud. This module only
-// moves the core through its states; round.js reads them to decide the round.
+// The Fuse Core, this game's bomb objective: carry, drop, arm on a site, fuse, disarm, detonate.
+// It only moves the core through its states; round.js reads them to decide the round.
 import { DT, OBJECTIVE, SIDE, ECON } from './config.js';
 import { emit, EV } from './events.js';
 import { makeNoise } from './senses.js';
-import { clearLine } from './collide.js';
-import { hurt } from './actors.js';
+import { siteNear } from './map.js';
+import { blast } from './actors.js';
 
 export function createCore() {
   return { state: 'carried', carrier: -1, x: 0, y: 0, z: 0, site: '', fuse: 0, progress: 0, worker: -1, beep: 0 };
@@ -19,13 +16,7 @@ export function resetCore(state, carrierId) {
   core.progress = 0; core.worker = -1; core.beep = 0;
 }
 
-// The site a point stands in, or null.
-export function siteAt(state, x, z) {
-  for (const site of state.map.siteList) if (Math.hypot(x - site.x, z - site.z) < site.radius) return site;
-  return null;
-}
-
-// True while an actor is busy arming or disarming (movement and trigger are locked).
+// Busy arming or disarming: movement and trigger are locked.
 export function isWorking(state, a) { return state.core.worker === a.id && state.core.progress > 0; }
 
 export function updateCore(state) {
@@ -34,7 +25,7 @@ export function updateCore(state) {
     const c = state.actors[core.carrier];
     if (!c.alive) { drop(state, c); return; }
     core.x = c.pos.x; core.y = c.pos.y; core.z = c.pos.z;
-    const site = siteAt(state, c.pos.x, c.pos.z);
+    const site = siteNear(state.map, c.pos.x, c.pos.z, 0);
     const still = Math.hypot(c.vel.x, c.vel.z) < 0.6 && c.grounded;
     if (c.cmd.use && site && still && state.round.phase === 'live') { if (work(state, c, OBJECTIVE.plantTime)) plant(state, c, site); }
     else stopWork(core);
@@ -108,15 +99,11 @@ function defuse(state, a) {
   emit(state.events, EV.CORE, a.id, -1, 3);
 }
 
-// The blast: heavy damage that falls off with distance, blocked by walls. No kill reward.
+// The blast: heavy damage falling off with distance, blocked by walls; no kill reward.
 function detonate(state) {
   const core = state.core;
   core.state = 'detonated';
   const e = emit(state.events, EV.BLAST, -1, -1, OBJECTIVE.blastRadius);
   e.x = core.x; e.y = core.y + 0.5; e.z = core.z;
-  for (const a of state.actors) {
-    const d = Math.hypot(a.pos.x - core.x, a.pos.z - core.z);
-    if (!a.alive || d > OBJECTIVE.blastRadius || !clearLine(state.map, core.x, core.y + 0.6, core.z, a.pos.x, a.pos.y + 1, a.pos.z)) continue;
-    hurt(state, a, null, OBJECTIVE.blastDamage * (1 - d / OBJECTIVE.blastRadius), 0.5, 2, null, core.x, core.z);
-  }
+  blast(state, core.x, core.y + 0.5, core.z, OBJECTIVE.blastRadius, OBJECTIVE.blastDamage, 0.5, null, null);
 }

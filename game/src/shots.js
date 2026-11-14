@@ -112,12 +112,19 @@ function stagePlant(ctx) {
   ctx.input.face(p.yaw - 0.15, -0.36);
 }
 
-export function stageShot(name, ctx) {
+// ?shot=N stages scene N and sets window.__shotReady; ?test exposes the sim to tools/playtest.mjs.
+export function dev(name, ctx, setRunning) {
   document.getElementById('overlay').hidden = true;
-  window.addEventListener('load', () => setTimeout(() => {
+  if (!name) {
+    setRunning(true);
+    window.__brineworks = { state: ctx.state, step: ctx.step, pause: () => setRunning(false), resume: () => setRunning(true) };
+    return;
+  }
+  const go = () => setTimeout(() => {
     ctx.state.player.brain = createBrain(0.7, 'entry');
     (SCENES[name] ?? SCENES[1])(ctx);
     ctx.hud.update();
     requestAnimationFrame(() => { ctx.hud.update(); window.__shotReady = true; });
-  }, 50));
+  }, 50);
+  if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
 }

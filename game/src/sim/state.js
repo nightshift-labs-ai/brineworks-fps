@@ -1,5 +1,4 @@
-// The one game state. Everything the simulation knows lives in this object; the view, HUD and
-// audio only read it (and the event ring inside it). Created once; rounds reset it in place.
+// The one game state, created once and reset in place each round; view and HUD only read it.
 import { TEAMS, TEAM_SIZE, PLAYER_TEAM } from './config.js';
 import { buildMap } from './map.js';
 import { createRng } from './util.js';
@@ -29,7 +28,7 @@ export function createState(seed) {
     core: createCore(),
     nades: createNades(),
     smokes: createSmokes(),
-    intel: [0, 1].map(() => ({ x: 0, z: 0, time: -99, id: -1, count: 0, heardX: 0, heardZ: 0, heardTime: -99 })), // per team: latest sighting and noise
+    intel: [0, 1].map(() => ({ x: 0, z: 0, time: -99, id: -1, count: 0, heardX: 0, heardZ: 0, heardTime: -99 })), // per team: last sighting, last noise
     match: { winner: -1, history: [] },
     events: createEvents(),
   };

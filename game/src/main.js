@@ -1,13 +1,10 @@
-// Boot and the one loop. The simulation advances in fixed 1/60 s steps (an accumulator absorbs
-// the display's frame rate); the renderer draws in between, interpolating with the leftover
-// fraction. Simulation state lives in one object (sim/state.js); view, HUD and audio only read it.
+// Boot and the one loop: fixed 1/60 s simulation steps from an accumulator, interpolated rendering.
 import { DT } from './sim/config.js';
 import { createGame, step } from './sim/sim.js';
 import { SHOP, buy } from './sim/economy.js';
-import { createView } from './render/view.js';
-import { createHud } from './ui/hud.js';
 import { createInput } from './input.js';
-import { stageShot } from './shots.js';
+import { createHud } from './ui/hud.js';
+import { createView } from './render/view.js';
 
 const params = new URLSearchParams(window.location.search);
 const seed = Number.parseInt(params.get('seed') ?? '7', 10) || 7;
@@ -17,8 +14,7 @@ const state = createGame(seed);
 const view = createView(state, document.getElementById('game'));
 const hud = createHud(state, view.camera);
 const overlay = document.getElementById('overlay');
-let running = false;
-let lastRound = 0;
+let running = false, lastRound = 0;
 
 const input = createInput(view.canvas, {
   onLock(locked) {
@@ -31,48 +27,35 @@ const input = createInput(view.canvas, {
     if (code === 'Tab') { hud.showBoard(down); return true; }
     if (!down || !running) return false;
     if (code === 'KeyB') { hud.toggleBuy(); return true; }
-    if (hud.isBuyOpen()) {
-      const item = SHOP.find((s) => `Digit${s.key}` === code);
-      if (item) { buy(state, state.player, item); return true; }
-      if (code === 'Escape') { hud.toggleBuy(false); return true; }
-    }
-    return false;
+    if (!hud.isBuyOpen()) return false;
+    const item = SHOP.find((s) => `Digit${s.key}` === code);
+    if (item) buy(state, state.player, item);
+    else if (code === 'Escape') hud.toggleBuy(false);
+    return !!item || code === 'Escape';
   },
 });
 document.getElementById('play').addEventListener('click', () => view.canvas.requestPointerLock());
 
-function followRounds() {
-  if (state.round.number !== lastRound) {
-    lastRound = state.round.number;
-    input.face(state.player.yaw, 0);
-  }
+function followRounds() { // face the spawn's direction at each new round
+  if (state.round.number !== lastRound) { lastRound = state.round.number; input.face(state.player.yaw, 0); }
 }
 
-let last = performance.now();
-let acc = 0;
+let last = performance.now(), acc = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   if (running) {
-    acc += dt;
-    while (acc >= DT) {
+    for (acc += dt; acc >= DT; acc -= DT) {
       input.fill(state.player.cmd);
       step(state);
       followRounds();
-      acc -= DT;
     }
   }
   view.render(acc / DT, dt, input.look);
   hud.update();
 }
 
-if (shot) stageShot(shot, { state, view, hud, input, step });
-else { followRounds(); requestAnimationFrame(frame); }
-
-// ?test: automated play tests (tools/playtest.mjs) drive the same loop without pointer lock.
-if (params.has('test')) {
-  running = true;
-  overlay.hidden = true;
-  window.__saltline = { state, step, pause: () => { running = false; }, resume: () => { running = true; } };
-}
+// Screenshot staging and the play-test hook live in a dev module loaded only for ?shot / ?test.
+if (shot || params.has('test')) import('./shots.js').then((m) => m.dev(shot, { state, view, hud, input, step }, (on) => { running = on; }));
+if (!shot) { followRounds(); requestAnimationFrame(frame); }

@@ -11,14 +11,14 @@ const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 await page.goto(`http://127.0.0.1:8792/index.html?test&seed=${seed}`, { waitUntil: 'load' });
-await page.waitForFunction(() => window.__saltline, null, { timeout: 30000 });
+await page.waitForFunction(() => window.__brineworks, null, { timeout: 30000 });
 await page.waitForTimeout(1500);
 
 const checks = [];
 const check = (name, ok, detail = '') => { checks.push({ name, ok, detail }); };
 
 const r = await page.evaluate(() => {
-  const { state, step, pause } = window.__saltline;
+  const { state, step, pause } = window.__brineworks;
   pause();
   const p = state.player, cmd = p.cmd;
   const out = {};
@@ -72,10 +72,10 @@ check('reload refills from reserve', r.magReloaded === r.mag0 && r.resAfter < r.
 check('recoil recovers', Math.abs(r.punchAfterRest) < 0.005, r.punchAfterRest.toFixed(4));
 
 // Real-time play with rendering, then fast-forward the sim, then render again.
-await page.evaluate(() => window.__saltline.resume());
+await page.evaluate(() => window.__brineworks.resume());
 await page.waitForTimeout(6000);
 const mid = await page.evaluate(() => {
-  const { state, step, pause, resume } = window.__saltline;
+  const { state, step, pause, resume } = window.__brineworks;
   pause();
   const before = state.round.number;
   let roundsEnded = 0, matches = 0, last = state.round.phase, travel = 0;

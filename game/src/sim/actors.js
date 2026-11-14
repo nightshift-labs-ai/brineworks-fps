@@ -1,10 +1,9 @@
-// Actors are the player and the bots alike: one record shape, created once and reused every round.
-// This module owns their body (height, eye, hitboxes), their loadout and the damage rules.
+// Actors (player and bots alike): body, hitboxes, loadout and every damage rule.
 import { MOVE, BODY, WEAPONS, ECON } from './config.js';
-import { raySphere, rayCylinder } from './collide.js';
+import { raySphere, rayCylinder, clearLine } from './collide.js';
 import { emit, EV } from './events.js';
 
-// The command record: filled by input.js for the player and by bots.js for bots, read by the sim.
+// The command record shared by input.js (player) and bots.js (bots); the sim reads only this.
 export function createCommand() {
   return { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, aim: false, reload: false, crouch: false, walk: false, jump: false, use: false, slot: -1, toss: '', tossRange: 0 };
 }
@@ -14,11 +13,10 @@ export function createActor(id, team, name, isBot) {
     id, team, name, isBot,
     alive: false, hp: 100, armor: 0, helm: false, kit: false, money: 0,
     pos: { x: 0, y: 0, z: 0 }, prev: { x: 0, y: 0, z: 0 }, vel: { x: 0, y: 0, z: 0 },
-    yaw: 0, pitch: 0, prevYaw: 0, prevPitch: 0,
-    grounded: true, crouch: 0, // crouch: 0 standing .. 1 fully crouched
-    stride: 0, // metres run since the last footstep
+    yaw: 0, pitch: 0, prevYaw: 0,
+    grounded: true, crouch: 0, stride: 0, // crouch 0..1; stride: metres run since the last footstep
     cmd: createCommand(),
-    slots: [null, null], // primary, sidearm: { id, mag, reserve } or null
+    slots: [null, null], // primary, sidearm: { id, mag, reserve }
     active: 1,
     grenades: { frag: 0, smoke: 0 },
     scoped: false,
@@ -26,7 +24,7 @@ export function createActor(id, team, name, isBot) {
     bloom: 0, punchPitch: 0, punchYaw: 0, shotsFired: 0,
     kills: 0, deaths: 0, earned: 0, // earned: kill money this round
     lastHurtTime: -99, lastHurtBy: -1, diedAt: -99,
-    brain: null, // bots only (see bots.js)
+    brain: null, // bots only
   };
 }
 
@@ -43,8 +41,7 @@ export function giveWeapon(a, id) {
   a.reloadTimer = 0;
 }
 
-// Place an actor at a spawn for a new round. Survivors keep guns, grenades and armour; the dead
-// start again with the sidearm. Every gun is refilled; the disarm kit is bought each round.
+// Survivors keep guns, grenades and armour; the dead restart with the sidearm. Guns are refilled.
 export function respawn(a, spawn, yaw) {
   if (!a.alive) { a.slots[0] = a.slots[1] = null; a.armor = 0; a.helm = false; a.grenades.frag = a.grenades.smoke = 0; }
   if (!a.slots[1]) giveWeapon(a, 'rivet');
@@ -53,14 +50,14 @@ export function respawn(a, spawn, yaw) {
   a.alive = true; a.hp = 100; a.kit = false;
   a.pos.x = a.prev.x = spawn.x; a.pos.z = a.prev.z = spawn.z; a.pos.y = a.prev.y = 0;
   a.vel.x = a.vel.y = a.vel.z = 0;
-  a.yaw = a.prevYaw = yaw; a.pitch = a.prevPitch = 0;
+  a.yaw = a.prevYaw = yaw; a.pitch = 0;
   a.crouch = 0; a.grounded = true; a.stride = 0;
   a.fireCooldown = a.reloadTimer = a.drawTimer = 0;
   a.bloom = a.punchPitch = a.punchYaw = a.shotsFired = 0;
   a.scoped = false; a.lastHurtBy = -1; a.earned = 0;
 }
 
-// Hit test one actor's three hitboxes. Returns the distance and writes the part (1 head, 2 torso, 3 legs).
+// Ray against the three hitboxes: distance, and out.part = 1 head, 2 torso, 3 legs.
 export function rayActor(a, ox, oy, oz, dx, dy, dz, out) {
   const h = heightOf(a);
   const { x, y, z } = a.pos;
@@ -81,8 +78,8 @@ export function applyDamage(state, victim, attacker, def, part, distance) {
   hurt(state, victim, attacker, def.damage * mult * Math.pow(def.falloff, distance / 25), def.armorPen, part, def, attacker.pos.x, attacker.pos.z);
 }
 
-// Every kind of damage ends here. The vest guards the torso and the helm the head (only while armour
-// points last): health takes dmg x pen, armour loses half of the rest. (fromX, fromZ) is the source.
+// Every damage ends here: a vest guards the torso, a helm the head, while armour points last (health
+// takes dmg x pen, armour loses half the rest). (fromX, fromZ) is the source, for the HUD's arc.
 export function hurt(state, victim, attacker, amount, pen, part, def, fromX, fromZ) {
   if (!victim.alive) return;
   let dmg = amount;
@@ -98,6 +95,15 @@ export function hurt(state, victim, attacker, amount, pen, part, def, fromX, fro
   const e = emit(state.events, EV.HIT, attacker ? attacker.id : -1, victim.id, dmg, part);
   e.x = fromX; e.z = fromZ;
   if (victim.hp <= 0) kill(state, victim, attacker && attacker.team !== victim.team ? attacker : null, def, part === 1);
+}
+
+// Radial damage (frag, core): linear to 0 at `radius`, blocked by walls, credited to `owner`.
+export function blast(state, x, y, z, radius, damage, pen, owner, def) {
+  for (const a of state.actors) {
+    const d = Math.hypot(a.pos.x - x, a.pos.y + 0.9 - y, a.pos.z - z);
+    if (!a.alive || d > radius || !clearLine(state.map, x, y + 0.2, z, a.pos.x, a.pos.y + 0.9, a.pos.z)) continue;
+    hurt(state, a, owner, damage * (1 - d / radius), pen, 2, def, x, z);
+  }
 }
 
 export function kill(state, victim, killer, def, headshot) {

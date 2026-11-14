@@ -1,5 +1,4 @@
-// The fixed-step simulation: step(state) advances the world by exactly DT. It never reads the
-// clock, the DOM or three.js; the caller decides how many steps a frame needs (see main.js).
+// The fixed-step simulation: step(state) advances the world exactly DT (no clock, DOM or three.js).
 import { DT } from './config.js';
 import { createState } from './state.js';
 import { startMatch, updateRound } from './round.js';

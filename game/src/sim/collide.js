@@ -1,6 +1,5 @@
-// Collision and line of sight against the map grid. Every solid is a column standing on one cell,
-// so movement is an axis-separated box sweep over the cells a body overlaps, and a ray is a grid
-// walk (Amanatides & Woo) that compares the ray's height with each column it crosses.
+// Collision and sight on the map grid: every solid is a column on a cell; bodies sweep axis by axis,
+// rays walk the grid (Amanatides & Woo) comparing their height with each column.
 import { MOVE } from './config.js';
 
 const OUTSIDE = 99;
@@ -10,7 +9,6 @@ export function heightAt(map, c, r) {
   return map.height[r * map.w + c];
 }
 
-// Highest column top under a square footprint of half-size `half` centred on (x, z).
 export function groundUnder(map, x, z, half) {
   const inv = 1 / map.cell;
   const c0 = Math.floor((x - half) * inv), c1 = Math.floor((x + half) * inv);
@@ -20,8 +18,7 @@ export function groundUnder(map, x, z, half) {
   return top;
 }
 
-// Move one axis (0 = x, 2 = z) by `delta`, stopping at columns taller than `climb` above the feet.
-// Returns the tallest column top we may step onto (or -1 when none).
+// Move one axis (0 = x, 2 = z), stopping at columns over `climb` above the feet; returns the top to step onto (-1: none).
 function sweepAxis(map, body, axis, delta, climb) {
   const r = MOVE.radius;
   const inv = 1 / map.cell;
@@ -47,7 +44,6 @@ function sweepAxis(map, body, axis, delta, climb) {
   return step;
 }
 
-// Integrate a body (pos = feet, vel) through the map for one tick of length dt.
 export function moveBody(map, body, dt) {
   const climb = body.grounded ? MOVE.stepHeight : 0;
   const sx = sweepAxis(map, body, 0, body.vel.x * dt, climb);
@@ -67,14 +63,12 @@ export function moveBody(map, body, dt) {
   }
 }
 
-// Push a body sideways (e.g. out of another body) without climbing anything.
 export function nudgeBody(map, body, dx, dz) {
   sweepAxis(map, body, 0, dx, 0);
   sweepAxis(map, body, 2, dz, 0);
 }
 
-// Cast a ray; fills `hit` with t (distance), the point, the face normal and the cell kind (0 = floor).
-// Returns true on a hit within maxT.
+// Fills `hit` (t, point, face normal, cell kind; 0 = floor); true on a hit within maxT.
 export function raycast(map, ox, oy, oz, dx, dy, dz, maxT, hit) {
   const size = map.cell;
   let c = Math.floor(ox / size), r = Math.floor(oz / size);
@@ -106,11 +100,10 @@ function fillHit(hit, t, ox, oy, oz, dx, dy, dz, nx, ny, nz, kind) {
   hit.t = t;
   hit.x = ox + dx * t; hit.y = oy + dy * t; hit.z = oz + dz * t;
   hit.nx = nx; hit.ny = ny; hit.nz = nz;
-  hit.kind = kind; // char code of the struck cell, 0 for the open floor
+  hit.kind = kind;
   return true;
 }
 
-// True when nothing solid blocks the segment between two points.
 const losHit = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, kind: 0 };
 export function clearLine(map, ax, ay, az, bx, by, bz) {
   const dx = bx - ax, dy = by - ay, dz = bz - az;
@@ -119,8 +112,7 @@ export function clearLine(map, ax, ay, az, bx, by, bz) {
   return !raycast(map, ax, ay, az, dx / len, dy / len, dz / len, len, losHit);
 }
 
-// Ray against a finite vertical cylinder (x, z, radius, y0..y1): the side interval clipped by the
-// y slab, so rays entering through the top or bottom count. Returns entry distance or -1.
+// Ray vs finite vertical cylinder: side interval clipped by the y slab (caps count); distance or -1.
 export function rayCylinder(ox, oy, oz, dx, dy, dz, cx, cz, radius, y0, y1) {
   const px = ox - cx, pz = oz - cz, a = dx * dx + dz * dz;
   let tIn = -Infinity, tOut = Infinity;
@@ -139,7 +131,6 @@ export function rayCylinder(ox, oy, oz, dx, dy, dz, cx, cz, radius, y0, y1) {
   return Math.max(0, tIn);
 }
 
-// Ray against a sphere. Returns entry distance or -1.
 export function raySphere(ox, oy, oz, dx, dy, dz, cx, cy, cz, radius) {
   const px = ox - cx, py = oy - cy, pz = oz - cz;
   const b = px * dx + py * dy + pz * dz;
