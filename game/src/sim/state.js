@@ -2,7 +2,7 @@
 // audio only read it (and the event ring inside it). Created once; rounds reset it in place.
 import { TEAMS, TEAM_SIZE, PLAYER_TEAM } from './config.js';
 import { buildMap } from './map.js';
-import { createRng } from './rng.js';
+import { createRng } from './util.js';
 import { createEvents } from './events.js';
 import { createActor } from './actors.js';
 import { createBrain } from './bots.js';

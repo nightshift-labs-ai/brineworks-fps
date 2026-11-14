@@ -47,11 +47,11 @@ export function createEffects(scene) {
   scene.add(points);
 
   // Third-person muzzle flashes.
-  const flashMat = new THREE.SpriteMaterial({ map: softDot(), color: 0xffb860, blending: THREE.AdditiveBlending, depthWrite: false });
+  const flashMat = new THREE.SpriteMaterial({ map: softDot(), color: 0xc88a40, blending: THREE.AdditiveBlending, depthWrite: false });
   const flashes = Array.from({ length: FLASHES }, () => {
     const sp = new THREE.Sprite(flashMat);
     sp.visible = false;
-    sp.scale.setScalar(0.45);
+    sp.scale.setScalar(0.3);
     scene.add(sp);
     return { sprite: sp, life: 0 };
   });

@@ -25,7 +25,7 @@ export function createActor(id, team, name, isBot) {
     fireCooldown: 0, reloadTimer: 0, drawTimer: 0, triggerHeld: false,
     bloom: 0, punchPitch: 0, punchYaw: 0, shotsFired: 0,
     kills: 0, deaths: 0, roundKills: 0,
-    lastHurtTime: -99, lastHurtBy: -1,
+    lastHurtTime: -99, lastHurtBy: -1, diedAt: -99,
     brain: null, // bots only (see bots.js)
   };
 }
@@ -99,6 +99,7 @@ export function applyDamage(state, victim, attacker, def, part, distance) {
 export function kill(state, victim, killer, def, headshot) {
   victim.hp = 0;
   victim.alive = false;
+  victim.diedAt = state.time;
   victim.deaths++;
   victim.vel.x = victim.vel.z = 0;
   if (killer && killer !== victim) {

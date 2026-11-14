@@ -213,17 +213,36 @@ export function softDot() {
   return finish(c, false);
 }
 
-// Vertical sky gradient for the background sphere.
+// A lumpy smoke puff: overlapping soft blobs inside a round falloff.
+export function puffTexture() {
+  const size = 128, rand = rng(83);
+  const [c, ctx] = canvas(size);
+  for (let i = 0; i < 18; i++) {
+    const a = rand() * 6.28, r = rand() * 34, x = 64 + Math.cos(a) * r, y = 64 + Math.sin(a) * r, R = 18 + rand() * 22;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+    const v = (200 + rand() * 55) | 0;
+    g.addColorStop(0, `rgba(${v},${v},${v - 6},0.55)`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - R, y - R, R * 2, R * 2);
+  }
+  return finish(c, false);
+}
+
+// Dusk sky for the background sphere: a vertical gradient with thin lit cloud bands near the horizon.
 export function skyTexture() {
-  const [c, ctx] = canvas(256);
-  const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, PALETTE.skyTop);
-  g.addColorStop(0.42, PALETTE.skyMid);
-  g.addColorStop(0.5, PALETTE.horizon);
-  g.addColorStop(0.56, PALETTE.sea);
-  g.addColorStop(1, PALETTE.sea);
+  const [c, ctx] = canvas(512);
+  const rand = rng(97);
+  const g = ctx.createLinearGradient(0, 0, 0, 512);
+  for (const [at, color] of PALETTE.sky) g.addColorStop(at, color);
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 256, 256);
+  ctx.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 26; i++) {
+    const y = 150 + rand() * 95, w = 60 + rand() * 220, x = rand() * 512;
+    ctx.fillStyle = `rgba(255,${170 + rand() * 50 | 0},${120 + rand() * 40 | 0},${0.08 + (y - 150) / 95 * 0.18})`;
+    ctx.fillRect(x, y, w, 1 + rand() * 3);
+    ctx.fillRect(x - 512, y, w, 1 + rand() * 3);
+  }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;

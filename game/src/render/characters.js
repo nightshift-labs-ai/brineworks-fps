@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { TEAMS, BODY, MOVE } from '../sim/config.js';
 import { heightOf } from '../sim/actors.js';
+import { wrapAngle } from '../sim/util.js';
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const GEO = {
@@ -75,16 +76,16 @@ export function createCharacters(scene, state) {
   });
 
   // Pose every rig from interpolated sim state. `hideId` is the actor whose eyes we look through.
-  function update(alpha, dt, hideId) {
+  function update(alpha, dt, hideId, time) {
     for (const a of state.actors) {
       const rig = rigs[a.id];
-      rig.root.visible = a.id !== hideId && (a.alive || rig.fall < 1 || state.round.phase !== 'freeze');
+      rig.root.visible = a.id !== hideId;
       if (!rig.root.visible) continue;
       const x = a.prev.x + (a.pos.x - a.prev.x) * alpha;
       const y = a.prev.y + (a.pos.y - a.prev.y) * alpha;
       const z = a.prev.z + (a.pos.z - a.prev.z) * alpha;
       rig.root.position.set(x, y, z);
-      rig.root.rotation.y = lerpAngle(a.prevYaw, a.yaw, alpha);
+      rig.root.rotation.y = a.prevYaw + wrapAngle(a.yaw - a.prevYaw) * alpha;
 
       const h = heightOf(a);
       const legLen = h * BODY.legTop;
@@ -105,18 +106,11 @@ export function createCharacters(scene, state) {
       rig.arms.rotation.x = a.pitch;
       rig.chest.rotation.x = a.crouch * 0.15;
 
-      // Dying: tip over backwards over a third of a second; reset on respawn.
-      rig.fall = a.alive ? 0 : Math.min(1, rig.fall + dt * 3);
+      // Dying: tip over backwards over a third of a second after the moment of death.
+      rig.fall = a.alive ? 0 : Math.min(1, (time - a.diedAt) * 3);
       rig.body.rotation.x = rig.fall * rig.fall * 1.45;
       rig.body.position.y = -rig.fall * 0.1;
     }
   }
   return { update, rigs };
-}
-
-export function lerpAngle(a, b, t) {
-  let d = b - a;
-  while (d > Math.PI) d -= Math.PI * 2;
-  while (d < -Math.PI) d += Math.PI * 2;
-  return a + d * t;
 }

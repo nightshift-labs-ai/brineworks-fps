@@ -2,7 +2,7 @@
 // sim ticks, turns sim events into effects, and draws the world then the first-person gun.
 import * as THREE from 'three';
 import { PALETTE } from './palette.js';
-import { createTextures, skyTexture } from './textures.js';
+import { createTextures, skyTexture, softDot } from './textures.js';
 import { buildLevel } from './level.js';
 import { createCharacters } from './characters.js';
 import { createEffects } from './effects.js';
@@ -18,7 +18,7 @@ export function createView(state, container) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.12;
   renderer.autoClear = false;
   container.appendChild(renderer.domElement);
 
@@ -29,7 +29,7 @@ export function createView(state, container) {
 
   const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(), side: THREE.BackSide, fog: false, depthWrite: false }));
   scene.add(sky);
-  scene.add(new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.25));
+  scene.add(new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.6));
   const sun = new THREE.DirectionalLight(PALETTE.sun, 3.2);
   const map = state.map;
   sun.position.set(map.width / 2 - 60, 38, map.depth / 2 + 25); // low in the south-west
@@ -41,6 +41,11 @@ export function createView(state, container) {
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
+  // The low sun itself, far off in the light's direction.
+  const disc = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot(), color: 0xffd9a0, fog: false, depthWrite: false, blending: THREE.AdditiveBlending }));
+  disc.position.copy(sun.position).sub(sun.target.position).normalize().multiplyScalar(380).add(sun.target.position);
+  disc.scale.setScalar(70);
+  scene.add(disc);
 
   scene.add(buildLevel(map, createTextures()));
   const characters = createCharacters(scene, state);
@@ -132,11 +137,11 @@ export function createView(state, container) {
     if (camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
     camera.updateMatrixWorld();
 
-    characters.update(alpha, dt, who.id);
+    characters.update(alpha, dt, who.id, state.time);
     props.update(alpha, dt, who.id);
     effects.update(dt);
     vm.setVisible(who === state.player && who.alive && !who.scoped);
-    vm.update(dt, who, look);
+    vm.update(dt, who, look, state.core.worker === who.id && state.core.progress > 0);
 
     renderer.clear();
     renderer.render(scene, camera);

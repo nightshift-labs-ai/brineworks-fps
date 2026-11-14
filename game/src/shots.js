@@ -91,7 +91,10 @@ const SCENES = {
   // Retake: the core is armed on B; the player crouches over it disarming, smoke on the door.
   3(ctx) {
     stageRetake(ctx);
-    run(ctx, 60 * 3, () => { ctx.state.player.cmd.use = true; ctx.state.player.cmd.crouch = true; });
+    const { state } = ctx;
+    state.core.worker = state.player.id; state.core.progress = 0.55; // already half-way through
+    state.player.crouch = 1;
+    run(ctx, 24, () => { state.player.cmd.use = true; state.player.cmd.crouch = true; });
   },
   // The same retake a moment later: core disarmed, round won, scores up.
   4(ctx) {
@@ -108,21 +111,21 @@ function stageRetake(ctx) {
   skipUntil(ctx, (s) => s.round.number === 7 && s.round.phase === 'live');
   const p = state.player;
   const mates = team(state, SIDE.DEFEND).filter((a) => a !== p), foes = team(state, SIDE.ATTACK);
-  // the attackers armed the core on B; one of them is down beside it, the rest are far away
-  const core = state.core;
+  // the attackers armed the core on B; one of them is down by the door, the rest are far away
+  const core = state.core, S = state.map.cell;
+  place(state, p, 9, 11, 5.5 * S, 18.5 * S, 'kestrel');
   core.state = 'planted'; core.site = 'B'; core.fuse = 19; core.carrier = -1;
-  core.x = 8.5 * 1.5; core.y = 0; core.z = 12.2 * 1.5;
+  core.x = p.pos.x - Math.sin(p.yaw) * 1.35; core.y = 0; core.z = p.pos.z - Math.cos(p.yaw) * 1.35;
   state.round.planted = true;
-  place(state, p, 8, 13, core.x, core.z, 'kestrel');
-  place(state, mates[0], 11, 15, 5 * 1.5, 19 * 1.5, 'kestrel');
-  place(state, mates[1], 12, 8, 10 * 1.5, 6 * 1.5, 'heron');
-  for (const m of mates.slice(2)) place(state, m, 14, 9, 13 * 1.5, 19 * 1.5);
-  for (const f of foes) place(state, f, 5, 30, 5 * 1.5, 19 * 1.5);
-  place(state, foes[0], 6, 15, 8 * 1.5, 13 * 1.5);
-  foes[0].alive = false; foes[0].hp = 0;
+  place(state, mates[0], 13, 12, 13 * S, 19 * S, 'kestrel');
+  place(state, mates[1], 4, 9, 10 * S, 6 * S, 'heron');
+  for (const m of mates.slice(2)) place(state, m, 14, 9, 13 * S, 19 * S);
+  for (const f of foes) place(state, f, 5, 30, 5 * S, 19 * S);
+  place(state, foes[0], 7, 16, p.pos.x, p.pos.z);
+  foes[0].alive = false; foes[0].hp = 0; foes[0].diedAt = state.time - 2;
   const smoke = state.smokes[0];
-  smoke.live = true; smoke.x = 5.5 * 1.5; smoke.y = 0; smoke.z = 17.6 * 1.5; smoke.age = 1;
-  ctx.input.face(p.yaw + 0.55, -0.42);
+  smoke.live = true; smoke.x = 5.5 * S; smoke.y = 0; smoke.z = 19.5 * S; smoke.age = 1;
+  ctx.input.face(p.yaw + 0.1, -0.4);
 }
 
 export function stageShot(name, ctx) {

@@ -1,4 +1,5 @@
-// Seeded random numbers (mulberry32) so a round replays the same from the same seed and inputs.
+// Small shared helpers: seeded random numbers (mulberry32, so a seed replays the same match) and
+// angle wrapping. Used by the simulation and the view alike.
 export function createRng(seed) {
   let a = seed >>> 0;
   const next = () => {
@@ -8,7 +9,14 @@ export function createRng(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
   next.range = (lo, hi) => lo + (hi - lo) * next();
-  next.int = (n) => Math.floor(next() * n);
   next.pick = (list) => list[Math.floor(next() * list.length)];
   return next;
+}
+
+// An angle brought into (-PI, PI].
+export function wrapAngle(angle) {
+  let x = angle;
+  while (x > Math.PI) x -= Math.PI * 2;
+  while (x <= -Math.PI) x += Math.PI * 2;
+  return x;
 }

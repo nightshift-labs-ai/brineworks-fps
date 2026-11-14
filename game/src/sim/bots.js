@@ -144,7 +144,12 @@ function playObjective(state, a, b) {
     }
     return false;
   }
-  if (core.state === 'planted') { // retake: go to the core and disarm it when the coast is clear
+  if (core.state === 'planted') {
+    // Retake: whoever is closest disarms when the coast is clear; the others cover the site.
+    if (!nearestTo(state, a, core.x, core.z)) {
+      if (b.site !== core.site) { b.site = core.site; b.plan = 'hold'; setHold(state, b, HOLDS[core.site][a.id % HOLDS[core.site].length]); }
+      return false;
+    }
     if (Math.hypot(a.pos.x - core.x, a.pos.z - core.z) < OBJECTIVE.reach * 0.8 && quiet) {
       cmd.use = true;
       cmd.crouch = true;
@@ -163,10 +168,10 @@ function playObjective(state, a, b) {
   return false;
 }
 
-// Is `a` the living bot of its team closest to (x, z)?
+// Is `a` the living member of its team (player included) closest to (x, z)?
 function nearestTo(state, a, x, z) {
   const d = dist2(a.pos.x, a.pos.z, x, z);
-  for (const o of state.actors) if (o !== a && o.alive && o.isBot && o.team === a.team && dist2(o.pos.x, o.pos.z, x, z) < d) return false;
+  for (const o of state.actors) if (o !== a && o.alive && o.team === a.team && dist2(o.pos.x, o.pos.z, x, z) < d) return false;
   return true;
 }
 

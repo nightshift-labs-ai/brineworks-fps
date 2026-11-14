@@ -3,7 +3,7 @@
 // of soft sprites per cloud slot.
 import * as THREE from 'three';
 import { GRENADES } from '../sim/config.js';
-import { softDot } from './textures.js';
+import { puffTexture } from './textures.js';
 
 const PUFFS = 14;
 
@@ -28,9 +28,9 @@ export function createProps(scene, state) {
   const nadeMats = { frag: new THREE.MeshStandardMaterial({ color: 0x4d5a3a, roughness: 0.6 }), smoke: new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.5 }) };
   const nades = state.nades.map(() => { const m = new THREE.Mesh(nadeGeo, nadeMats.frag); m.visible = false; scene.add(m); return m; });
 
-  const puffTex = softDot();
+  const puffTex = puffTexture();
   const clouds = state.smokes.map(() => Array.from({ length: PUFFS }, (_, i) => {
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: 0xd9d4cc, transparent: true, depthWrite: false, opacity: 0 }));
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: 0xcfd0cc, transparent: true, depthWrite: false, opacity: 0, rotation: i * 1.7 }));
     // puffs on a squashed golden-angle spiral, fixed per slot
     const a = i * 2.39996, r = Math.sqrt((i + 0.5) / PUFFS);
     sp.userData.offset = new THREE.Vector3(Math.cos(a) * r, 0.35 + ((i * 7) % 5) * 0.32, Math.sin(a) * r);
