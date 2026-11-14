@@ -2,8 +2,8 @@
 // teams swap sides at half time, first to ROUND.winsNeeded takes the match, then a new match starts.
 import { DT, ROUND, ECON, SIDE } from './config.js';
 import { respawn } from './actors.js';
-import { payRound, botShop } from './economy.js';
-import { planRound } from './bots.js';
+import { payRound, botShop, teamCall } from './economy.js';
+import { planRound, reviewRound } from './coach.js';
 import { emit, EV } from './events.js';
 import { resetCore } from './objective.js';
 
@@ -29,19 +29,21 @@ export function startRound(state) {
   for (const n of state.nades) n.live = false;
   for (const s of state.smokes) s.live = false;
   const used = [0, 0];
+  const calls = state.teams.map((t) => teamCall(state, t));
   for (const a of state.actors) {
     const side = state.teams[a.team].side;
     const spawns = state.map.spawns[side];
     const spawn = spawns[used[side]++ % spawns.length];
     respawn(a, spawn, side === SIDE.ATTACK ? 0 : Math.PI);
     a.cmd.yaw = a.yaw; a.cmd.pitch = 0;
-    if (a.isBot) botShop(state, a);
+    if (a.isBot) botShop(state, a, calls[a.team], a.brain.role === 'marksman');
   }
+  round.calls = calls;
   // The Fuse Core goes to the player when attacking, else to a random attacking bot.
   const attackers = state.actors.filter((a) => state.teams[a.team].side === SIDE.ATTACK);
   const carrier = attackers.includes(state.player) ? state.player : state.rng.pick(attackers);
   resetCore(state, carrier.id);
-  for (const t of state.teams) planRound(state, t.id, t.side === SIDE.ATTACK);
+  for (const t of state.teams) planRound(state, t, calls[t.id]);
   emit(state.events, EV.ROUND, -1, -1, 0);
 }
 
@@ -101,7 +103,8 @@ export function endRound(state, winner, reason) {
   round.reason = reason;
   round.buyOpen = false;
   state.teams[winner].score++;
-  payRound(state, winner);
+  payRound(state, winner, reason);
+  reviewRound(state, winner);
   if (state.teams[winner].score >= ROUND.winsNeeded) state.match.winner = winner;
   emit(state.events, EV.ROUND, winner, -1, 1);
 }

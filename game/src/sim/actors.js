@@ -1,9 +1,10 @@
 // Actors are the player and the bots alike: one record shape, created once and reused every round.
-// This module owns their body (height, eye, hitboxes), loadout and the damage rules.
+// This module owns their body (height, eye, hitboxes), their loadout and the damage rules.
 import { MOVE, BODY, WEAPONS, ECON } from './config.js';
 import { raySphere, rayCylinder } from './collide.js';
 import { emit, EV } from './events.js';
 
+// The command record: filled by input.js for the player and by bots.js for bots, read by the sim.
 export function createCommand() {
   return { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, aim: false, reload: false, crouch: false, walk: false, jump: false, use: false, slot: -1, toss: '' };
 }
@@ -11,20 +12,19 @@ export function createCommand() {
 export function createActor(id, team, name, isBot) {
   return {
     id, team, name, isBot,
-    alive: false, hp: 100, armor: 0, money: 0,
+    alive: false, hp: 100, armor: 0, helm: false, kit: false, money: 0,
     pos: { x: 0, y: 0, z: 0 }, prev: { x: 0, y: 0, z: 0 }, vel: { x: 0, y: 0, z: 0 },
     yaw: 0, pitch: 0, prevYaw: 0, prevPitch: 0,
     grounded: true, crouch: 0, // crouch: 0 standing .. 1 fully crouched
     stride: 0, // metres run since the last footstep
     cmd: createCommand(),
-    // loadout: one primary, one sidearm; each slot { id, mag, reserve } or null
-    slots: [null, null],
+    slots: [null, null], // primary, sidearm: { id, mag, reserve } or null
     active: 1,
     grenades: { frag: 0, smoke: 0 },
     scoped: false,
     fireCooldown: 0, reloadTimer: 0, drawTimer: 0, triggerHeld: false,
     bloom: 0, punchPitch: 0, punchYaw: 0, shotsFired: 0,
-    kills: 0, deaths: 0, roundKills: 0,
+    kills: 0, deaths: 0,
     lastHurtTime: -99, lastHurtBy: -1, diedAt: -99,
     brain: null, // bots only (see bots.js)
   };
@@ -32,7 +32,6 @@ export function createActor(id, team, name, isBot) {
 
 export function heightOf(a) { return MOVE.standHeight + (MOVE.crouchHeight - MOVE.standHeight) * a.crouch; }
 export function eyeOf(a) { return MOVE.standEye + (MOVE.crouchEye - MOVE.standEye) * a.crouch; }
-export function weaponOf(a) { return a.slots[a.active]; }
 export function weaponDef(a) { const w = a.slots[a.active]; return w ? WEAPONS[w.id] : null; }
 
 export function giveWeapon(a, id) {
@@ -44,22 +43,21 @@ export function giveWeapon(a, id) {
   a.reloadTimer = 0;
 }
 
-// Place an actor at a spawn for a new round. Survivors keep their guns and armour; the dead start
-// again with the sidearm. Every gun is refilled.
+// Place an actor at a spawn for a new round. Survivors keep guns, grenades and armour; the dead
+// start again with the sidearm. Every gun is refilled; the disarm kit is bought each round.
 export function respawn(a, spawn, yaw) {
-  if (!a.alive) { a.slots[0] = null; a.slots[1] = null; a.armor = 0; a.grenades.frag = 0; a.grenades.smoke = 0; }
-  if (!a.slots[1]) giveWeapon(a, 'pike');
+  if (!a.alive) { a.slots[0] = a.slots[1] = null; a.armor = 0; a.helm = false; a.grenades.frag = a.grenades.smoke = 0; }
+  if (!a.slots[1]) giveWeapon(a, 'rivet');
   for (const w of a.slots) if (w) { w.mag = WEAPONS[w.id].mag; w.reserve = WEAPONS[w.id].reserve; }
   a.active = a.slots[0] ? 0 : 1;
-  a.alive = true;
-  a.hp = 100;
+  a.alive = true; a.hp = 100; a.kit = false;
   a.pos.x = a.prev.x = spawn.x; a.pos.z = a.prev.z = spawn.z; a.pos.y = a.prev.y = 0;
   a.vel.x = a.vel.y = a.vel.z = 0;
   a.yaw = a.prevYaw = yaw; a.pitch = a.prevPitch = 0;
   a.crouch = 0; a.grounded = true; a.stride = 0;
-  a.fireCooldown = 0; a.reloadTimer = 0; a.drawTimer = 0;
-  a.bloom = 0; a.punchPitch = 0; a.punchYaw = 0; a.shotsFired = 0; a.scoped = false;
-  a.roundKills = 0; a.lastHurtBy = -1;
+  a.fireCooldown = a.reloadTimer = a.drawTimer = 0;
+  a.bloom = a.punchPitch = a.punchYaw = a.shotsFired = 0;
+  a.scoped = false; a.lastHurtBy = -1;
 }
 
 // Hit test one actor's three hitboxes. Returns the distance and writes the part (1 head, 2 torso, 3 legs).
@@ -77,23 +75,29 @@ export function rayActor(a, ox, oy, oz, dx, dy, dz, out) {
   return best;
 }
 
-// Apply a bullet's damage. Armour soaks part of it except on the legs; the head multiplier is per weapon.
+// A bullet: per-weapon head multiplier, leg multiplier, falloff per 25 m, then armour.
 export function applyDamage(state, victim, attacker, def, part, distance) {
-  if (!victim.alive) return;
   const mult = part === 1 ? def.headMult : part === 3 ? BODY.legMult : BODY.torsoMult;
-  let dmg = def.damage * mult * Math.pow(def.falloff, distance / 25);
-  if (victim.armor > 0 && part !== 3) {
-    const soaked = dmg * (1 - def.armorPen);
+  hurt(state, victim, attacker, def.damage * mult * Math.pow(def.falloff, distance / 25), def.armorPen, part, def, attacker.pos.x, attacker.pos.z);
+}
+
+// Every kind of damage ends here. The vest guards the torso and the helm the head (only while armour
+// points last): health takes dmg x pen, armour loses half of the rest. (fromX, fromZ) is the source.
+export function hurt(state, victim, attacker, amount, pen, part, def, fromX, fromZ) {
+  if (!victim.alive) return;
+  let dmg = amount;
+  if (victim.armor > 0 && (part === 2 || (part === 1 && victim.helm))) {
+    const soaked = Math.min(dmg * (1 - pen), victim.armor * 2);
     victim.armor = Math.max(0, victim.armor - soaked * 0.5);
     dmg -= soaked;
   }
   dmg = Math.max(1, Math.round(dmg));
   victim.hp -= dmg;
   victim.lastHurtTime = state.time;
-  victim.lastHurtBy = attacker.id;
-  const e = emit(state.events, EV.HIT, attacker.id, victim.id, dmg, part);
-  e.x = attacker.pos.x; e.z = attacker.pos.z;
-  if (victim.hp <= 0) kill(state, victim, attacker, def, part === 1);
+  victim.lastHurtBy = attacker ? attacker.id : -1;
+  const e = emit(state.events, EV.HIT, attacker ? attacker.id : -1, victim.id, dmg, part);
+  e.x = fromX; e.z = fromZ;
+  if (victim.hp <= 0) kill(state, victim, attacker && attacker.team !== victim.team ? attacker : null, def, part === 1);
 }
 
 export function kill(state, victim, killer, def, headshot) {
@@ -102,10 +106,9 @@ export function kill(state, victim, killer, def, headshot) {
   victim.diedAt = state.time;
   victim.deaths++;
   victim.vel.x = victim.vel.z = 0;
-  if (killer && killer !== victim) {
+  if (killer) {
     killer.kills++;
-    killer.roundKills++;
-    if (killer.team !== victim.team) killer.money = Math.min(ECON.max, killer.money + def.reward);
+    if (def) killer.money = Math.min(ECON.max, killer.money + def.reward);
   }
   emit(state.events, EV.KILL, killer ? killer.id : -1, victim.id, def ? def.index : -1, headshot ? 1 : 0);
 }

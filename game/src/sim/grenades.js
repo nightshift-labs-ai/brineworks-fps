@@ -1,11 +1,11 @@
 // Thrown grenades: a small pool of bouncing projectiles. The frag bursts after its fuse and hurts
 // everyone in the open within its radius; the smoke canister fills a sphere that blocks sight
 // (senses.js asks smokeBlocks) for a while. Bounces use the same map columns as everything else.
-import { DT, GRENADES } from './config.js';
+import { DT, GRENADES, HEARING } from './config.js';
 import { heightAt, clearLine } from './collide.js';
-import { eyeOf, kill } from './actors.js';
+import { eyeOf, hurt } from './actors.js';
 import { emit, EV } from './events.js';
-import { makeNoise } from './senses.js';
+import { noiseAt } from './senses.js';
 
 const SPEED = 17, NADE_GRAVITY = 15, RADIUS = 0.08;
 export const NADE_SLOTS = ['frag', 'smoke'];
@@ -53,7 +53,10 @@ export function updateNades(state) {
     n.y += n.vy * DT;
     if (n.y < floor) {
       n.y = floor;
-      if (n.vy < -2) emit(state.events, EV.BOUNCE, n.owner).x = n.x;
+      if (n.vy < -2) {
+        emit(state.events, EV.BOUNCE, n.owner).x = n.x;
+        noiseAt(state, state.actors[n.owner].team, n.x, n.y, n.z, HEARING.bounce);
+      }
       n.vy = Math.abs(n.vy) < 1.5 ? 0 : -n.vy * 0.35;
       n.vx *= 0.75; n.vz *= 0.75;
     }
@@ -76,18 +79,11 @@ function burst(state, n) {
   const g = GRENADES.frag;
   const e = emit(state.events, EV.BLAST, n.owner, -1, g.radius);
   e.x = n.x; e.y = n.y; e.z = n.z;
-  makeNoise(state, owner, 40);
+  noiseAt(state, owner.team, n.x, n.y, n.z, HEARING.shot);
   for (const a of state.actors) {
-    if (!a.alive) continue;
     const d = Math.hypot(a.pos.x - n.x, a.pos.y + 0.9 - n.y, a.pos.z - n.z);
-    if (d > g.radius || !clearLine(state.map, n.x, n.y + 0.2, n.z, a.pos.x, a.pos.y + 0.9, a.pos.z)) continue;
-    let dmg = g.damage * (1 - d / g.radius);
-    if (a.armor > 0) { dmg *= 0.6; a.armor = Math.max(0, a.armor - dmg * 0.4); }
-    a.hp -= Math.round(dmg);
-    a.lastHurtTime = state.time; a.lastHurtBy = owner.id;
-    const hit = emit(state.events, EV.HIT, owner.id, a.id, Math.round(dmg), 2);
-    hit.x = n.x; hit.z = n.z;
-    if (a.hp <= 0) kill(state, a, a.team === owner.team ? null : owner, g, false);
+    if (!a.alive || d > g.radius || !clearLine(state.map, n.x, n.y + 0.2, n.z, a.pos.x, a.pos.y + 0.9, a.pos.z)) continue;
+    hurt(state, a, owner, g.damage * (1 - d / g.radius), 0.6, 2, g, n.x, n.z);
   }
 }
 

@@ -1,21 +1,23 @@
-// What bots can know: sight (view cone + line of sight) and hearing (noises with a radius).
-// Noises are delivered straight into the listening bots' memories, so nothing is queued.
-import { BOT } from './config.js';
+// What bots can know: sight (view cone, range, line of sight, smoke) and hearing (noises with a
+// radius from config.js HEARING, shortened through walls). A noise goes straight into the memory
+// of every enemy bot in range, so nothing is queued. Walking and crouching make no noise at all.
+import { BOT, HEARING } from './config.js';
 import { clearLine } from './collide.js';
 import { eyeOf, heightOf } from './actors.js';
 import { smokeBlocks } from './grenades.js';
 
-export const NOISE = { STEP: 16, SHOT: 48, RELOAD: 9, LAND: 12 };
-
 export function makeNoise(state, source, radius) {
-  const r2 = radius * radius;
+  noiseAt(state, source.team, source.pos.x, source.pos.y, source.pos.z, radius);
+}
+
+export function noiseAt(state, team, x, y, z, radius) {
   for (const bot of state.actors) {
-    if (!bot.isBot || !bot.alive || bot.team === source.team) continue;
-    const dx = bot.pos.x - source.pos.x, dz = bot.pos.z - source.pos.z;
-    if (dx * dx + dz * dz > r2) continue;
+    if (!bot.isBot || !bot.alive || bot.team === team) continue;
+    const d = Math.hypot(bot.pos.x - x, bot.pos.z - z);
+    if (d > radius || (d > radius * HEARING.muffle && !clearLine(state.map, x, y + 1.2, z, bot.pos.x, bot.pos.y + 1.2, bot.pos.z))) continue;
     const mem = bot.brain;
-    mem.heardX = source.pos.x;
-    mem.heardZ = source.pos.z;
+    mem.heardX = x;
+    mem.heardZ = z;
     mem.heardTime = state.time;
   }
 }

@@ -4,6 +4,7 @@ import { DT } from './config.js';
 import { createState } from './state.js';
 import { startMatch, updateRound } from './round.js';
 import { think } from './bots.js';
+import { updateCoach } from './coach.js';
 import { moveActor, separateActors } from './movement.js';
 import { updateWeapon } from './weapons.js';
 import { updateCore, isWorking } from './objective.js';
@@ -21,6 +22,7 @@ export function step(state) {
   updateRound(state);
   const frozen = state.round.phase === 'freeze';
   const actors = state.actors;
+  if (state.round.phase === 'live') updateCoach(state);
   for (const a of actors) if (a.alive && a.isBot) think(state, a);
   for (const a of actors) {
     if (a.alive) moveActor(state, a, a.cmd, frozen || isWorking(state, a));

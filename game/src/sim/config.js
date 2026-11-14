@@ -1,5 +1,5 @@
-// Every tunable number of Saltline in one place: tick rate, movement, weapons, economy and rounds.
-// Simulation modules read these; nothing here touches three.js or the DOM.
+// Rules and numbers of Saltline, one table per topic: timing, movement, bodies, weapons, gear,
+// grenades, the Fuse Core, money, rounds, hearing, bots. Sim modules read these; no three.js, no DOM.
 
 export const TICK_HZ = 60;
 export const DT = 1 / TICK_HZ;
@@ -8,131 +8,89 @@ export const GRAVITY = 20;
 // Two teams swap sides at half time. Side 0 attacks (carries the Fuse Core), side 1 defends.
 export const SIDE = { ATTACK: 0, DEFEND: 1 };
 export const TEAMS = [
-  { name: 'Harrow', color: 0xe0703a, css: '#e0703a' }, // rust: salvage crews from the rail yard
-  { name: 'Wardens', color: 0x3fb7b0, css: '#3fb7b0' }, // teal: the refinery's own guard
+  { name: 'Harrow', color: 0xdd4a32, css: '#ef5a3e' }, // vermilion: salvage crews from the rail yard
+  { name: 'Wardens', color: 0x3a86e0, css: '#4d97f0' }, // cobalt: the refinery's own guard
 ];
 export const PLAYER_TEAM = 0;
 export const TEAM_SIZE = 5;
 
+// Metres and seconds. accel/friction work Quake-style: speed builds up and bleeds off, so a
+// player who stops before shooting (spread follows speed, see weapons.js) has to plan the stop.
 export const MOVE = {
-  runSpeed: 5.2,
-  walkSpeed: 2.6, // shift: silent, steadier aim
-  crouchSpeed: 1.8,
-  accel: 6.5, // ground acceleration, in "wish speeds per second" (Quake-style accelerate)
-  airAccel: 1.4,
-  friction: 6.5,
-  stopSpeed: 1.8, // friction never works on less than this speed, so stops are crisp
-  jumpSpeed: 6.9,
-  radius: 0.34,
-  standHeight: 1.8,
-  crouchHeight: 1.22,
-  standEye: 1.62,
-  crouchEye: 1.06,
-  crouchRate: 7, // crouch transition, fraction per second
-  stepHeight: 0.45,
-  footstepEvery: 2.2, // metres of running between footstep sounds
+  runSpeed: 5.2, walkSpeed: 2.6, crouchSpeed: 1.8, // walking and crouching make no footsteps
+  accel: 6.2, airAccel: 1.2, friction: 6, stopSpeed: 1.8,
+  jumpSpeed: 6.9, stepHeight: 0.45, radius: 0.34,
+  standHeight: 1.8, crouchHeight: 1.22, standEye: 1.62, crouchEye: 1.06, crouchRate: 7,
+  footstepEvery: 2.2, // metres of running between footstep noises
 };
 
-// Hitbox proportions (fractions of current height) shared by the hit test and the character model.
-export const BODY = {
-  headRadius: 0.16,
-  torsoRadius: 0.27,
-  legRadius: 0.22,
-  legTop: 0.47, // fraction of height where legs end and torso starts
-  legMult: 0.75,
-  torsoMult: 1,
-};
+// Hitboxes (fractions of the current height), shared by the hit test and the soldier model:
+// head sphere, torso and leg cylinders. Damage multipliers per part; the head one is per weapon.
+export const BODY = { headRadius: 0.16, torsoRadius: 0.27, legRadius: 0.22, legTop: 0.47, legMult: 0.75, torsoMult: 1 };
 
-// Spread values are cone radii in radians. Moving and jumping add a lot: stop to aim.
-// bloom is added per shot. recoil: climb = pitch kick per shot (rad), sway = yaw swing per shot once
-// `settle` shots have climbed, recover = exponential rate (1/s) at which punch and bloom fade off-trigger.
+// Spread: cone radius in radians = base + move x (speed fraction) + air + bloom, x crouch.
+// recoil: climb = pitch kick per shot for the first `settle` shots, then a quarter of it while the
+// muzzle sways (sway per shot); recover = rate (1/s) at which punch and bloom fade off the trigger.
+// Design intent: a Ballast headshot (34 x 3.8) kills through a helm only up close; a Capstan body
+// shot kills through a vest, a leg shot does not; the Skiff is cheap, forgiving on the move, weak far.
 export const WEAPONS = {
-  pike: {
-    name: 'Pike-9', kind: 'pistol', slot: 'secondary', price: 200, mag: 12, reserve: 36,
-    interval: 0.16, auto: false, damage: 31, headMult: 4, armorPen: 0.47, falloff: 0.86, range: 60,
-    pellets: 1, reload: 2.1, speedMult: 1, reward: 300, draw: 0.5,
-    spread: { base: 0.006, move: 0.045, air: 0.12, crouch: 0.8, bloom: 0.022 },
-    recoil: { climb: 0.018, sway: 0.004, settle: 2, recover: 5 },
-  },
-  wasp: {
-    name: 'Wasp SMG', kind: 'smg', slot: 'primary', price: 1250, mag: 25, reserve: 100,
-    interval: 0.075, auto: true, damage: 25, headMult: 3.2, armorPen: 0.6, falloff: 0.75, range: 50,
-    pellets: 1, reload: 2.4, speedMult: 0.98, reward: 600, draw: 0.6,
-    spread: { base: 0.009, move: 0.022, air: 0.1, crouch: 0.85, bloom: 0.006 },
-    recoil: { climb: 0.006, sway: 0.008, settle: 5, recover: 7 },
-  },
-  kestrel: {
-    name: 'Kestrel AR', kind: 'rifle', slot: 'primary', price: 2700, mag: 30, reserve: 90,
-    interval: 0.1, auto: true, damage: 35, headMult: 4, armorPen: 0.78, falloff: 0.94, range: 120,
-    pellets: 1, reload: 2.5, speedMult: 0.9, reward: 300, draw: 0.8,
-    spread: { base: 0.0035, move: 0.075, air: 0.16, crouch: 0.75, bloom: 0.0075 },
-    recoil: { climb: 0.0105, sway: 0.0075, settle: 7, recover: 6 },
-  },
-  brute: {
-    name: 'Brute-12', kind: 'shotgun', slot: 'primary', price: 1100, mag: 7, reserve: 28,
-    interval: 0.85, auto: false, damage: 15, headMult: 2, armorPen: 0.6, falloff: 0.45, range: 40,
-    pellets: 9, reload: 3, speedMult: 0.95, reward: 900, draw: 0.7,
-    spread: { base: 0.055, move: 0.02, air: 0.06, crouch: 0.95, bloom: 0.01 },
-    recoil: { climb: 0.05, sway: 0.004, settle: 1, recover: 4 },
-  },
-  heron: {
-    name: 'Heron .338', kind: 'marksman', slot: 'primary', price: 4300, mag: 5, reserve: 20,
-    interval: 1.3, auto: false, damage: 108, headMult: 2.5, armorPen: 0.95, falloff: 0.99, range: 160,
-    pellets: 1, reload: 3.2, speedMult: 0.82, reward: 100, draw: 1,
-    scope: 0.32, // field of view multiplier while scoped (right mouse)
-    spread: { base: 0.0008, unscoped: 0.075, move: 0.12, air: 0.25, crouch: 0.85, bloom: 0.02 },
-    recoil: { climb: 0.045, sway: 0.005, settle: 1, recover: 4 },
-  },
+  rivet: { name: 'Rivet-9', kind: 'pistol', slot: 'secondary', price: 200, mag: 13, reserve: 39, interval: 0.15, auto: false, damage: 29, headMult: 3.8, armorPen: 0.5, falloff: 0.85, range: 60, pellets: 1, reload: 2, speedMult: 1, reward: 250, draw: 0.45,
+    spread: { base: 0.006, move: 0.042, air: 0.12, crouch: 0.8, bloom: 0.02 }, recoil: { climb: 0.017, sway: 0.004, settle: 2, recover: 5 } },
+  skiff: { name: 'Skiff SMG', kind: 'smg', slot: 'primary', price: 1200, mag: 28, reserve: 112, interval: 0.072, auto: true, damage: 24, headMult: 3.4, armorPen: 0.6, falloff: 0.76, range: 50, pellets: 1, reload: 2.3, speedMult: 0.98, reward: 550, draw: 0.6,
+    spread: { base: 0.009, move: 0.021, air: 0.1, crouch: 0.85, bloom: 0.006 }, recoil: { climb: 0.006, sway: 0.008, settle: 5, recover: 7 } },
+  ballast: { name: 'Ballast AR', kind: 'rifle', slot: 'primary', price: 2600, mag: 30, reserve: 90, interval: 0.095, auto: true, damage: 34, headMult: 3.8, armorPen: 0.8, falloff: 0.95, range: 120, pellets: 1, reload: 2.4, speedMult: 0.9, reward: 250, draw: 0.8,
+    spread: { base: 0.0035, move: 0.072, air: 0.16, crouch: 0.75, bloom: 0.0075 }, recoil: { climb: 0.0105, sway: 0.0075, settle: 7, recover: 6 } },
+  bollard: { name: 'Bollard-12', kind: 'shotgun', slot: 'primary', price: 1050, mag: 6, reserve: 24, interval: 0.9, auto: false, damage: 16, headMult: 2.2, armorPen: 0.55, falloff: 0.5, range: 40, pellets: 9, reload: 2.8, speedMult: 0.95, reward: 750, draw: 0.7,
+    spread: { base: 0.055, move: 0.02, air: 0.06, crouch: 0.95, bloom: 0.01 }, recoil: { climb: 0.05, sway: 0.004, settle: 1, recover: 4 } },
+  capstan: { name: 'Capstan .338', kind: 'marksman', slot: 'primary', price: 4500, mag: 5, reserve: 15, interval: 1.35, auto: false, damage: 112, headMult: 2.6, armorPen: 0.95, falloff: 0.99, range: 160, pellets: 1, reload: 3.3, speedMult: 0.82, reward: 150, draw: 1,
+    scope: 0.32, // field of view multiplier while scoped (right mouse); only precise when scoped
+    spread: { base: 0.0008, unscoped: 0.075, move: 0.12, air: 0.25, crouch: 0.85, bloom: 0.02 }, recoil: { climb: 0.045, sway: 0.005, settle: 1, recover: 4 } },
 };
-export const WEAPON_ORDER = ['pike', 'wasp', 'kestrel', 'brute', 'heron'];
+export const WEAPON_ORDER = ['rivet', 'skiff', 'ballast', 'bollard', 'capstan'];
 WEAPON_ORDER.forEach((id, index) => Object.assign(WEAPONS[id], { id, index }));
+
+// Gear: the vest guards the torso, the helm the head (armour points shared); the kit halves disarming.
+export const GEAR = {
+  vest: { name: 'Hull vest', price: 600 },
+  helm: { name: 'Hull helm', price: 350 },
+  kit: { name: 'Spanner kit', price: 350, side: SIDE.DEFEND },
+};
 
 // Grenades, bought like guns and thrown with G (frag) and F (smoke). index 100: kill-feed id.
 export const GRENADES = {
-  frag: { name: 'Clatter frag', price: 300, fuse: 1.5, radius: 7, damage: 105, reward: 300, index: 100 },
-  smoke: { name: 'Haze canister', price: 300, fuse: 1.6, radius: 4.4, duration: 15 },
+  frag: { name: 'Clatter frag', price: 250, fuse: 1.6, radius: 7, damage: 100, reward: 250, index: 100 },
+  smoke: { name: 'Haze canister', price: 300, fuse: 1.7, radius: 4.4, duration: 15 },
 };
 
-// The Fuse Core (the attackers' charge): arm it on a site, defenders disarm it.
+// The Fuse Core, this game's bomb objective: arm it on a site, the defenders disarm it.
 export const OBJECTIVE = {
-  plantTime: 3.2,
-  defuseTime: 5,
-  fuse: 40,
+  plantTime: 3, defuseTime: 7, kitDefuseTime: 3.5, fuse: 38,
   reach: 1.6, // metres from the core to disarm it
-  reward: 300, // to the one who arms or disarms
-  plantBonus: 800, // to each attacker when they lose a round after arming
-  blastRadius: 15,
-  blastDamage: 240,
+  reward: 250, // to the one who arms or disarms it
+  plantBonus: 650, // to each attacker when they lose a round after arming
+  blastRadius: 16, blastDamage: 250,
 };
 
-export const ECON = {
-  start: 800,
-  max: 9000,
-  win: 3250,
-  lossBase: 1400,
-  lossStep: 500,
-  lossMax: 3400,
-};
+// Money: wins pay more for the objective; each loss in a row raises the next loss payment.
+export const ECON = { start: 900, max: 9500, win: 3100, objectiveWin: 3400, lossBase: 1500, lossStep: 450, lossMax: 3300 };
 
 export const ROUND = {
-  freeze: 6, // seconds frozen in spawn at round start (buy menu open)
-  live: 105, // round clock
-  buyWindow: 20, // seconds into the live round the buy menu stays open
-  over: 5, // pause after a round is decided
-  matchOver: 9, // pause after the match before a new one starts
-  winsNeeded: 6,
-  half: 5, // rounds before teams swap sides
+  freeze: 7, // frozen in spawn at round start, buy menu open
+  live: 110, // round clock
+  buyWindow: 18, // seconds into the live round the buy menu stays open
+  over: 5, matchOver: 9, // pauses after a round and after a match
+  winsNeeded: 6, half: 5, // first to 6; teams swap sides after round 5
 };
 
-// Bot skill: reaction to a newly seen enemy, aim settle speed and turn rate.
+// How far each noise carries (m). Walls muffle a noise to HEARING.muffle of its range.
+export const HEARING = { step: 18, land: 12, shot: 50, reload: 8, bounce: 14, work: 22, beep: 26, muffle: 0.6 };
+
+// Bot skill: sight cone and range, reaction to a fresh target, aim settling, turn rate, bursts.
 export const BOT = {
-  fov: 2.1, // radians, full cone
-  viewRange: 70,
-  reactMin: 0.28,
-  reactMax: 0.5,
+  fov: 2.1, viewRange: 70, reactMin: 0.28, reactMax: 0.5,
   turnRate: 7.5, // rad/s
   aimSettle: 2.6, // aim error shrinks by e^-k per second while tracking
   aimError: 0.11, // initial aim error (rad) on a fresh target
-  burst: [3, 6],
-  thinkEvery: 6, // ticks between perception updates
+  burst: [3, 6], thinkEvery: 6, // ticks between sight checks (staggered per bot)
+  stageWait: 9, // seconds attackers wait at their stage point for the rest of the group
 };

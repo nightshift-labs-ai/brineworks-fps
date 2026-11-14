@@ -1,11 +1,11 @@
 // Gunplay for every actor: trigger, magazine and reserve, reload, draw time, spread that grows with
 // speed, air time and sustained fire, and a fixed spray pattern (climb, then sway) that the shooter
 // must pull against. Bullets are hitscan: the map ray first, then each body's head/torso/leg boxes.
-import { DT, MOVE, WEAPONS } from './config.js';
+import { DT, MOVE, WEAPONS, HEARING } from './config.js';
 import { raycast } from './collide.js';
 import { eyeOf, rayActor, applyDamage } from './actors.js';
 import { emit, EV } from './events.js';
-import { makeNoise, NOISE } from './senses.js';
+import { makeNoise } from './senses.js';
 import { throwNade } from './grenades.js';
 
 const worldHit = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, kind: 0 };
@@ -26,7 +26,7 @@ export function updateWeapon(state, a, cmd, canFire) {
   const w = a.slots[a.active];
   const def = WEAPONS[w.id];
 
-  a.fireCooldown = Math.max(0, a.fireCooldown - DT);
+  if (a.fireCooldown > 0) a.fireCooldown -= DT; // may go slightly negative: fire() carries it over
   if (a.drawTimer > 0) a.drawTimer -= DT;
   if (a.reloadTimer > 0) {
     a.reloadTimer -= DT;
@@ -44,7 +44,7 @@ export function updateWeapon(state, a, cmd, canFire) {
   }
 
   const pulled = cmd.fire && (def.auto || !a.triggerHeld);
-  if (pulled && canFire && a.fireCooldown <= 0 && a.drawTimer <= 0 && a.reloadTimer <= 0) {
+  if (pulled && canFire && a.fireCooldown <= 1e-9 && a.drawTimer <= 0 && a.reloadTimer <= 0) {
     if (w.mag > 0) fire(state, a, w, def);
     else {
       emit(state.events, EV.DRY, a.id);
@@ -54,13 +54,15 @@ export function updateWeapon(state, a, cmd, canFire) {
   }
   a.triggerHeld = cmd.fire;
 
-  // Off the trigger, the spray pattern resets and punch and bloom fade.
-  if (a.fireCooldown <= 0 && !cmd.fire) {
+  // Punch and bloom fade off the trigger, while reloading, and through a slow gun's cooldown;
+  // the spray pattern restarts once the muzzle has settled.
+  const idle = !cmd.fire || a.reloadTimer > 0 || w.mag === 0;
+  if (idle && (a.fireCooldown <= 0 || def.interval > 0.3)) {
     const fade = Math.exp(-def.recoil.recover * DT);
     a.punchPitch *= fade;
     a.punchYaw *= fade;
     a.bloom *= fade;
-    if (Math.abs(a.punchPitch) < 0.002) a.shotsFired = 0;
+    if (a.fireCooldown <= 0 && Math.abs(a.punchPitch) < 0.002) a.shotsFired = 0;
   }
 }
 
@@ -76,7 +78,7 @@ function startReload(state, a, w, def) {
   if (a.reloadTimer > 0 || w.mag >= def.mag || w.reserve <= 0) return;
   a.reloadTimer = def.reload;
   emit(state.events, EV.RELOAD, a.id);
-  makeNoise(state, a, NOISE.RELOAD);
+  makeNoise(state, a, HEARING.reload);
 }
 
 // Spray pattern: the first `settle` shots climb straight up, then the climb flattens and the
@@ -91,7 +93,7 @@ function kick(a, def) {
 
 function fire(state, a, w, def) {
   w.mag--;
-  a.fireCooldown = def.interval;
+  a.fireCooldown = Math.min(0, a.fireCooldown) + def.interval; // exact fire rate at 60 Hz
   const rng = state.rng;
   const ox = a.pos.x, oy = a.pos.y + eyeOf(a), oz = a.pos.z;
   const cone = spreadOf(a, def);
@@ -105,7 +107,7 @@ function fire(state, a, w, def) {
   kick(a, def);
   a.shotsFired++;
   a.bloom += def.spread.bloom;
-  makeNoise(state, a, NOISE.SHOT);
+  makeNoise(state, a, HEARING.shot);
 }
 
 function traceBullet(state, a, def, ox, oy, oz, dx, dy, dz) {

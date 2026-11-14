@@ -60,14 +60,14 @@ const SCENES = {
     skipUntil(ctx, (s) => s.round.number === 2 && s.round.phase === 'live');
     const p = state.player;
     const mates = team(state, SIDE.ATTACK).filter((a) => a !== p), foes = team(state, SIDE.DEFEND);
-    place(state, p, 49, 22, 47 * 1.5, 12 * 1.5, 'kestrel');
+    place(state, p, 49, 22, 47 * 1.5, 12 * 1.5, 'ballast');
     p.armor = 100;
-    place(state, mates[0], 48, 19, 45 * 1.5, 11 * 1.5, 'kestrel');
-    place(state, mates[1], 51, 24, 51 * 1.5, 12 * 1.5, 'wasp');
+    place(state, mates[0], 48, 19, 45 * 1.5, 11 * 1.5, 'ballast');
+    place(state, mates[1], 51, 24, 51 * 1.5, 12 * 1.5, 'skiff');
     for (const m of mates.slice(2)) place(state, m, 50, 31, 49 * 1.5, 20 * 1.5);
-    place(state, foes[0], 46, 12, p.pos.x, p.pos.z, 'kestrel');
-    place(state, foes[1], 43, 10, p.pos.x, p.pos.z, 'kestrel');
-    place(state, foes[2], 51, 13, p.pos.x, p.pos.z, 'wasp');
+    place(state, foes[0], 46, 12, p.pos.x, p.pos.z, 'ballast');
+    place(state, foes[1], 43, 10, p.pos.x, p.pos.z, 'ballast');
+    place(state, foes[2], 51, 13, p.pos.x, p.pos.z, 'skiff');
     for (const f of foes.slice(3)) place(state, f, 27, 3, 27 * 1.5, 30 * 1.5);
     engage(foes[0], p, 0.1); engage(foes[1], mates[0], 0.05); engage(foes[2], mates[0], 0.2);
     engage(mates[0], foes[1], 0.05);
@@ -113,12 +113,12 @@ function stageRetake(ctx) {
   const mates = team(state, SIDE.DEFEND).filter((a) => a !== p), foes = team(state, SIDE.ATTACK);
   // the attackers armed the core on B; one of them is down by the door, the rest are far away
   const core = state.core, S = state.map.cell;
-  place(state, p, 9, 11, 5.5 * S, 18.5 * S, 'kestrel');
+  place(state, p, 9, 11, 5.5 * S, 18.5 * S, 'ballast');
   core.state = 'planted'; core.site = 'B'; core.fuse = 19; core.carrier = -1;
   core.x = p.pos.x - Math.sin(p.yaw) * 1.35; core.y = 0; core.z = p.pos.z - Math.cos(p.yaw) * 1.35;
   state.round.planted = true;
-  place(state, mates[0], 13, 12, 13 * S, 19 * S, 'kestrel');
-  place(state, mates[1], 4, 9, 10 * S, 6 * S, 'heron');
+  place(state, mates[0], 13, 12, 13 * S, 19 * S, 'ballast');
+  place(state, mates[1], 4, 9, 10 * S, 6 * S, 'capstan');
   for (const m of mates.slice(2)) place(state, m, 14, 9, 13 * S, 19 * S);
   for (const f of foes) place(state, f, 5, 30, 5 * S, 19 * S);
   place(state, foes[0], 7, 16, p.pos.x, p.pos.z);

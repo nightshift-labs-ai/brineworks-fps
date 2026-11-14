@@ -1,11 +1,11 @@
 // Movement for every actor (player and bots run the same code): Quake-style acceleration and
 // friction, so speed builds up and bleeds off instead of snapping; crouch, walk, jump, gravity,
 // map collision with step-up, and running footsteps that enemies can hear.
-import { DT, GRAVITY, MOVE } from './config.js';
+import { DT, GRAVITY, MOVE, HEARING } from './config.js';
 import { moveBody, nudgeBody } from './collide.js';
 import { weaponDef } from './actors.js';
 import { emit, EV } from './events.js';
-import { makeNoise, NOISE } from './senses.js';
+import { makeNoise } from './senses.js';
 
 export function moveActor(state, a, cmd, frozen) {
   a.prev.x = a.pos.x; a.prev.y = a.pos.y; a.prev.z = a.pos.z;
@@ -46,7 +46,7 @@ export function moveActor(state, a, cmd, frozen) {
   const wasAirborne = !a.grounded;
   const fallSpeed = a.vel.y;
   moveBody(state.map, a, DT);
-  if (wasAirborne && a.grounded && fallSpeed < -5) makeNoise(state, a, NOISE.LAND);
+  if (wasAirborne && a.grounded && fallSpeed < -5) makeNoise(state, a, HEARING.land);
 
   // Running is loud; walking and crouching are silent.
   const speed = Math.hypot(a.vel.x, a.vel.z);
@@ -56,7 +56,7 @@ export function moveActor(state, a, cmd, frozen) {
       a.stride = 0;
       const e = emit(state.events, EV.STEP, a.id);
       e.x = a.pos.x; e.y = a.pos.y; e.z = a.pos.z;
-      makeNoise(state, a, NOISE.STEP);
+      makeNoise(state, a, HEARING.step);
     }
   }
 }

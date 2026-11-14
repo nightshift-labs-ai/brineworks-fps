@@ -119,19 +119,24 @@ export function clearLine(map, ax, ay, az, bx, by, bz) {
   return !raycast(map, ax, ay, az, dx / len, dy / len, dz / len, len, losHit);
 }
 
-// Ray against a vertical cylinder (x, z, radius, y0..y1). Returns entry distance or -1.
+// Ray against a finite vertical cylinder (x, z, radius, y0..y1): the side interval clipped by the
+// y slab, so rays entering through the top or bottom count. Returns entry distance or -1.
 export function rayCylinder(ox, oy, oz, dx, dy, dz, cx, cz, radius, y0, y1) {
-  const px = ox - cx, pz = oz - cz;
-  const a = dx * dx + dz * dz;
-  if (a < 1e-9) return -1;
-  const b = px * dx + pz * dz;
-  const k = px * px + pz * pz - radius * radius;
-  const disc = b * b - a * k;
-  if (disc < 0) return -1;
-  const t = (-b - Math.sqrt(disc)) / a;
-  if (t < 0) return -1;
-  const y = oy + dy * t;
-  return y >= y0 && y <= y1 ? t : -1;
+  const px = ox - cx, pz = oz - cz, a = dx * dx + dz * dz;
+  let tIn = -Infinity, tOut = Infinity;
+  if (a > 1e-12) {
+    const b = px * dx + pz * dz, k = px * px + pz * pz - radius * radius;
+    const disc = b * b - a * k;
+    if (disc < 0) return -1;
+    const s = Math.sqrt(disc);
+    tIn = (-b - s) / a; tOut = (-b + s) / a;
+  } else if (px * px + pz * pz > radius * radius) return -1;
+  if (dy !== 0) {
+    const ta = (y0 - oy) / dy, tb = (y1 - oy) / dy;
+    tIn = Math.max(tIn, Math.min(ta, tb)); tOut = Math.min(tOut, Math.max(ta, tb));
+  } else if (oy < y0 || oy > y1) return -1;
+  if (tIn > tOut || tOut < 0) return -1;
+  return Math.max(0, tIn);
 }
 
 // Ray against a sphere. Returns entry distance or -1.

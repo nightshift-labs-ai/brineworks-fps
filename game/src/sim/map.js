@@ -5,9 +5,10 @@
 //   -  low wall (1 m)     1 2 3  stair / deck heights 0.4, 0.8, 1.2 m        .  floor
 //   A B  Fuse Core sites  a d  attacker / defender spawns      other letters: named waypoints (floor)
 //
-// Lanes: west "Sluice" to B, the open "Conveyor yard" in the middle with a vent hall to B and a
-// catwalk to A, and the east "Long dock" to A. The attackers start in the rail yard (south), the
-// defenders in the pumphouse yard (north).
+// Sites: A = the Brine Tanks (a raised steel deck), B = the Evaporator Hall. Lanes: the west Brine
+// Channel to B; the open Conveyor Yard in the middle (its tower blocks the spawn-to-spawn line) with
+// the Pan House to B and the Brine Bridge to A; the east Quay to A. Harrow start in the rail yard
+// (south), the Wardens in the pumphouse yard (north).
 export const CELL = 1.5;
 
 const LAYOUT = `
@@ -58,28 +59,29 @@ const LAYOUT = `
 `;
 
 const HEIGHTS = { '#': 4.8, H: 9, X: 2.6, x: 1.1, '-': 1, 1: 0.4, 2: 0.8, 3: 1.2 };
-const WAYPOINT_NAMES = {
-  e: 'lower mid', f: 'mid tunnel', g: 'conveyor yard', h: 'top mid', i: 'mid gate', j: 'catwalk',
-  k: 'long door', l: 'dock corner', m: 'long dock', n: 'sluice corner', o: 'sluice', p: 'sluice door',
-  q: 'vent hall', r: 'vent door', s: 'B link', t: 'A link', u: 'A door', v: 'B door', w: 'A front',
-  y: 'pumphouse east', z: 'pumphouse west',
+// Callouts: every waypoint letter is a named place (the HUD shows where you stand, bots call by name).
+const CALLOUTS = {
+  e: 'Rail Cut', f: 'Weighbridge', g: 'Conveyor Yard', h: 'Tower Foot', i: 'Pump Gate', j: 'Brine Bridge',
+  k: 'Dock Gate', l: 'Bollard Corner', m: 'Quay', n: 'Channel Foot', o: 'Brine Channel', p: 'Channel Gate',
+  q: 'Pan House', r: 'Pan Door', s: 'Office Row', t: 'Tank Walk', u: 'Tank Gate', v: 'Hall Gate', w: 'Tank Apron',
+  y: 'Pumphouse East', z: 'Pumphouse West',
 };
+export const SITE_NAMES = { A: 'Brine Tanks', B: 'Evaporator Hall' };
 
-// Attack routes: waypoints walked in order from the rail yard, ending on a site.
+// Attack routes: waypoints walked in order from the rail yard. The group gathers at `stage`, then
+// pushes the last waypoint into the site together.
 export const ATTACK_ROUTES = [
-  { site: 'A', name: 'long', path: 'lmk' },
-  { site: 'A', name: 'catwalk', path: 'efghj' },
-  { site: 'B', name: 'sluice', path: 'nop' },
-  { site: 'B', name: 'vent', path: 'efgqr' },
+  { site: 'A', name: 'quay', path: 'lmk', stage: 'm' },
+  { site: 'A', name: 'bridge', path: 'efghj', stage: 'h' },
+  { site: 'B', name: 'channel', path: 'nop', stage: 'o' },
+  { site: 'B', name: 'pan house', path: 'efgqr', stage: 'q' },
 ];
-// Defender routes from the pumphouse to each site (used to take positions and to retake).
-export const DEFEND_ROUTES = { A: ['ytu', 'ihj'], B: ['zsv', 'ihqr'] };
 
 // Held angles: stand at a cell, watch a waypoint. Defenders anchor these; attackers hold post-plant ones.
 export const HOLDS = {
   A: [{ at: [43, 10], look: 'k' }, { at: [40, 9], look: 'j' }, { at: [52, 12], look: 'k' }],
   B: [{ at: [12, 13], look: 'p' }, { at: [4, 11], look: 'r' }, { at: [14, 8], look: 'p' }],
-  mid: [{ at: [28, 9], look: 'h' }],
+  yard: [{ at: [28, 9], look: 'h' }],
 };
 export const POSTPLANT = {
   A: [{ at: [43, 10], look: 'u' }, { at: [51, 15], look: 'j' }, { at: [42, 16], look: 'u' }],
@@ -115,18 +117,25 @@ export function buildMap() {
       else if (ch === 'A' || ch === 'B') {
         const site = map.sites[ch] ?? (map.sites[ch] = { name: ch, cells: [], x: 0, z: 0, radius: 0 });
         site.cells.push(place);
-      } else if (WAYPOINT_NAMES[ch]) map.marks[ch] = { ...place, name: WAYPOINT_NAMES[ch] };
+      } else if (CALLOUTS[ch]) map.marks[ch] = { ...place, name: CALLOUTS[ch] };
     }
   }
-  for (const site of Object.values(map.sites)) {
+  map.markList = Object.values(map.marks);
+  map.siteList = Object.values(map.sites);
+  for (const site of map.siteList) {
     for (const p of site.cells) { site.x += p.x / site.cells.length; site.z += p.z / site.cells.length; }
     site.radius = Math.sqrt(site.cells.length) * CELL * 0.5 + 0.9;
   }
   return map;
 }
 
-export function cellCenter(c, r, out) {
-  out.x = (c + 0.5) * CELL;
-  out.z = (r + 0.5) * CELL;
-  return out;
+// The callout for a point: the site's name inside a site, else the nearest named waypoint.
+export function placeName(map, x, z) {
+  for (const site of map.siteList) if (Math.hypot(x - site.x, z - site.z) < site.radius + 1) return `${SITE_NAMES[site.name]} (${site.name})`;
+  let best = '', bestD = Infinity;
+  for (const m of map.markList) {
+    const d = (m.x - x) ** 2 + (m.z - z) ** 2;
+    if (d < bestD) { bestD = d; best = m.name; }
+  }
+  return best;
 }

@@ -16,13 +16,14 @@ export const EV = {
   THROW: 13, // a = actor, v = 0 frag / 1 smoke
   BOUNCE: 14, // x = grenade position
   SMOKE: 15, // (x,y,z) cloud centre
+  RADIO: 16, // a = speaking bot, b = its team, text = the line
 };
 
 const SIZE = 512;
 
 export function createEvents() {
   const list = [];
-  for (let i = 0; i < SIZE; i++) list.push({ type: 0, a: -1, b: -1, v: 0, w: 0, x: 0, y: 0, z: 0, x2: 0, y2: 0, z2: 0 });
+  for (let i = 0; i < SIZE; i++) list.push({ type: 0, a: -1, b: -1, v: 0, w: 0, x: 0, y: 0, z: 0, x2: 0, y2: 0, z2: 0, text: '' });
   return { head: 0, list };
 }
 
@@ -31,6 +32,7 @@ export function emit(events, type, a = -1, b = -1, v = 0, w = 0) {
   events.head++;
   e.type = type; e.a = a; e.b = b; e.v = v; e.w = w;
   e.x = e.y = e.z = e.x2 = e.y2 = e.z2 = 0;
+  e.text = '';
   return e;
 }
 
