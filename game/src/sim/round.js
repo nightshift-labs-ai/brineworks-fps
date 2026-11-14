@@ -11,6 +11,7 @@ export function startMatch(state) {
   for (const t of state.teams) { t.score = 0; t.side = t.id; t.lossStreak = 0; }
   for (const a of state.actors) { a.alive = false; a.money = ECON.start; a.kills = 0; a.deaths = 0; }
   state.match.winner = -1;
+  state.match.history.length = 0;
   state.round.number = 0;
   startRound(state);
 }
@@ -99,10 +100,12 @@ export function endRound(state, winner, reason) {
   const round = state.round;
   round.phase = 'over';
   round.timer = ROUND.over;
+  round.endedAt = state.time;
   round.winner = winner;
   round.reason = reason;
   round.buyOpen = false;
   state.teams[winner].score++;
+  state.match.history.push(winner, reason); // pairs: winning team, reason
   payRound(state, winner, reason);
   reviewRound(state, winner);
   if (state.teams[winner].score >= ROUND.winsNeeded) state.match.winner = winner;

@@ -6,7 +6,7 @@ import { BOT, DT, WEAPONS, SIDE, OBJECTIVE, HEARING } from './config.js';
 import { HOLDS, POSTPLANT, placeName } from './map.js';
 import { canSee } from './senses.js';
 import { siteAt } from './objective.js';
-import { throwPitch } from './grenades.js';
+import { LOB } from './grenades.js';
 import { findPath, createPath } from './nav.js';
 import { eyeOf, heightOf } from './actors.js';
 import { pickHold, radio } from './coach.js';
@@ -30,7 +30,7 @@ export function createBrain(skill, role) {
 export function think(state, a) {
   const b = a.brain, cmd = a.cmd;
   cmd.moveX = cmd.moveZ = 0; cmd.fire = cmd.jump = cmd.reload = cmd.walk = cmd.use = cmd.aim = false;
-  cmd.slot = -1; cmd.toss = '';
+  cmd.slot = -1; cmd.toss = ''; cmd.tossRange = 0;
   if (state.round.phase === 'freeze') { cmd.crouch = false; return; }
   if ((state.tick + a.id) % BOT.thinkEvery === 0) perceive(state, a, b);
   if (b.lastSeenTime > -99 && !state.actors[b.lastSeenId].alive) b.lastSeenTime = -99; // it is down
@@ -267,10 +267,11 @@ function goTo(state, a, b, x, z, quiet) {
   if (b.stuckTime > 0.8) { cmd.jump = true; b.repathAt = 0; b.stuckTime = 0; }
 }
 
-// Face (x, z) at the arc that lands a grenade there, and throw it this tick.
+// Face (x, z) and lob a grenade to land there this tick.
 function toss(a, x, z, kind) {
   a.cmd.yaw = Math.atan2(-(x - a.pos.x), -(z - a.pos.z));
-  a.cmd.pitch = throwPitch(Math.hypot(x - a.pos.x, z - a.pos.z));
+  a.cmd.pitch = LOB;
+  a.cmd.tossRange = Math.hypot(x - a.pos.x, z - a.pos.z);
   a.cmd.toss = kind;
 }
 

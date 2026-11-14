@@ -27,14 +27,23 @@ export function throwNade(state, a, kind) {
   const fx = -Math.sin(a.yaw) * cp, fy = Math.sin(a.pitch), fz = -Math.cos(a.yaw) * cp;
   n.live = true; n.kind = kind; n.owner = a.id; n.fuse = GRENADES[kind].fuse;
   n.x = n.px = a.pos.x + fx * 0.4; n.y = n.py = a.pos.y + eyeOf(a) - 0.1; n.z = n.pz = a.pos.z + fz * 0.4;
-  n.vx = fx * SPEED + a.vel.x * 0.5; n.vy = fy * SPEED + 2.5; n.vz = fz * SPEED + a.vel.z * 0.5;
+  const v = a.cmd.tossRange > 0 ? lobSpeed(a.cmd.tossRange) : SPEED; // bots lob to a range
+  n.vx = fx * v + a.vel.x * 0.5; n.vy = fy * v + 2.5; n.vz = fz * v + a.vel.z * 0.5;
   emit(state.events, EV.THROW, a.id, -1, NADE_SLOTS.indexOf(kind));
   return true;
 }
 
-// Pitch that lands a throw at horizontal distance d (low arc), for bots.
-export function throwPitch(d) {
-  return 0.5 * Math.asin(Math.min(1, (d * NADE_GRAVITY) / (SPEED * SPEED))) - 0.12;
+// A lob's launch speed so it lands about d metres away: bisect the ballistic range at pitch LOB
+// (released at eye height with the throw's upward boost), aiming a little short of the bounce.
+export const LOB = 0.6;
+function lobSpeed(d) {
+  let lo = 2, hi = SPEED;
+  for (let i = 0; i < 16; i++) {
+    const v = (lo + hi) / 2, up = Math.sin(LOB) * v + 2.5;
+    const range = Math.cos(LOB) * v * (up + Math.sqrt(up * up + 2 * NADE_GRAVITY * 1.5)) / NADE_GRAVITY;
+    if (range < d * 0.85) lo = v; else hi = v;
+  }
+  return lo;
 }
 
 const solid = (map, x, y, z) => heightAt(map, Math.floor(x / map.cell), Math.floor(z / map.cell)) > y - RADIUS;
@@ -60,6 +69,7 @@ export function updateNades(state) {
       n.vy = Math.abs(n.vy) < 1.5 ? 0 : -n.vy * 0.35;
       n.vx *= 0.75; n.vz *= 0.75;
     }
+    if (n.y <= floor + 0.001) { n.vx *= 0.93; n.vz *= 0.93; } // rolling friction
     n.fuse -= DT;
     if (n.fuse <= 0) burst(state, n);
   }

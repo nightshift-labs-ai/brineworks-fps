@@ -1,15 +1,14 @@
-// Screenshot staging (?shot=N&seed=S): plays the real simulation to a chosen moment with scripted
-// input and a scripted opening position, renders it, then stops and sets window.__shotReady for
-// the capture tool. Nothing here runs in normal play.
+// Screenshot staging (?shot=N&seed=S). The match is played by the sim with the player slot on the bot
+// brain (autopilot) up to a chosen round; then a few actors are put in place for the composition and
+// the real simulation runs the moment (shots, hits, smoke, arming) before the frame is taken.
 import { DT, SIDE } from './sim/config.js';
 import { giveWeapon, eyeOf } from './sim/actors.js';
+import { createBrain, think } from './sim/bots.js';
 
-// Advance n ticks with an optional per-tick script; only the last `drawn` ticks are rendered, so
-// effects (tracers, flashes) are in flight in the final frame without rendering every tick.
+// Advance n ticks; `script` runs before each tick, the last `drawn` ticks are rendered (effects in flight).
 function run(ctx, n, script, drawn = 3) {
   const { state, view, input, step } = ctx;
   for (let i = 0; i < n; i++) {
-    if (script) script(i);
     input.fill(state.player.cmd);
     if (script) script(i);
     step(state);
@@ -17,120 +16,106 @@ function run(ctx, n, script, drawn = 3) {
   }
 }
 
-// Fast-forward (nothing rendered) until a condition holds, the player idle.
-function skipUntil(ctx, done) {
-  for (let i = 0; i < 60 * 60 * 30 && !done(ctx.state); i++) {
-    ctx.input.fill(ctx.state.player.cmd);
-    ctx.step(ctx.state);
+// Fast-forward with the player on autopilot until `done`, then hand the slot back to the input.
+function autopilot(ctx, done) {
+  const { state } = ctx, p = state.player;
+  p.isBot = true;
+  for (let i = 0; i < 60 * 60 * 40 && !done(state); i++) {
+    if (p.alive) think(state, p);
+    ctx.step(state);
   }
+  p.isBot = false;
 }
 
-// Put an actor on a cell (column, row of the map grid), facing a world point.
-function place(state, a, c, r, lookX, lookZ, gun) {
-  a.pos.x = a.prev.x = (c + 0.5) * state.map.cell;
-  a.pos.z = a.prev.z = (r + 0.5) * state.map.cell;
+// Put an actor on a map cell facing a cell, optionally with a gun.
+function place(state, a, c, r, fc, fr, gun) {
+  const S = state.map.cell;
+  a.alive = true; a.hp = Math.max(a.hp, 1);
+  a.pos.x = a.prev.x = (c + 0.5) * S; a.pos.z = a.prev.z = (r + 0.5) * S;
   a.pos.y = a.prev.y = state.map.height[r * state.map.w + c];
   a.vel.x = a.vel.z = 0;
-  a.yaw = a.prevYaw = a.cmd.yaw = Math.atan2(-(lookX - a.pos.x), -(lookZ - a.pos.z));
+  a.yaw = a.prevYaw = a.cmd.yaw = Math.atan2(-(fc - c), -(fr - r));
   a.pitch = a.cmd.pitch = 0;
   if (gun) giveWeapon(a, gun);
   a.drawTimer = 0;
+  if (a.brain) Object.assign(a.brain, { plan: 'hold', holdX: a.pos.x, holdZ: a.pos.z, lookX: (fc + 0.5) * S, lookZ: (fr + 0.5) * S, target: -1 });
 }
 
-// Point the player's view at a target's body (height dy above its feet, yaw offset dx).
-function aim(ctx, t, dy = 1.35, dx = 0) {
-  const p = ctx.state.player;
-  const ex = p.pos.x, ey = p.pos.y + eyeOf(p), ez = p.pos.z;
-  ctx.input.face(Math.atan2(-(t.pos.x - ex), -(t.pos.z - ez)) + dx, Math.atan2(t.pos.y + dy - ey, Math.hypot(t.pos.x - ex, t.pos.z - ez)));
+// The player looks at an actor's chest (yaw offset dx).
+function look(ctx, t, dx = 0) {
+  const p = ctx.state.player, ey = p.pos.y + eyeOf(p);
+  ctx.input.face(Math.atan2(-(t.pos.x - p.pos.x), -(t.pos.z - p.pos.z)) + dx, Math.atan2(t.pos.y + 1.25 - ey, Math.hypot(t.pos.x - p.pos.x, t.pos.z - p.pos.z)));
 }
 
-// A bot in the scene already has its target and fires after `react` seconds.
+// A bot that has already seen `target` and fires after `react` seconds.
 function engage(bot, target, react) {
-  const b = bot.brain;
-  b.target = target.id; b.reactTimer = react; b.errYaw = 0.03; b.errPitch = 0.01; b.aimHead = false;
-  b.lastSeenX = target.pos.x; b.lastSeenZ = target.pos.z; b.lastSeenTime = 1e9;
+  Object.assign(bot.brain, { target: target.id, reactTimer: react, errYaw: 0.02, errPitch: 0.01, aimHead: false, lastSeenId: target.id, lastSeenTime: 1e9 });
 }
 
-const team = (state, side) => state.actors.filter((a) => state.teams[a.team].side === side);
+const side = (state, s) => state.actors.filter((a) => state.teams[a.team].side === s && a !== state.player);
+// Everyone not in the shot waits in their own spawn, out of sight.
+const park = (state, list) => list.forEach((a, i) => { const s = state.map.spawns[state.teams[a.team].side][i % 5]; place(state, a, Math.floor(s.x / 1.5), Math.floor(s.z / 1.5), 27, 20); });
+const kit = (a) => { a.grenades.frag = 1; a.grenades.smoke = 1; a.armor = 100; a.helm = true; };
 
 const SCENES = {
-  // Cover: a firefight at the Dock Gate of A, the player spraying a rifle into the site.
+  // Cover (seed 9): round 5 of a real match, where two Saltreeve frags have just landed (kill feed).
+  // In Conveyor Court a Saltreeve 5 m ahead fires at you and another flanks from the right.
   1(ctx) {
-    const { state } = ctx;
-    skipUntil(ctx, (s) => s.round.number === 2 && s.round.phase === 'live');
-    const p = state.player;
-    const mates = team(state, SIDE.ATTACK).filter((a) => a !== p), foes = team(state, SIDE.DEFEND);
-    place(state, p, 49, 22, 47 * 1.5, 12 * 1.5, 'ballast');
-    p.armor = 100;
-    place(state, mates[0], 48, 19, 45 * 1.5, 11 * 1.5, 'ballast');
-    place(state, mates[1], 51, 24, 51 * 1.5, 12 * 1.5, 'skiff');
-    for (const m of mates.slice(2)) place(state, m, 50, 31, 49 * 1.5, 20 * 1.5);
-    place(state, foes[0], 46, 12, p.pos.x, p.pos.z, 'ballast');
-    place(state, foes[1], 43, 10, p.pos.x, p.pos.z, 'ballast');
-    place(state, foes[2], 51, 13, p.pos.x, p.pos.z, 'skiff');
-    for (const f of foes.slice(3)) place(state, f, 27, 3, 27 * 1.5, 30 * 1.5);
-    engage(foes[0], p, 0.1); engage(foes[1], mates[0], 0.05); engage(foes[2], mates[0], 0.2);
-    engage(mates[0], foes[1], 0.05);
-    aim(ctx, foes[0], 1.2, 0.004);
-    run(ctx, 16, () => {
-      p.cmd.fire = true;
-      p.hp = Math.max(p.hp, 64);
-    });
+    const { state } = ctx, p = state.player;
+    autopilot(ctx, (s) => s.round.number === 5 && s.round.phase === 'live' && s.round.clock < 95);
+    const foes = side(state, SIDE.DEFEND);
+    park(state, [...side(state, SIDE.ATTACK), ...foes]);
+    place(state, p, 24, 30, 25, 27, 'ballast'); kit(p); p.hp = 100;
+    place(state, foes[0], 25, 27, 24, 30, 'ballast'); foes[0].armor = 100; foes[0].hp = 100;
+    place(state, foes[1], 31, 24, 24, 30, 'skiff');
+    engage(foes[0], p, 0.3); engage(foes[1], p, 0.25);
+    look(ctx, foes[0], 0.02);
+    run(ctx, 24, (i) => { p.cmd.fire = i > 12; });
   },
-  // Buy menu in the railhead during the freeze of a later round.
+  // Requisition at the pumphouse during the buy window of a later round; an attacker shows at Tower Foot.
   2(ctx) {
-    skipUntil(ctx, (s) => s.round.number >= 3 && s.round.phase === 'freeze');
-    const { state } = ctx;
-    const p = state.player;
-    p.money = Math.max(p.money, 4350);
-    place(state, p, 27, 41, 27 * 1.5, 30 * 1.5);
-    ctx.input.face(p.yaw - 0.35, -0.04);
+    const { state } = ctx, p = state.player;
+    autopilot(ctx, (s) => s.round.number >= 7 && s.round.phase === 'live');
+    p.money = Math.max(p.money, 3150);
+    const mates = side(state, SIDE.DEFEND), foes = side(state, SIDE.ATTACK);
+    park(state, [...mates, ...foes]);
+    place(state, p, 27, 3, 28, 15);
+    place(state, mates[0], 25, 5, 26, 9, 'ballast'); place(state, mates[1], 30, 4, 28, 8, 'skiff');
+    place(state, foes[0], 28, 16, 28, 9, 'ballast');
+    ctx.input.face(p.yaw + 0.12, -0.03);
     run(ctx, 20);
     ctx.hud.toggleBuy(true);
   },
-  // Retake: the core is armed on B; the player crouches over it disarming, smoke on the door.
-  3(ctx) {
-    stageRetake(ctx);
-    const { state } = ctx;
-    state.core.worker = state.player.id; state.core.progress = 0.55; // already half-way through
-    state.player.crouch = 1;
-    run(ctx, 24, () => { state.player.cmd.use = true; state.player.cmd.crouch = true; });
-  },
-  // The same retake a moment later: core disarmed, round won, scores up.
+  // Arming the core on B under a teammate's smoke on Hall Gate; a Saltreeve presses from the north-west.
+  3(ctx) { stagePlant(ctx); run(ctx, 110, () => { ctx.state.player.cmd.use = true; }); },
+  // The same round played out: the round-end banner, scores and the camera pulled up over the site.
   4(ctx) {
-    stageRetake(ctx);
-    run(ctx, 60 * 6, () => { ctx.state.player.cmd.use = true; ctx.state.player.cmd.crouch = true; }, 0);
-    skipUntil(ctx, (s) => s.round.phase === 'over' && s.round.timer < 4.2);
+    stagePlant(ctx);
+    run(ctx, 200, () => { ctx.state.player.cmd.use = true; }, 0);
+    autopilot(ctx, (s) => s.round.phase === 'over' && s.time - s.round.endedAt > 2.2);
     ctx.hud.showBoard(true);
     run(ctx, 2);
   },
 };
 
-function stageRetake(ctx) {
-  const { state } = ctx;
-  skipUntil(ctx, (s) => s.round.number === 7 && s.round.phase === 'live');
-  const p = state.player;
-  const mates = team(state, SIDE.DEFEND).filter((a) => a !== p), foes = team(state, SIDE.ATTACK);
-  // the attackers armed the core on B; one of them is down by the door, the rest are far away
-  const core = state.core, S = state.map.cell;
-  place(state, p, 9, 11, 5.5 * S, 18.5 * S, 'ballast');
-  core.state = 'planted'; core.site = 'B'; core.fuse = 19; core.carrier = -1;
-  core.x = p.pos.x - Math.sin(p.yaw) * 1.35; core.y = 0; core.z = p.pos.z - Math.cos(p.yaw) * 1.35;
-  state.round.planted = true;
-  place(state, mates[0], 13, 12, 13 * S, 19 * S, 'ballast');
-  place(state, mates[1], 4, 9, 10 * S, 6 * S, 'capstan');
-  for (const m of mates.slice(2)) place(state, m, 14, 9, 13 * S, 19 * S);
-  for (const f of foes) place(state, f, 5, 30, 5 * S, 19 * S);
-  place(state, foes[0], 7, 16, p.pos.x, p.pos.z);
-  foes[0].alive = false; foes[0].hp = 0; foes[0].diedAt = state.time - 2;
-  const smoke = state.smokes[0];
-  smoke.live = true; smoke.x = 5.5 * S; smoke.y = 0; smoke.z = 19.5 * S; smoke.age = 1;
-  ctx.input.face(p.yaw + 0.1, -0.4);
+function stagePlant(ctx) {
+  const { state } = ctx, p = state.player;
+  autopilot(ctx, (s) => s.round.number === 4 && s.round.phase === 'live' && s.round.clock < 92);
+  const mates = side(state, SIDE.ATTACK), foes = side(state, SIDE.DEFEND);
+  park(state, [...mates, ...foes]);
+  place(state, p, 8, 13, 10, 7, 'ballast'); kit(p); p.hp = 100;
+  Object.assign(state.core, { state: 'carried', carrier: p.id });
+  place(state, mates[0], 12, 13, 12, 18, 'ballast'); place(state, mates[1], 13, 8, 10, 6, 'skiff');
+  // Rook's smoke sits on Hall Gate; a Saltreeve inside it cannot see out (smokeBlocks).
+  Object.assign(state.smokes[0], { live: true, x: 10.5 * 1.5, y: 0, z: 6.6 * 1.5, age: 2 });
+  place(state, foes[0], 10, 6, 8, 13, 'ballast');
+  ctx.input.face(p.yaw - 0.15, -0.36);
 }
 
 export function stageShot(name, ctx) {
   document.getElementById('overlay').hidden = true;
   window.addEventListener('load', () => setTimeout(() => {
+    ctx.state.player.brain = createBrain(0.7, 'entry');
     (SCENES[name] ?? SCENES[1])(ctx);
     ctx.hud.update();
     requestAnimationFrame(() => { ctx.hud.update(); window.__shotReady = true; });

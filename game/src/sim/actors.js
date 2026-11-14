@@ -6,7 +6,7 @@ import { emit, EV } from './events.js';
 
 // The command record: filled by input.js for the player and by bots.js for bots, read by the sim.
 export function createCommand() {
-  return { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, aim: false, reload: false, crouch: false, walk: false, jump: false, use: false, slot: -1, toss: '' };
+  return { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, aim: false, reload: false, crouch: false, walk: false, jump: false, use: false, slot: -1, toss: '', tossRange: 0 };
 }
 
 export function createActor(id, team, name, isBot) {
@@ -24,7 +24,7 @@ export function createActor(id, team, name, isBot) {
     scoped: false,
     fireCooldown: 0, reloadTimer: 0, drawTimer: 0, triggerHeld: false,
     bloom: 0, punchPitch: 0, punchYaw: 0, shotsFired: 0,
-    kills: 0, deaths: 0,
+    kills: 0, deaths: 0, earned: 0, // earned: kill money this round
     lastHurtTime: -99, lastHurtBy: -1, diedAt: -99,
     brain: null, // bots only (see bots.js)
   };
@@ -57,7 +57,7 @@ export function respawn(a, spawn, yaw) {
   a.crouch = 0; a.grounded = true; a.stride = 0;
   a.fireCooldown = a.reloadTimer = a.drawTimer = 0;
   a.bloom = a.punchPitch = a.punchYaw = a.shotsFired = 0;
-  a.scoped = false; a.lastHurtBy = -1;
+  a.scoped = false; a.lastHurtBy = -1; a.earned = 0;
 }
 
 // Hit test one actor's three hitboxes. Returns the distance and writes the part (1 head, 2 torso, 3 legs).
@@ -108,7 +108,7 @@ export function kill(state, victim, killer, def, headshot) {
   victim.vel.x = victim.vel.z = 0;
   if (killer) {
     killer.kills++;
-    if (def) killer.money = Math.min(ECON.max, killer.money + def.reward);
+    if (def) { killer.money = Math.min(ECON.max, killer.money + def.reward); killer.earned += def.reward; }
   }
   emit(state.events, EV.KILL, killer ? killer.id : -1, victim.id, def ? def.index : -1, headshot ? 1 : 0);
 }

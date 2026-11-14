@@ -1,5 +1,7 @@
 // The renderer: reads the game state (never writes it), interpolates bodies between the last two
-// sim ticks, turns sim events into effects, and draws the world then the first-person gun.
+// sim ticks, turns sim events into effects, and draws the world then the first-person gun. Light:
+// a low warm sun with shadows, a cool sky fill, and an environment map made once from the sky.
+// When a round ends the camera rises to look over the Fuse Core's position.
 import * as THREE from 'three';
 import { PALETTE } from './palette.js';
 import { createTextures, skyTexture, softDot } from './textures.js';
@@ -11,6 +13,7 @@ import { createProps } from './props.js';
 import { drain, EV } from '../sim/events.js';
 import { eyeOf } from '../sim/actors.js';
 import { WEAPONS } from '../sim/config.js';
+import { wrapAngle } from '../sim/util.js';
 
 export function createView(state, container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -18,7 +21,7 @@ export function createView(state, container) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.12;
+  renderer.toneMappingExposure = 1;
   renderer.autoClear = false;
   container.appendChild(renderer.domElement);
 
@@ -29,7 +32,7 @@ export function createView(state, container) {
 
   const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(), side: THREE.BackSide, fog: false, depthWrite: false }));
   scene.add(sky);
-  scene.add(new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.6));
+  scene.add(new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.1));
   const sun = new THREE.DirectionalLight(PALETTE.sun, 3.2);
   const map = state.map;
   sun.position.set(map.width / 2 - 60, 38, map.depth / 2 + 25); // low in the south-west
@@ -47,15 +50,27 @@ export function createView(state, container) {
   disc.scale.setScalar(70);
   scene.add(disc);
 
+  // Environment light for every material (metal, brine pools): the sky plus a warm panel where the
+  // sun is, filtered once with PMREM. The gun's scene uses it too.
+  const envScene = new THREE.Scene();
+  envScene.add(new THREE.Mesh(sky.geometry, sky.material));
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(120, 60), new THREE.MeshBasicMaterial({ color: 0xffc890, side: THREE.DoubleSide }));
+  panel.position.copy(disc.position).multiplyScalar(0.9);
+  panel.lookAt(0, 0, 0);
+  envScene.add(panel);
+  const env = new THREE.PMREMGenerator(renderer).fromScene(envScene, 0.03).texture;
+
   scene.add(buildLevel(map, createTextures()));
   const characters = createCharacters(scene, state);
   const effects = createEffects(scene);
   const props = createProps(scene, state);
   const vm = createViewModel();
+  scene.environment = vm.scene.environment = env;
+  scene.environmentIntensity = vm.scene.environmentIntensity = 0.6;
   const BASE_FOV = 74;
   let shake = 0;
 
-  const muzzle = new THREE.Vector3();
+  const muzzle = new THREE.Vector3(), overview = new THREE.Vector3();
   let cursor = state.events.head;
 
   function resize() {
@@ -126,11 +141,23 @@ export function createView(state, container) {
     const z = who.prev.z + (who.pos.z - who.prev.z) * alpha;
     camera.position.set(x, y, z);
     // The player's own view uses the freshest mouse look; recoil punch is drawn on top.
-    const yaw = who === state.player ? look.yaw : who.yaw;
-    const pitch = who === state.player ? look.pitch : who.pitch;
+    let yaw = (who === state.player ? look.yaw : who.yaw) + who.punchYaw;
+    let pitch = (who === state.player ? look.pitch : who.pitch) + who.punchPitch;
     shake = Math.max(0, shake - dt * 1.8);
     const jolt = shake * shake * 0.04 * Math.sin(performance.now() * 0.09);
-    camera.rotation.set(pitch + who.punchPitch + jolt, yaw + who.punchYaw + jolt * 0.7, 0);
+    // Round over: rise and pull back over the Fuse Core (eased over 1.4 s).
+    const round = state.round, ended = round.phase === 'over' || round.phase === 'matchover';
+    const t = ended ? Math.min(1, Math.max(0, (state.time - round.endedAt - 0.6) / 1.4)) : 0;
+    if (t > 0) {
+      const k = t * t * (3 - 2 * t), c = state.core;
+      const away = Math.atan2(x - c.x, z - c.z);
+      overview.set(c.x + Math.sin(away) * 15, c.y + 13, c.z + Math.cos(away) * 15);
+      camera.position.lerp(overview, k);
+      const dx = c.x - camera.position.x, dz = c.z - camera.position.z;
+      yaw += wrapAngle(Math.atan2(-dx, -dz) - yaw) * k;
+      pitch += (Math.atan2(c.y - camera.position.y, Math.hypot(dx, dz)) - pitch) * k;
+    }
+    camera.rotation.set(pitch + jolt, yaw + jolt * 0.7, 0);
     // A scoped marksman rifle narrows the view; the HUD draws the scope ring.
     const w = who.slots[who.active];
     const fov = who.scoped && w ? BASE_FOV * WEAPONS[w.id].scope : BASE_FOV;
@@ -140,7 +167,7 @@ export function createView(state, container) {
     characters.update(alpha, dt, who.id, state.time);
     props.update(alpha, dt, who.id);
     effects.update(dt);
-    vm.setVisible(who === state.player && who.alive && !who.scoped);
+    vm.setVisible(who === state.player && who.alive && !who.scoped && t === 0);
     vm.update(dt, who, look, state.core.worker === who.id && state.core.progress > 0);
 
     renderer.clear();

@@ -1,5 +1,6 @@
 // Radar: the whole map drawn once from the grid onto an offscreen canvas, then each frame the
-// player's team and any enemy a teammate currently has eyes on.
+// player's team with facing cones, any enemy a teammate has eyes on, the team's last heard enemy
+// noise (a fading ring) and the Fuse Core.
 import { TEAMS, SIDE } from '../sim/config.js';
 
 export function createRadar(state, canvas) {
@@ -38,19 +39,29 @@ export function createRadar(state, canvas) {
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(base, 0, 0);
-    const p = state.player;
+    const p = state.player, intel = state.intel[p.team];
+    // The team's last heard enemy noise: a ring that fades over 4 s.
+    const heard = 1 - (state.time - intel.heardTime) / 4;
+    if (heard > 0) {
+      ctx.strokeStyle = `rgba(255,90,74,${heard.toFixed(2)})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(ox + (intel.heardX / map.cell) * scale, oy + (intel.heardZ / map.cell) * scale, 4 + (1 - heard) * 6, 0, 7); ctx.stroke();
+    }
+    // Teammates with a short facing cone; enemies only while a teammate has eyes on them.
     for (const a of state.actors) {
       if (!a.alive || a === p) continue;
-      if (a.team === p.team) dot(a, TEAMS[a.team].css, 5);
+      if (a.team === p.team) { cone(a, 'rgba(255,255,255,0.22)', 16); dot(a, TEAMS[a.team].css, 5); }
       else if (spotted(a)) dot(a, '#ff4d4d', 6);
     }
-    // The Fuse Core: attackers always know where it is; defenders once it is armed.
+    // The Fuse Core: attackers always know where it is; defenders once it is armed. It pulses.
     const core = state.core;
     if (core.state !== 'carried' && (core.state === 'planted' || state.teams[p.team].side === SIDE.ATTACK)) {
-      ctx.fillStyle = state.time % 0.6 < 0.3 ? '#efc94c' : '#7a5f10';
-      ctx.fillRect(ox + (core.x / map.cell) * scale - 4, oy + (core.z / map.cell) * scale - 4, 8, 8);
+      const r = 3 + (core.state === 'planted' ? 2 * Math.abs(Math.sin(state.time * 6)) : 1);
+      ctx.fillStyle = '#efc94c';
+      ctx.beginPath(); ctx.arc(ox + (core.x / map.cell) * scale, oy + (core.z / map.cell) * scale, r, 0, 7); ctx.fill();
     }
     if (p.alive) {
+      cone(p, 'rgba(255,255,255,0.35)', 22);
       const x = ox + (p.pos.x / map.cell) * scale, y = oy + (p.pos.z / map.cell) * scale;
       ctx.save();
       ctx.translate(x, y);
@@ -60,5 +71,13 @@ export function createRadar(state, canvas) {
       ctx.restore();
     }
   }
+
+  // A view cone (60 degrees) of length len pixels from an actor's radar position.
+  function cone(a, color, len) {
+    const x = ox + (a.pos.x / map.cell) * scale, y = oy + (a.pos.z / map.cell) * scale, dir = -a.yaw - Math.PI / 2;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, len, dir - 0.52, dir + 0.52); ctx.closePath(); ctx.fill();
+  }
+
   return { draw };
 }

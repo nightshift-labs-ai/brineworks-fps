@@ -25,12 +25,12 @@ export function createState(seed) {
     teams: TEAMS.map((t, id) => ({ id, name: t.name, side: id, score: 0, lossStreak: 0, lastPay: 0, plan: createPlan() })),
     actors: [],
     player: null,
-    round: { number: 0, phase: 'freeze', timer: 0, clock: 0, winner: -1, reason: '', buyOpen: false, planted: false },
+    round: { number: 0, phase: 'freeze', timer: 0, clock: 0, winner: -1, reason: '', buyOpen: false, planted: false, endedAt: -99 },
     core: createCore(),
     nades: createNades(),
     smokes: createSmokes(),
     intel: [0, 1].map(() => ({ x: 0, z: 0, time: -99, id: -1, count: 0, heardX: 0, heardZ: 0, heardTime: -99 })), // per team: latest sighting and noise
-    match: { winner: -1 },
+    match: { winner: -1, history: [] },
     events: createEvents(),
   };
   for (let team = 0; team < 2; team++) {
