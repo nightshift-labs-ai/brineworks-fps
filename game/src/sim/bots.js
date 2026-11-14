@@ -21,7 +21,7 @@ export function createBrain(skill, role) {
     path: createPath(), goalX: 0, goalZ: 0, repathAt: 0,
     target: -1, reactTimer: 0, errYaw: 0, errPitch: 0, aimHead: false, lostId: -1, lostAt: -99,
     lastSeenId: -1, lastSeenX: 0, lastSeenZ: 0, lastSeenTime: -99,
-    heardX: 0, heardZ: 0, heardTime: -99,
+    heardX: 0, heardZ: 0, heardTime: -99, heardKind: '', atHold: false,
     burstLeft: 0, burstPause: 0, magSeen: 0, strafe: 1, strafeTimer: 0, crouchSpray: false,
     stuckTime: 0, scan: 0, smoked: false, fragAt: -99, calledAt: -99,
   };
@@ -64,6 +64,10 @@ export function think(state, a) {
     else if (holding) followPlan(state, a, b);
     lookAt(a, b.lastSeenX, a.pos.y + eyeOf(a), b.lastSeenZ, 1);
   } else if (state.time - b.heardTime < 3.5) {
+    if (b.heardTime === state.time && state.time - b.calledAt > 6 && HEARD[b.heardKind]) { // tell the team what and where
+      b.calledAt = state.time;
+      radio(state, a, `${HEARD[b.heardKind]} at ${placeName(state.map, b.heardX, b.heardZ)}`);
+    }
     // Check close noises; for far ones keep the plan and just turn to listen.
     const near = dist2(a.pos.x, a.pos.z, b.heardX, b.heardZ) < 400 || dist2(b.holdX, b.holdZ, b.heardX, b.heardZ) < 225;
     if (near && b.plan === 'hold' && !b.anchor) goTo(state, a, b, b.heardX, b.heardZ, true);
@@ -90,7 +94,7 @@ function perceive(state, a, b) {
     // start with a sloppy aim that settles while tracking. Holding an angle is the defenders' edge.
     const off = Math.abs(wrapAngle(Math.atan2(-(best.pos.x - a.pos.x), -(best.pos.z - a.pos.z)) - a.yaw));
     const moving = Math.hypot(a.vel.x, a.vel.z) > 1.5;
-    const ready = off < 0.26 && !moving ? 0.55 : moving ? 1.3 : 1;
+    const ready = off < 0.4 && !moving ? 0.45 : moving ? 1.4 : 1;
     const slow = (1.25 - b.skill * 0.5) * (1 + Math.sqrt(bestD) / 50) * ready;
     b.reactTimer = state.rng.range(BOT.reactMin, BOT.reactMax) * slow;
     const err = BOT.aimError * slow;
@@ -195,9 +199,11 @@ function engage(state, a, b, t) {
   if (w.mag === 0) cmd.reload = true;
 
   // Feet: stand still to shoot (spread follows speed) and strafe between bursts; an SMG closes in.
+  // A defender on its angle stays put behind its cover (crouched between bursts) instead of strafing.
   const shooting = b.burstLeft > 0 && ready;
-  cmd.crouch = shooting && b.crouchSpray && d > 12;
-  if (!shooting) {
+  const dug = b.plan === 'hold' && state.teams[a.team].side === SIDE.DEFEND && dist2(a.pos.x, a.pos.z, b.holdX, b.holdZ) < 1;
+  cmd.crouch = dug ? (!shooting && a.id % 2 === 0) || b.crouchSpray : shooting && b.crouchSpray && d > 12;
+  if (!shooting && !dug) {
     b.strafeTimer -= DT;
     if (b.strafeTimer <= 0) { b.strafe = -b.strafe; b.strafeTimer = state.rng.range(0.35, 0.8); }
     cmd.moveX = b.strafe;
@@ -230,10 +236,11 @@ function followPlan(state, a, b) {
     goTo(state, a, b, mark.x, mark.z, false);
     return;
   }
-  if (dist2(a.pos.x, a.pos.z, b.holdX, b.holdZ) > 0.5) { goTo(state, a, b, b.holdX, b.holdZ, false); return; }
+  if (dist2(a.pos.x, a.pos.z, b.holdX, b.holdZ) > 0.5) { goTo(state, a, b, b.holdX, b.holdZ, false); b.atHold = false; return; }
+  if (!b.atHold && state.time - b.calledAt > 3) { b.atHold = true; b.calledAt = state.time; radio(state, a, `holding ${placeName(state.map, b.holdX, b.holdZ)}`); }
   // Holding: cover the angle with a slow sweep.
   b.scan += DT * 0.7;
-  turnToward(a, Math.atan2(-(b.lookX - a.pos.x), -(b.lookZ - a.pos.z)) + Math.sin(b.scan + a.id) * 0.35, 0, 2.5);
+  turnToward(a, Math.atan2(-(b.lookX - a.pos.x), -(b.lookZ - a.pos.z)) + Math.sin(b.scan + a.id) * 0.2, 0, 2.5);
 }
 
 // Walk toward a point along an A* path, re-planning when the goal moves or the bot is stuck.
@@ -278,5 +285,7 @@ function turnToward(a, yaw, pitch, rate) {
   cmd.yaw = wrapAngle(cmd.yaw + Math.max(-max, Math.min(max, wrapAngle(yaw - cmd.yaw))));
   cmd.pitch += Math.max(-max, Math.min(max, pitch - cmd.pitch));
 }
+
+const HEARD = { step: 'footsteps', shot: 'gunfire', reload: 'a reload', work: 'the core being worked', bounce: 'a grenade' };
 
 function dist2(ax, az, bx, bz) { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; }

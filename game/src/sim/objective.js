@@ -3,7 +3,7 @@
 // unless a defender holds E on it for defuseTime (halved with a Spanner kit). A dead carrier drops
 // it; an attacker walking over it picks it up. Arming and disarming are loud. This module only
 // moves the core through its states; round.js reads them to decide the round.
-import { DT, OBJECTIVE, SIDE, ECON, HEARING } from './config.js';
+import { DT, OBJECTIVE, SIDE, ECON } from './config.js';
 import { emit, EV } from './events.js';
 import { makeNoise } from './senses.js';
 import { clearLine } from './collide.js';
@@ -70,7 +70,7 @@ function work(state, a, duration) {
   if (core.worker !== a.id) {
     core.worker = a.id; core.progress = 0;
     emit(state.events, EV.CORE, a.id, -1, 5);
-    makeNoise(state, a, HEARING.work);
+    makeNoise(state, a, 'work');
   }
   core.progress += DT / duration;
   if (core.progress < 1) return false;
@@ -99,7 +99,7 @@ function plant(state, a, site) {
   a.money = Math.min(ECON.max, a.money + OBJECTIVE.reward);
   state.round.planted = true;
   emit(state.events, EV.CORE, a.id, -1, 2);
-  makeNoise(state, a, 200); // the armed core's alarm: every defender knows
+  makeNoise(state, a, 'alarm'); // the armed core's alarm: every defender knows
 }
 
 function defuse(state, a) {

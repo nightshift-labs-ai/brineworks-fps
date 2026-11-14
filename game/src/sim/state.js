@@ -29,7 +29,7 @@ export function createState(seed) {
     core: createCore(),
     nades: createNades(),
     smokes: createSmokes(),
-    intel: [0, 1].map(() => ({ x: 0, z: 0, time: -99, id: -1, count: 0 })), // latest enemy sighting per team
+    intel: [0, 1].map(() => ({ x: 0, z: 0, time: -99, id: -1, count: 0, heardX: 0, heardZ: 0, heardTime: -99 })), // per team: latest sighting and noise
     match: { winner: -1 },
     events: createEvents(),
   };

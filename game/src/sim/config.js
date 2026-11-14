@@ -83,7 +83,7 @@ export const ROUND = {
 };
 
 // How far each noise carries (m). Walls muffle a noise to HEARING.muffle of its range.
-export const HEARING = { step: 18, land: 12, shot: 50, reload: 8, bounce: 14, work: 22, beep: 26, muffle: 0.6 };
+export const HEARING = { step: 18, land: 12, shot: 50, reload: 8, bounce: 14, work: 22, alarm: 200, muffle: 0.6 };
 
 // Bot skill: sight cone and range, reaction to a fresh target, aim settling, turn rate, bursts.
 export const BOT = {

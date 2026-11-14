@@ -1,7 +1,7 @@
 // Thrown grenades: a small pool of bouncing projectiles. The frag bursts after its fuse and hurts
 // everyone in the open within its radius; the smoke canister fills a sphere that blocks sight
 // (senses.js asks smokeBlocks) for a while. Bounces use the same map columns as everything else.
-import { DT, GRENADES, HEARING } from './config.js';
+import { DT, GRENADES } from './config.js';
 import { heightAt, clearLine } from './collide.js';
 import { eyeOf, hurt } from './actors.js';
 import { emit, EV } from './events.js';
@@ -55,7 +55,7 @@ export function updateNades(state) {
       n.y = floor;
       if (n.vy < -2) {
         emit(state.events, EV.BOUNCE, n.owner).x = n.x;
-        noiseAt(state, state.actors[n.owner].team, n.x, n.y, n.z, HEARING.bounce);
+        noiseAt(state, state.actors[n.owner].team, n.x, n.y, n.z, 'bounce');
       }
       n.vy = Math.abs(n.vy) < 1.5 ? 0 : -n.vy * 0.35;
       n.vx *= 0.75; n.vz *= 0.75;
@@ -79,7 +79,7 @@ function burst(state, n) {
   const g = GRENADES.frag;
   const e = emit(state.events, EV.BLAST, n.owner, -1, g.radius);
   e.x = n.x; e.y = n.y; e.z = n.z;
-  noiseAt(state, owner.team, n.x, n.y, n.z, HEARING.shot);
+  noiseAt(state, owner.team, n.x, n.y, n.z, 'shot');
   for (const a of state.actors) {
     const d = Math.hypot(a.pos.x - n.x, a.pos.y + 0.9 - n.y, a.pos.z - n.z);
     if (!a.alive || d > g.radius || !clearLine(state.map, n.x, n.y + 0.2, n.z, a.pos.x, a.pos.y + 0.9, a.pos.z)) continue;

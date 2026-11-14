@@ -6,11 +6,13 @@ import { clearLine } from './collide.js';
 import { eyeOf, heightOf } from './actors.js';
 import { smokeBlocks } from './grenades.js';
 
-export function makeNoise(state, source, radius) {
-  noiseAt(state, source.team, source.pos.x, source.pos.y, source.pos.z, radius);
+// `kind` names the noise and its range in HEARING (step, land, shot, reload, bounce, work, alarm).
+export function makeNoise(state, source, kind) {
+  noiseAt(state, source.team, source.pos.x, source.pos.y, source.pos.z, kind);
 }
 
-export function noiseAt(state, team, x, y, z, radius) {
+export function noiseAt(state, team, x, y, z, kind) {
+  const radius = HEARING[kind];
   for (const bot of state.actors) {
     if (!bot.isBot || !bot.alive || bot.team === team) continue;
     const d = Math.hypot(bot.pos.x - x, bot.pos.z - z);
@@ -19,6 +21,9 @@ export function noiseAt(state, team, x, y, z, radius) {
     mem.heardX = x;
     mem.heardZ = z;
     mem.heardTime = state.time;
+    mem.heardKind = kind;
+    const intel = state.intel[bot.team]; // the team's last heard enemy (the radar marks it)
+    intel.heardX = x; intel.heardZ = z; intel.heardTime = state.time;
   }
 }
 

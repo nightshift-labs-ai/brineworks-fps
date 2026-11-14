@@ -1,7 +1,7 @@
 // Gunplay for every actor: trigger, magazine and reserve, reload, draw time, spread that grows with
 // speed, air time and sustained fire, and a fixed spray pattern (climb, then sway) that the shooter
 // must pull against. Bullets are hitscan: the map ray first, then each body's head/torso/leg boxes.
-import { DT, MOVE, WEAPONS, HEARING } from './config.js';
+import { DT, MOVE, WEAPONS } from './config.js';
 import { raycast } from './collide.js';
 import { eyeOf, rayActor, applyDamage } from './actors.js';
 import { emit, EV } from './events.js';
@@ -78,7 +78,7 @@ function startReload(state, a, w, def) {
   if (a.reloadTimer > 0 || w.mag >= def.mag || w.reserve <= 0) return;
   a.reloadTimer = def.reload;
   emit(state.events, EV.RELOAD, a.id);
-  makeNoise(state, a, HEARING.reload);
+  makeNoise(state, a, 'reload');
 }
 
 // Spray pattern: the first `settle` shots climb straight up, then the climb flattens and the
@@ -107,7 +107,7 @@ function fire(state, a, w, def) {
   kick(a, def);
   a.shotsFired++;
   a.bloom += def.spread.bloom;
-  makeNoise(state, a, HEARING.shot);
+  makeNoise(state, a, 'shot');
 }
 
 function traceBullet(state, a, def, ox, oy, oz, dx, dy, dz) {
