@@ -1,4 +1,4 @@
-// Saltline packager (Node 22, standard library + the kit's vendor/makefun-threejs.ts only).
+// Brineworks packager (Node 22, standard library + the kit's vendor/makefun-threejs.ts only).
 // Copies the static game (game/) and its screenshots (screenshots/) into the output directory
 // and writes dossier.json with make.fun's buildDossier. Same input, same bytes, every run:
 // stale copies from an earlier run are removed first so nothing extra leaks into the output.

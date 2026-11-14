@@ -5,7 +5,7 @@ import { DT, SIDE } from './sim/config.js';
 import { giveWeapon, eyeOf } from './sim/actors.js';
 
 // Advance n ticks with an optional per-tick script; only the last `drawn` ticks are rendered, so
-// effects (tracers, flashes) are mid-flight in the final frame without rendering every tick.
+// effects (tracers, flashes) are in flight in the final frame without rendering every tick.
 function run(ctx, n, script, drawn = 3) {
   const { state, view, input, step } = ctx;
   for (let i = 0; i < n; i++) {
@@ -54,7 +54,7 @@ function engage(bot, target, react) {
 const team = (state, side) => state.actors.filter((a) => state.teams[a.team].side === side);
 
 const SCENES = {
-  // Cover: a firefight at the long door of A, the player spraying a rifle into the site.
+  // Cover: a firefight at the Dock Gate of A, the player spraying a rifle into the site.
   1(ctx) {
     const { state } = ctx;
     skipUntil(ctx, (s) => s.round.number === 2 && s.round.phase === 'live');
@@ -77,7 +77,7 @@ const SCENES = {
       p.hp = Math.max(p.hp, 64);
     });
   },
-  // Buy menu in the rail yard during the freeze of a later round.
+  // Buy menu in the railhead during the freeze of a later round.
   2(ctx) {
     skipUntil(ctx, (s) => s.round.number >= 3 && s.round.phase === 'freeze');
     const { state } = ctx;

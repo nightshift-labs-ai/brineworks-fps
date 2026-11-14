@@ -1,5 +1,5 @@
 // Pooled combat effects, all allocated once: travelling tracer streaks (one instanced mesh),
-// bullet-hole decals (instanced, recycled oldest-first), dust and hit particles (one Points
+// bullet-hole decals (instanced, recycled oldest-first), grit and hit particles (one Points
 // cloud) and third-person muzzle flashes (a few sprites). spawn* functions only rewrite slots.
 import * as THREE from 'three';
 import { holeTexture, softDot } from './textures.js';
@@ -8,7 +8,7 @@ const TRACERS = 48, DECALS = 160, PARTICLES = 360, FLASHES = 10;
 const TRACER_SPEED = 260, STREAK = 5;
 
 export function createEffects(scene) {
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3();
+  const mat4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3();
   const zAxis = new THREE.Vector3(0, 0, 1), color = new THREE.Color();
 
   // Tracers: a unit box along +z, scaled into a thin streak between two points along the shot.
@@ -35,7 +35,7 @@ export function createEffects(scene) {
   let nextDecal = 0;
   scene.add(decalMesh);
 
-  // Particles: dust off walls, dark spray off bodies. Colour alpha fades with life.
+  // Particles: grit off walls, dark spray off bodies. Colour alpha fades with life.
   const pPos = new Float32Array(PARTICLES * 3), pCol = new Float32Array(PARTICLES * 4);
   const pVel = new Float32Array(PARTICLES * 3), pLife = new Float32Array(PARTICLES), pMax = new Float32Array(PARTICLES);
   const pGeo = new THREE.BufferGeometry();
@@ -73,8 +73,8 @@ export function createEffects(scene) {
     v.set(nx, ny, nz);
     q.setFromUnitVectors(zAxis, v);
     s.setScalar(0.7 + ((nextDecal * 7919) % 100) / 160);
-    m4.compose(v.set(x + nx * 0.004, y + ny * 0.004, z + nz * 0.004), q, s);
-    decalMesh.setMatrixAt(nextDecal, m4);
+    mat4.compose(v.set(x + nx * 0.004, y + ny * 0.004, z + nz * 0.004), q, s);
+    decalMesh.setMatrixAt(nextDecal, mat4);
     decalMesh.instanceMatrix.needsUpdate = true;
     nextDecal = (nextDecal + 1) % DECALS;
   }
@@ -101,7 +101,7 @@ export function createEffects(scene) {
     f.life = 0.05;
   }
 
-  // Explosion: a big flash, a burst of fire and grit, and a short light.
+  // Explosion: a big flash, a burst of fire and grit, and a brief light.
   const blastSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot(), color: 0xffb35c, blending: THREE.AdditiveBlending, depthWrite: false }));
   blastSprite.visible = false;
   const blastLight = new THREE.PointLight(0xff9a40, 0, 30);
@@ -135,8 +135,8 @@ export function createEffects(scene) {
       v.set(t.ox + t.dir.x * tail, t.oy + t.dir.y * tail, t.oz + t.dir.z * tail);
       q.setFromUnitVectors(zAxis, t.dir);
       s.set(0.014, 0.014, Math.max(0.01, head - tail));
-      m4.compose(v, q, s);
-      tracerMesh.setMatrixAt(i, m4);
+      mat4.compose(v, q, s);
+      tracerMesh.setMatrixAt(i, mat4);
     }
     tracerMesh.instanceMatrix.needsUpdate = true;
 

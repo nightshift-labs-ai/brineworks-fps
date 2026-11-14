@@ -1,7 +1,7 @@
-# Saltline
+# Brineworks
 
 A round-based tactical first-person shooter in three.js, played single-player against bots.
-Five Harrow salvage crew against five Wardens at a salt refinery on the coast at dusk: short rounds
+Five Harrow salvage crew against five Saltreeves at a salt refinery on the coast at dusk: short rounds
 on an original three-lane map, money that carries between rounds, and gunfire where stopping to
 aim beats spraying on the move.
 

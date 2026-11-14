@@ -1,4 +1,4 @@
-// The Saltline map: a salt refinery on the coast at dusk. One ASCII grid is the single source of truth
+// The Brineworks map: a salt refinery on the coast at dusk. One ASCII grid is the single source of truth
 // for collision, line of sight, bot navigation and the rendered level. North is up; one cell is CELL metres.
 //
 //   #  perimeter wall     H  refinery building   X  stacked crates (2.6 m)   x  crate (1.1 m, vaultable)
@@ -6,9 +6,9 @@
 //   A B  Fuse Core sites  a d  attacker / defender spawns      other letters: named waypoints (floor)
 //
 // Sites: A = the Brine Tanks (a raised steel deck), B = the Evaporator Hall. Lanes: the west Brine
-// Channel to B; the open Conveyor Yard in the middle (its tower blocks the spawn-to-spawn line) with
-// the Pan House to B and the Brine Bridge to A; the east Quay to A. Harrow start in the rail yard
-// (south), the Wardens in the pumphouse yard (north).
+// Channel to B; the open Conveyor Court in the middle (its tower blocks the spawn-to-spawn line) with
+// the Pan House to B and the Brine Bridge to A; the east Quay to A. Harrow start in the railhead
+// (south), the Saltreeves in the pumphouse (north).
 export const CELL = 1.5;
 
 const LAYOUT = `
@@ -61,14 +61,14 @@ const LAYOUT = `
 const HEIGHTS = { '#': 4.8, H: 9, X: 2.6, x: 1.1, '-': 1, 1: 0.4, 2: 0.8, 3: 1.2 };
 // Callouts: every waypoint letter is a named place (the HUD shows where you stand, bots call by name).
 const CALLOUTS = {
-  e: 'Rail Cut', f: 'Weighbridge', g: 'Conveyor Yard', h: 'Tower Foot', i: 'Pump Gate', j: 'Brine Bridge',
+  e: 'Rail Cut', f: 'Weighbridge', g: 'Conveyor Court', h: 'Tower Foot', i: 'Pump Gate', j: 'Brine Bridge',
   k: 'Dock Gate', l: 'Bollard Corner', m: 'Quay', n: 'Channel Foot', o: 'Brine Channel', p: 'Channel Gate',
   q: 'Pan House', r: 'Pan Door', s: 'Office Row', t: 'Tank Walk', u: 'Tank Gate', v: 'Hall Gate', w: 'Tank Apron',
   y: 'Pumphouse East', z: 'Pumphouse West',
 };
 export const SITE_NAMES = { A: 'Brine Tanks', B: 'Evaporator Hall' };
 
-// Attack routes: waypoints walked in order from the rail yard. The group gathers at `stage`, then
+// Attack routes: waypoints walked in order from the railhead. The group gathers at `stage`, then
 // pushes the last waypoint into the site together.
 export const ATTACK_ROUTES = [
   { site: 'A', name: 'quay', path: 'lmk', stage: 'm' },
@@ -77,11 +77,11 @@ export const ATTACK_ROUTES = [
   { site: 'B', name: 'pan house', path: 'efgqr', stage: 'q' },
 ];
 
-// Held angles: stand at a cell, watch a waypoint. Defenders anchor these; attackers hold post-plant ones.
+// Held angles: stand at a cell, aim at a waypoint. Defenders anchor these; attackers hold post-plant ones.
 export const HOLDS = {
   A: [{ at: [43, 10], look: 'k' }, { at: [40, 9], look: 'j' }, { at: [52, 12], look: 'k' }],
   B: [{ at: [12, 13], look: 'p' }, { at: [4, 11], look: 'r' }, { at: [14, 8], look: 'p' }],
-  yard: [{ at: [28, 9], look: 'h' }],
+  tower: [{ at: [28, 9], look: 'h' }],
 };
 export const POSTPLANT = {
   A: [{ at: [43, 10], look: 'u' }, { at: [51, 15], look: 'j' }, { at: [42, 16], look: 'u' }],

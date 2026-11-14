@@ -185,7 +185,7 @@ function buildSkyline(map) {
   const beam = new THREE.Mesh(new THREE.BoxGeometry(34, 1.6, 2), rust);
   beam.position.set(W + 10, 22, 15);
   g.add(beam);
-  // land around the yard to the west, north and south; open water east of the dock wall
+  // land around the works to the west, north and south; open water east of the dock wall
   const apron = new THREE.Mesh(new THREE.PlaneGeometry(W + 64, D + 120), new THREE.MeshStandardMaterial({ color: 0xb9a68f, roughness: 1 }));
   apron.rotation.x = -Math.PI / 2;
   apron.position.set((W - 56) / 2, -0.05, D / 2);

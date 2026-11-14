@@ -1,4 +1,4 @@
-// Rules and numbers of Saltline, one table per topic: timing, movement, bodies, weapons, gear,
+// Rules and numbers of Brineworks, one table per topic: timing, movement, bodies, weapons, gear,
 // grenades, the Fuse Core, money, rounds, hearing, bots. Sim modules read these; no three.js, no DOM.
 
 export const TICK_HZ = 60;
@@ -8,8 +8,8 @@ export const GRAVITY = 20;
 // Two teams swap sides at half time. Side 0 attacks (carries the Fuse Core), side 1 defends.
 export const SIDE = { ATTACK: 0, DEFEND: 1 };
 export const TEAMS = [
-  { name: 'Harrow', color: 0xdd4a32, css: '#ef5a3e' }, // vermilion: salvage crews from the rail yard
-  { name: 'Wardens', color: 0x3a86e0, css: '#4d97f0' }, // cobalt: the refinery's own guard
+  { name: 'Harrow', color: 0xdd4a32, css: '#ef5a3e' }, // vermilion: salvage crews from the railhead
+  { name: 'Saltreeves', color: 0x3a86e0, css: '#4d97f0' }, // cobalt: the refinery's own reeves (guards)
 ];
 export const PLAYER_TEAM = 0;
 export const TEAM_SIZE = 5;
@@ -34,15 +34,15 @@ export const BODY = { headRadius: 0.16, torsoRadius: 0.27, legRadius: 0.22, legT
 // Design intent: a Ballast headshot (34 x 3.8) kills through a helm only up close; a Capstan body
 // shot kills through a vest, a leg shot does not; the Skiff is cheap, forgiving on the move, weak far.
 export const WEAPONS = {
-  rivet: { name: 'Rivet-9', kind: 'pistol', slot: 'secondary', price: 200, mag: 13, reserve: 39, interval: 0.15, auto: false, damage: 29, headMult: 3.8, armorPen: 0.5, falloff: 0.85, range: 60, pellets: 1, reload: 2, speedMult: 1, reward: 250, draw: 0.45,
+  rivet: { name: 'Rivet-9', kind: 'pistol', slot: 'secondary', price: 180, mag: 13, reserve: 39, interval: 0.15, auto: false, damage: 29, headMult: 3.8, armorPen: 0.5, falloff: 0.85, range: 60, pellets: 1, reload: 2, speedMult: 1, reward: 250, draw: 0.45,
     spread: { base: 0.006, move: 0.042, air: 0.12, crouch: 0.8, bloom: 0.02 }, recoil: { climb: 0.017, sway: 0.004, settle: 2, recover: 5 } },
-  skiff: { name: 'Skiff SMG', kind: 'smg', slot: 'primary', price: 1200, mag: 28, reserve: 112, interval: 0.072, auto: true, damage: 24, headMult: 3.4, armorPen: 0.6, falloff: 0.76, range: 50, pellets: 1, reload: 2.3, speedMult: 0.98, reward: 550, draw: 0.6,
+  skiff: { name: 'Skiff SMG', kind: 'smg', slot: 'primary', price: 1150, mag: 28, reserve: 112, interval: 0.072, auto: true, damage: 24, headMult: 3.4, armorPen: 0.6, falloff: 0.76, range: 50, pellets: 1, reload: 2.3, speedMult: 0.98, reward: 550, draw: 0.6,
     spread: { base: 0.009, move: 0.021, air: 0.1, crouch: 0.85, bloom: 0.006 }, recoil: { climb: 0.006, sway: 0.008, settle: 5, recover: 7 } },
   ballast: { name: 'Ballast AR', kind: 'rifle', slot: 'primary', price: 2600, mag: 30, reserve: 90, interval: 0.095, auto: true, damage: 34, headMult: 3.8, armorPen: 0.8, falloff: 0.95, range: 120, pellets: 1, reload: 2.4, speedMult: 0.9, reward: 250, draw: 0.8,
     spread: { base: 0.0035, move: 0.072, air: 0.16, crouch: 0.75, bloom: 0.0075 }, recoil: { climb: 0.0105, sway: 0.0075, settle: 7, recover: 6 } },
-  bollard: { name: 'Bollard-12', kind: 'shotgun', slot: 'primary', price: 1050, mag: 6, reserve: 24, interval: 0.9, auto: false, damage: 16, headMult: 2.2, armorPen: 0.55, falloff: 0.5, range: 40, pellets: 9, reload: 2.8, speedMult: 0.95, reward: 750, draw: 0.7,
+  bollard: { name: 'Bollard-12', kind: 'shotgun', slot: 'primary', price: 1000, mag: 6, reserve: 24, interval: 0.9, auto: false, damage: 16, headMult: 2.2, armorPen: 0.55, falloff: 0.5, range: 40, pellets: 9, reload: 2.8, speedMult: 0.95, reward: 750, draw: 0.7,
     spread: { base: 0.055, move: 0.02, air: 0.06, crouch: 0.95, bloom: 0.01 }, recoil: { climb: 0.05, sway: 0.004, settle: 1, recover: 4 } },
-  capstan: { name: 'Capstan .338', kind: 'marksman', slot: 'primary', price: 4500, mag: 5, reserve: 15, interval: 1.35, auto: false, damage: 112, headMult: 2.6, armorPen: 0.95, falloff: 0.99, range: 160, pellets: 1, reload: 3.3, speedMult: 0.82, reward: 150, draw: 1,
+  capstan: { name: 'Capstan LR', kind: 'marksman', slot: 'primary', price: 4500, mag: 5, reserve: 15, interval: 1.35, auto: false, damage: 112, headMult: 2.6, armorPen: 0.95, falloff: 0.99, range: 160, pellets: 1, reload: 3.3, speedMult: 0.82, reward: 150, draw: 1,
     scope: 0.32, // field of view multiplier while scoped (right mouse); only precise when scoped
     spread: { base: 0.0008, unscoped: 0.075, move: 0.12, air: 0.25, crouch: 0.85, bloom: 0.02 }, recoil: { climb: 0.045, sway: 0.005, settle: 1, recover: 4 } },
 };
@@ -52,14 +52,14 @@ WEAPON_ORDER.forEach((id, index) => Object.assign(WEAPONS[id], { id, index }));
 // Gear: the vest guards the torso, the helm the head (armour points shared); the kit halves disarming.
 export const GEAR = {
   vest: { name: 'Hull vest', price: 600 },
-  helm: { name: 'Hull helm', price: 350 },
-  kit: { name: 'Spanner kit', price: 350, side: SIDE.DEFEND },
+  helm: { name: 'Hull helm', price: 300 },
+  kit: { name: 'Spanner kit', price: 330, side: SIDE.DEFEND },
 };
 
 // Grenades, bought like guns and thrown with G (frag) and F (smoke). index 100: kill-feed id.
 export const GRENADES = {
-  frag: { name: 'Clatter frag', price: 250, fuse: 1.6, radius: 7, damage: 100, reward: 250, index: 100 },
-  smoke: { name: 'Haze canister', price: 300, fuse: 1.7, radius: 4.4, duration: 15 },
+  frag: { name: 'Clatter frag', price: 240, fuse: 1.6, radius: 7, damage: 100, reward: 250, index: 100 },
+  smoke: { name: 'Haze canister', price: 280, fuse: 1.7, radius: 4.4, duration: 15 },
 };
 
 // The Fuse Core, this game's bomb objective: arm it on a site, the defenders disarm it.

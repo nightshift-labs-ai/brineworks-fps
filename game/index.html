@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  SALTLINE: a round-based tactical shooter at a salt refinery on the coast at dusk.
+  BRINEWORKS: a round-based tactical shooter at a salt refinery on the coast at dusk.
   Built by an AI agent (Claude Code) for Nightshift Labs, make.fun threejs-fps-02. MIT licence.
 
   Guide for a reader of this source. Where each part of the game lives:
@@ -25,11 +25,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Saltline</title>
+<title>Brineworks</title>
 <style>
   :root {
     --ink: #f3ead9; --muted: #b9ad9c; --panel: rgba(22, 20, 26, 0.62); --line: rgba(243, 234, 217, 0.16);
-    --paint: #efc94c; --harrow: #e0703a; --wardens: #3fb7b0; --danger: #ff5a4a;
+    --paint: #efc94c; --harrow: #e0703a; --reeves: #3fb7b0; --danger: #ff5a4a;
     --ui: 'Segoe UI', system-ui, -apple-system, sans-serif; --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
@@ -48,7 +48,7 @@
   .team .score { font: 700 28px var(--mono); }
   .pips { display: flex; gap: 3px; }
   .pips i { width: 14px; height: 5px; background: var(--ink); opacity: 0.9; }
-  #pips0 i { background: var(--harrow); } #pips1 i { background: var(--wardens); }
+  #pips0 i { background: var(--harrow); } #pips1 i { background: var(--reeves); }
   .pips i.dead { opacity: 0.18; }
   #clock { font: 700 30px var(--mono); padding: 0 10px; min-width: 96px; text-align: center; }
   #clock.freeze { color: var(--paint); }
@@ -167,8 +167,8 @@
 
 <div id="overlay">
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
-    <h1 id="overlay-title">SALT<span>LINE</span></h1>
-    <p>Five against five at the Saltline refinery. Harrow salvage crews try to arm a Fuse Core on site A or B; the Wardens who guard the plant stop them or disarm it. Rounds are short, money carries over, and a shot fired while running goes wide.</p>
+    <h1 id="overlay-title">BRINE<span>WORKS</span></h1>
+    <p>Five against five at the Brineworks salt refinery. Harrow salvage crews try to arm a Fuse Core on site A or B; the Saltreeves who guard the plant stop them or disarm it. Rounds are brief, money carries over, and a shot fired while running goes wide.</p>
     <button id="play" type="button">Deploy</button>
     <ul class="keys">
       <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</li>

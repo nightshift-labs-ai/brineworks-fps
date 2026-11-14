@@ -7,9 +7,9 @@ import { ATTACK_ROUTES, HOLDS, POSTPLANT } from './map.js';
 import { emit, EV } from './events.js';
 
 const SETUPS = [ // [weight, site of each defender in order]
-  [0.6, ['A', 'B', 'yard', 'A', 'B']],
-  [0.2, ['A', 'A', 'yard', 'B', 'A']],
-  [0.2, ['B', 'B', 'yard', 'A', 'B']],
+  [0.6, ['A', 'B', 'tower', 'A', 'B']],
+  [0.2, ['A', 'A', 'tower', 'B', 'A']],
+  [0.2, ['B', 'B', 'tower', 'A', 'B']],
 ];
 
 export function createPlan() { return { site: 'A', rush: false, execute: false, staged: -99, rotated: false, fails: { A: 0, B: 0 } }; }
@@ -42,7 +42,7 @@ export function planRound(state, team, call) {
     bots.forEach((a, i) => {
       const b = a.brain, where = b.role === 'marksman' && i >= 3 ? 'A' : setup[i % setup.length];
       b.plan = 'hold'; b.anchor = b.role === 'anchor';
-      b.site = where === 'yard' ? (rng() < 0.5 ? 'A' : 'B') : where;
+      b.site = where === 'tower' ? (rng() < 0.5 ? 'A' : 'B') : where;
       pickHold(state, a, HOLDS[where]);
     });
   }

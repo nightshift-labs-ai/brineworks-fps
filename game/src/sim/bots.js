@@ -212,7 +212,7 @@ function followPlan(state, a, b) {
     const letter = b.route[b.routeIndex], mark = state.map.marks[letter];
     const near = dist2(a.pos.x, a.pos.z, mark.x, mark.z);
     if (letter === b.stage && !team.plan.execute || (b.lurk && letter === b.stage)) {
-      // Stage point: arrive quietly, wait for the call, watch the way in.
+      // Stage point: arrive quietly, wait for the call, eye the way in.
       if (near > 2.2) { goTo(state, a, b, mark.x, mark.z, near < 150); return; }
       b.staged = true;
       const next = state.map.marks[b.route[b.routeIndex + 1]];
@@ -231,7 +231,7 @@ function followPlan(state, a, b) {
     return;
   }
   if (dist2(a.pos.x, a.pos.z, b.holdX, b.holdZ) > 0.5) { goTo(state, a, b, b.holdX, b.holdZ, false); return; }
-  // Holding: watch the angle with a slow sweep.
+  // Holding: cover the angle with a slow sweep.
   b.scan += DT * 0.7;
   turnToward(a, Math.atan2(-(b.lookX - a.pos.x), -(b.lookZ - a.pos.z)) + Math.sin(b.scan + a.id) * 0.35, 0, 2.5);
 }

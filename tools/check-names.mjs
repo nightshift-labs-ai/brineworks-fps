@@ -15,7 +15,10 @@ const WORDS = [
   // the sibling entry's names
   'cinder', 'tidewatch', 'lockmere', 'kestrel', 'heron', 'osprey', 'swift', 'shard', 'veil', 'glare', 'cutter',
   'plate vest', 'anvil', 'bramble', 'tallow', 'moth', 'sable', 'kiln', 'soot', 'hale', 'wren', 'orca', 'lumen', 'pike',
+  // names crowded in this contest's field (operator's survey): keep ours distinct
+  'wardens?', 'watch', 'vultures?', 'saltline', 'cinderline', 'dustline', 'sandline', 'yard', 'depot', 'foundry', 'ember',
 ];
+const CARTRIDGE = /(?<![\d.])\.(338|308|50|45|22)\b|\b(5\.56|7\.62)\b|\b9 ?mm\b/i; // real cartridge names, not decimals
 const CASED = ['CT', 'de_']; // exact case (CT as a word, de_ as a map prefix)
 const word = new RegExp(`\\b(${WORDS.join('|')})\\b`, 'i');
 const cased = new RegExp(`\\bCT\\b|\\bde_[a-z]`);
@@ -32,7 +35,7 @@ function* files(dir) {
 let bad = 0;
 for (const path of files(root)) {
   readFileSync(path, 'utf8').split('\n').forEach((line, i) => {
-    const m = line.match(word) ?? line.match(cased) ?? line.match(windowWord);
+    const m = line.match(word) ?? line.match(cased) ?? line.match(windowWord) ?? line.match(CARTRIDGE);
     if (m) { bad++; console.log(`${relative(root, path)}:${i + 1}: "${m[0]}"  ${line.trim().slice(0, 100)}`); }
   });
 }
