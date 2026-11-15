@@ -40,7 +40,11 @@ export function createView(state, container) {
   const disc = new THREE.Sprite(glow(0xffd9a0));
   disc.position.copy(sun.position).sub(sun.target.position).normalize().multiplyScalar(380).add(sun.target.position);
   disc.scale.setScalar(70);
-  scene.add(sky, new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.35), sun, sun.target, disc);
+  const halo = new THREE.Sprite(glow(0xff8a50)); // the warm glow round the sun, wide along the horizon
+  halo.position.copy(disc.position);
+  halo.scale.set(520, 150, 1);
+  halo.material.opacity = 0.5;
+  scene.add(sky, halo, new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.35), sun, sun.target, disc);
   const vm = createViewModel();
   scene.environment = vm.scene.environment = new THREE.PMREMGenerator(renderer).fromScene(scene, 0.03, 1, 1000).texture; // sky and sun, before the level
   scene.environmentIntensity = vm.scene.environmentIntensity = 0.8;

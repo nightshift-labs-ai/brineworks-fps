@@ -1,7 +1,7 @@
 // The visible level from the sim's grid: greedy-merged boxes, one geometry per material.
 import * as THREE from 'three';
 import { PALETTE, std } from './palette.js';
-import { siteDecal, signTexture } from './textures.js';
+import { siteDecal, signTexture, glow } from './textures.js';
 
 // Per face: normal axis and sign, then the u and v tangent axes and signs, with u x v = normal (CCW).
 const FACES = [[0, 1, 2, -1, 1, 1], [0, -1, 2, 1, 1, 1], [1, 1, 0, 1, 2, -1], [1, -1, 0, 1, 2, 1], [2, 1, 0, 1, 1, 1], [2, -1, 0, -1, 1, 1]];
@@ -134,9 +134,11 @@ export function buildLevel(map, tex) {
     group.add(obj);
   };
   for (const [lines, c, r, face] of SIGNS) place(new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), std({ map: signTexture(lines, PALETTE.lanes[laneOf(c, r)][1]), roughness: 0.6 })), c, r, face, 2.6, 0.02);
-  const lampMat = std({ color: 0x222222, emissive: PALETTE.lamp, emissiveIntensity: 2.5 });
-  for (const [c, r, face] of LAMPS) {
+  const lampMat = std({ color: 0x222222 }), lens = std({ color: 0, emissive: PALETTE.lamp, emissiveIntensity: 3 });
+  for (const [c, r, face] of LAMPS) { // a dark housing, its warm lens underneath, a small glow, the light
     place(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.18, 0.3), lampMat), c, r, face, 3.4, 0.15);
+    place(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.22), lens), c, r, face, 3.3, 0.15);
+    place(new THREE.Sprite(glow(PALETTE.lamp)), c, r, face, 3.25, 0.2);
     place(new THREE.PointLight(PALETTE.lamp, 14, 10), c, r, face, 3.1, 0.6);
   }
 
