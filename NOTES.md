@@ -21,29 +21,38 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   scratch object; HUD writes on change. Screenshot staging lives in tools/stage.js (outside the
   judged game/), injected by tools/shoot.mjs through main.js's dev hook (`window.__brineworks`).
 
-## Done since the operator's review of 28d09ae (prompt 7)
-- Item 2: events carry `t` (sim time); the HUD times hits/hurts/kills from it, clears the feed and
-  radio on round start; the damage indicator is a short wedge near the edge (no ring, no stuck
-  vignette in staged shots).
-- Item 8: budget. Staging moved out of game/: source 150.6 KiB, dossier 156,538 of 163,840 bytes.
-- Item 9: Rook -> Carrick, Vale -> Pell, Harrow -> Rakers; the old names are banned in
-  tools/check-names.mjs.
+## Done (prompts 7-10, operator reviews of 28d09ae, b52fd2e)
+- Events carry `t` (sim time); the HUD times hits from it, clears feed/radio each round; the damage
+  cue is a short edge wedge. Feed max 4 rows, radio 2, rows leave after 10 s.
+- Staging moved to tools/stage.js (no judged bytes); scenes are scripted tick by tick (see below).
+- Sim review fixes: route/hold/lurk reset each round, lurker release, retakes without the human,
+  X drops the core, core snaps to walkable ground, helm needs a vest, survivors keep the kit,
+  predictBurst() (own-side frag damage 40% -> 4%), dry gun -> sidearm, G/F latch, no keys while
+  paused, dead events removed, prev copied once per step.
+- Look: tracers kept off the lens, short (2.5 m at 420 m/s) and thin; low warm sun, exposure 0.9,
+  darker salt-stained ground, gravel roofs with a coping, salt flat to the fog, lane accents,
+  sign text fit, lumpy smoke dome, 3/4 round-end camera; smaller two-tone viewmodel lower right.
+- HUD: bar alone while arming/disarming ('ARMING FUSE CORE n%', KIT only when disarming),
+  match-win banner, docked board, two-value changed() cache, class captions (Hawser · bullpup rifle).
+- Audio: game/src/audio.js plays shots, steps, reloads, beeps, blasts, bounces from the event ring,
+  muffled through walls by the bots' hearing rule; starts in the pointer-lock click.
+- Pointer lock: lock() catches a refused re-lock and says 'Click again to resume'.
+- Names: bots Carrick, Skerry, Ozzy, Brandt / Haldane, Kesh, Fenn, Lowrie, Dunmore; teams Rakers /
+  Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
-## In progress (parallel worktree agents, merged one branch per commit)
-- Sim (code review items 1, 5, 6, 9, 10, 11, 12, 13, 14, 15): route reset, lurker release, retake
-  without waiting for the player, core drop (X), core snaps to walkable ground, helm/kit rules,
-  frag burst prediction (own-side frag damage 40% -> 4%), dry gun -> sidearm, toss latch, dead events.
-- Look (items 3, 4, 5 viewmodel, 6 smoke, 7 roofs/salt flat/camera): tracer clipping near the
-  lens, darker values with a low warm sun, sign text fit, two-tone rifle, lumpy smoke.
-- HUD (items 6, 7 HUD parts; review 4, 7, 10c, 12d, 12e, 13): arming hint, match-win banner,
-  docked board, feed limits, reviewer NOTE, overlay text.
-- Audio + pointer lock (review items 7, 8): WebAudio from the event ring, lock() with error hint.
-- Then: restage shots 1, 3, 4 (prompt items 5-7), rename weapons (done: Hawser, Cleat; the old names are banned) (an entry on the
-  board is titled BALLAST).
+## Budget (tools/budget.mjs 158)
+- Source 161,238 bytes (157.5 KiB); dossier text 163,662 of 163,840 (no cut). Headroom is ~180
+  bytes: every addition must be paid for by trimming.
+
+## Next (operator prompt 10 order)
+- K + V palette and visible salt theme (no purple/navy, salt heaps, pink brine pans, sacks),
+  L lighting (sun azimuth vs glow, fog colour, lamp housings), U visible bot plans (plan line,
+  route lines on the radar), then M-Q, X-Z and the rest of the code-review list.
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
-- 1 cover `?shot=1&seed=9` Conveyor Court firefight; 2 buy menu `?shot=2&seed=7`;
-  3 arming on B under smoke `?shot=3&seed=7`; 4 round end `?shot=4&seed=7` (shots.json).
+- 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
+  `?shot=2&seed=7`; 3 arming on B under smoke `?shot=3&seed=7`; 4 disarm win `?shot=4&seed=7`
+  (shots.json). `python3 tools/sheet.py` makes a 2x2 contact sheet.
 - `node tools/check-shots.mjs` checks size and dimensions.
 
 ## Decisions
