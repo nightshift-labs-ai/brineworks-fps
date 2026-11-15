@@ -74,6 +74,7 @@ export function createHud(state, camera) {
     expire(radio, radioRows);
     const p = state.player, round = state.round, core = state.core, w = p.slots[p.active];
     show(el.hp, Math.max(0, p.hp));
+    toggle(el.hp.parentNode, 'warn', p.hp < 50);
     toggle(el.hp.parentNode, 'low', p.hp <= 25);
     show(el.armor, Math.round(p.armor));
     show(el['armor-label'], p.helm ? 'ARMOUR+HELM' : 'ARMOUR');
