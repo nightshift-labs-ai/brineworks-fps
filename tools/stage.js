@@ -25,7 +25,7 @@ const SCENES = {
     script(i, s) {
       s.p.cmd.crouch = true;
       if (i === 11) s.aim('f0', 'head');
-      if (i >= 20) s.aim('f1', 'chest');
+      if (i >= 20) s.aim('f1', 'waist'); // low on the torso: the marker clears his muzzle flash
       s.p.cmd.fire = i === 12 || i === 31;
     } },
   // Buy time in the defenders' yard, the low sun across the cladding, teammates armed differently.
@@ -125,11 +125,11 @@ function stage(ctx, sc) {
   for (const e of state.events.list) if (e.type === EV.KILL && e.t >= roundStart) e.t = state.time; // this round's kills stay in the feed (rows expire after 10 s)
   for (const [k, text] of sc.radio ?? []) radio(state, who(k), text);
   for (const [k, react, low = 0.01] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: low, aimHead: false, crouchSpray: false, lastSeenId: p.id, lastSeenTime: 1e9 });
-  // Look at an actor's head or chest, or (k null) at pitch `part` toward cell (c, r).
+  // Look at an actor's head, chest or waist, or (k null) at pitch `part` toward cell (c, r).
   const aim = (k, part, c, r) => {
     const ey = p.pos.y + eyeOf(p);
     if (!k) return ctx.input.face(yawTo(p.pos.x, p.pos.z, (c + 0.5) * S, (r + 0.5) * S), part);
-    const a = who(k), y = a.pos.y + (part === 'head' ? heightOf(a) - 0.17 : heightOf(a) * 0.62);
+    const a = who(k), y = a.pos.y + (part === 'head' ? heightOf(a) - 0.17 : heightOf(a) * (part === 'waist' ? 0.55 : 0.62));
     ctx.input.face(yawTo(p.pos.x, p.pos.z, a.pos.x, a.pos.z), Math.atan2(y - ey, Math.hypot(a.pos.x - p.pos.x, a.pos.z - p.pos.z)));
   };
   const s = { ctx, p, who, aim };
