@@ -12,7 +12,7 @@ export function createActor(id, team, name, isBot) {
     grounded: true, crouch: 0, stride: 0, // crouch 0..1; stride: metres run since the last footstep
     // The command record input.js (player) or bots.js fills; the sim reads only this.
     cmd: { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, aim: false, reload: false, crouch: false, walk: false, jump: false, use: false,
-      slot: -1, toss: '', tossRange: 0 },
+      slot: -1, toss: '', tossRange: 0, drop: false },
     slots: [null, null], active: 1, grenades: { frag: 0, smoke: 0 }, scoped: false, // slots: primary, sidearm ({ id, mag, reserve })
     fireCooldown: 0, reloadTimer: 0, drawTimer: 0, triggerHeld: false,
     bloom: 0, punchPitch: 0, punchYaw: 0, shotsFired: 0,
@@ -32,13 +32,13 @@ export function giveWeapon(a, id) {
   a.active = slot; a.drawTimer = def.draw; a.reloadTimer = 0;
 }
 
-// Survivors keep guns, grenades and armour; the dead restart with the sidearm. Guns are refilled.
+// Survivors keep guns, grenades, armour and kit; the dead restart with the sidearm. Guns are refilled.
 export function respawn(a, spawn, yaw) {
-  if (!a.alive) { a.slots[0] = a.slots[1] = null; a.armor = 0; a.helm = false; a.grenades.frag = a.grenades.smoke = 0; }
+  if (!a.alive) { a.slots[0] = a.slots[1] = null; a.armor = 0; a.helm = a.kit = false; a.grenades.frag = a.grenades.smoke = 0; }
   if (!a.slots[1]) giveWeapon(a, 'rivet');
   for (const w of a.slots) if (w) { w.mag = WEAPONS[w.id].mag; w.reserve = WEAPONS[w.id].reserve; }
   a.active = a.slots[0] ? 0 : 1;
-  a.alive = true; a.hp = 100; a.kit = false;
+  a.alive = true; a.hp = 100;
   a.pos.x = a.prev.x = spawn.x; a.pos.z = a.prev.z = spawn.z; a.pos.y = a.prev.y = 0;
   a.vel.x = a.vel.y = a.vel.z = 0;
   a.yaw = a.prevYaw = yaw; a.pitch = 0;
@@ -61,7 +61,6 @@ export function rayActor(a, ox, oy, oz, dx, dy, dz, out) {
   return best;
 }
 
-// A bullet: per-weapon head multiplier, leg multiplier, falloff per 25 m, then armour.
 export function applyDamage(state, victim, attacker, def, part, distance) {
   const mult = part === 1 ? def.headMult : part === 3 ? BODY.legMult : BODY.torsoMult;
   hurt(state, victim, attacker, def.damage * mult * Math.pow(def.falloff, distance / 25), def.armorPen, part, def, attacker.pos.x, attacker.pos.z);

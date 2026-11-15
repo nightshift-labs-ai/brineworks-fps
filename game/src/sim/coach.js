@@ -11,7 +11,7 @@ const SETUPS = [ // defence: [weight, where each defender holds] = 2-1-2, 3-1-1,
 
 const mate = (a, team) => a.alive && a.isBot && a.team === team;
 
-export function createPlan() { return { site: 'A', rush: false, execute: false, staged: -99, rotated: false, fails: { A: 0, B: 0 } }; }
+export function createPlan() { return { site: 'A', rush: false, execute: false, staged: -99, executedAt: -99, rotated: false, fails: { A: 0, B: 0 } }; }
 
 // Attack: a site (less likely one that just failed) split over its two routes plus a lurker, or a save-round rush.
 // Defence: a weighted setup.
@@ -20,10 +20,10 @@ export function planRound(state, team, call) {
   const bots = state.actors.filter((a) => a.team === team.id && a.isBot).sort((x, y) => (y.id === state.core.carrier) - (x.id === state.core.carrier));
   for (const { brain: b } of bots) {
     b.target = -1; b.lastSeenTime = b.heardTime = -99; b.path.length = 0;
-    b.burstLeft = b.burstPause = b.stuckTime = 0; b.smoked = b.staged = b.anchor = false;
+    b.burstLeft = b.burstPause = b.stuckTime = b.routeIndex = 0; b.smoked = b.staged = b.anchor = b.atHold = false;
   }
   state.intel[team.id].time = -99;
-  plan.execute = plan.rotated = false; plan.staged = -99;
+  plan.execute = plan.rotated = false; plan.staged = plan.executedAt = -99;
   if (team.side === SIDE.ATTACK) {
     const weightA = 0.4 ** plan.fails.A, weightB = 0.4 ** plan.fails.B;
     plan.site = rng() * (weightA + weightB) < weightA ? 'A' : 'B';
@@ -61,7 +61,7 @@ export function updateCoach(state) {
       if (staged && plan.staged < 0) plan.staged = state.time;
       const spotted = state.time - state.intel[team.id].time < 1.5, waited = plan.staged >= 0 && state.time - plan.staged > BOT.stageWait;
       if (going && (staged >= going - 1 || waited || state.round.clock < 45 || (staged && spotted))) {
-        plan.execute = true;
+        plan.execute = true; plan.executedAt = state.time;
         radio(state, firstBot(state, team.id), `go ${plan.site} now`);
       }
     } else if (!plan.rotated) {
@@ -71,7 +71,7 @@ export function updateCoach(state) {
         ?? (intel.count >= 2 && state.time - intel.time < 4 ? siteNear(state.map, intel.x, intel.z, 19) : null);
       if (!hit) continue;
       plan.rotated = true;
-      for (const a of state.actors) { // every defender bot not fighting or anchoring elsewhere
+      for (const a of state.actors) {
         const b = a.brain;
         if (!mate(a, team.id) || b.target >= 0 || b.site === hit.name || b.anchor) continue;
         b.site = hit.name; b.plan = 'hold';

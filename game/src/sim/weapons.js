@@ -18,9 +18,7 @@ export function spreadOf(a, def) {
 
 export function updateWeapon(state, a, cmd, canFire) {
   if (cmd.slot >= 0 && cmd.slot !== a.active && a.slots[cmd.slot]) {
-    const next = WEAPONS[a.slots[cmd.slot].id];
-    a.active = cmd.slot; a.reloadTimer = 0; a.drawTimer = next.draw; a.shotsFired = 0;
-    emit(state.events, EV.DRAW, a.id, -1, next.index);
+    a.active = cmd.slot; a.reloadTimer = 0; a.drawTimer = WEAPONS[a.slots[cmd.slot].id].draw; a.shotsFired = 0;
   }
   const w = a.slots[a.active], def = WEAPONS[w.id];
   if (a.fireCooldown > 0) a.fireCooldown -= DT;

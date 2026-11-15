@@ -45,7 +45,9 @@ const passable = (map, from, to) => map.walk[to] === 1 && map.height[to] - map.h
 const inside = (map, c, r) => c >= 0 && r >= 0 && c < map.w && r < map.h;
 const cellX = (n) => (n % S.w + 0.5) * CELL, cellZ = (n) => (((n / S.w) | 0) + 0.5) * CELL; // a cell's centre
 
-function nearestWalkable(map, c, r) {
+// Index of the walkable cell nearest (x, z); -1: none within 3 cells.
+export function nearestWalkable(map, x, z) {
+  const c = Math.floor(x / CELL), r = Math.floor(z / CELL);
   for (let rad = 0; rad < 4; rad++) for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad; dc <= rad; dc++) {
     const cc = c + dc, rr = r + dr;
     if (inside(map, cc, rr) && map.walk[rr * map.w + cc]) return rr * map.w + cc;
@@ -57,8 +59,7 @@ function nearestWalkable(map, c, r) {
 export function findPath(map, fx, fz, tx, tz, path) {
   scratch(map);
   const W = map.w, { g, f, parent, heap, pos, closed, stamp } = S;
-  const start = nearestWalkable(map, Math.floor(fx / CELL), Math.floor(fz / CELL));
-  const goal = nearestWalkable(map, Math.floor(tx / CELL), Math.floor(tz / CELL));
+  const start = nearestWalkable(map, fx, fz), goal = nearestWalkable(map, tx, tz);
   path.length = 0; path.index = 0;
   if (start < 0 || goal < 0) return false;
   const gen = ++S.gen;
@@ -100,7 +101,7 @@ export function findPath(map, fx, fz, tx, tz, path) {
   return true;
 }
 
-// A body-wide straight line on walkable cells, never climbing more than a step between samples (onto the deck only by the stairs).
+// A body-wide straight walkable line, never climbing over a step between samples (the deck only by the stairs).
 function walkableLine(map, ax, az, bx, bz) {
   const steps = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.35), r = MOVE.radius + 0.08;
   let last = -1;

@@ -9,17 +9,16 @@ export const TEAMS = [
 ];
 export const PLAYER_TEAM = 0, TEAM_SIZE = 5;
 
-// Metres and seconds. Quake-style accel/friction: speed builds up and bleeds off, and spread follows
-// speed (weapons.js), so a player who wants to hit has to plan the stop.
+// Metres and seconds. Quake-style accel/friction, and spread follows speed (weapons.js): to hit, plan the stop.
 export const MOVE = {
   runSpeed: 5.2, walkSpeed: 2.6, crouchSpeed: 1.8,
   accel: 6.2, airAccel: 1.2, friction: 6, stopSpeed: 1.8,
-  jumpSpeed: 6.9, stepHeight: 0.45, radius: 0.34,
+  jumpSpeed: 6.9, stepHeight: 0.45, radius: 0.34, maxPitch: 1.45,
   standHeight: 1.8, crouchHeight: 1.22, standEye: 1.62, crouchEye: 1.06, crouchRate: 7,
   footstepEvery: 2.2, // metres of running between footstep noises
 };
 
-// Hitboxes as fractions of height (head sphere, torso and leg cylinders); the soldier model uses them too.
+// Hitboxes: head sphere and torso/leg cylinder radii (m), legTop a fraction of height; the soldier model uses them too.
 export const BODY = { headRadius: 0.16, torsoRadius: 0.27, legRadius: 0.22, legTop: 0.47, legMult: 0.75, torsoMult: 1 };
 
 // Spread: cone radius (rad) = base + move x speed fraction + air + bloom, x crouch. Recoil: `climb`
@@ -36,7 +35,7 @@ export const WEAPONS = {
   bollard: { name: 'Bollard-12', kind: 'shotgun', price: 1000, mag: 6, reserve: 24, interval: 0.9, damage: 16, headMult: 2.2, armorPen: 0.55, falloff: 0.5, range: 40, pellets: 9, reload: 2.8, speedMult: 0.95, reward: 750, draw: 0.7,
     spread: { base: 0.055, move: 0.02, air: 0.06, crouch: 0.95, bloom: 0.01 }, recoil: { climb: 0.05, sway: 0.004, settle: 1, recover: 4 } },
   capstan: { name: 'Capstan LR', kind: 'marksman', price: 4500, mag: 5, reserve: 15, interval: 1.35, damage: 112, headMult: 2.6, armorPen: 0.95, falloff: 0.99, range: 160, reload: 3.3, speedMult: 0.82, reward: 150, draw: 1,
-    scope: 0.32, // FOV multiplier while scoped (right mouse); only precise scoped
+    scope: 0.32, // FOV multiplier while scoped (right mouse); spread.unscoped applies unless scoped
     spread: { base: 0.0008, unscoped: 0.075, move: 0.12, air: 0.25, crouch: 0.85, bloom: 0.02 }, recoil: { climb: 0.045, sway: 0.005, settle: 1, recover: 4 } },
 };
 export const WEAPON_ORDER = ['rivet', 'skiff', 'ballast', 'bollard', 'capstan'];
@@ -45,33 +44,33 @@ WEAPON_ORDER.forEach((id, index) => {
   Object.assign(w, { id, index, slot: w.kind === 'pistol' ? 'secondary' : 'primary', pellets: w.pellets ?? 1, auto: !!w.auto });
 });
 
-// The vest guards the torso, the helm the head (armour points shared); the kit halves disarming.
+// The vest guards the torso, the helm (on a vest) the head; the kit halves disarming.
 export const GEAR = { vest: { name: 'Hull vest', price: 600 }, helm: { name: 'Hull helm', price: 300 }, kit: { name: 'Spanner kit', price: 330, side: SIDE.DEFEND } };
 
 // Thrown with G (frag) and F (smoke). index 100: the frag's kill-feed id.
 export const GRENADES = {
-  frag: { name: 'Clatter frag', price: 240, fuse: 1.6, radius: 7, damage: 100, reward: 250, index: 100 },
+  frag: { name: 'Clatter frag', price: 240, fuse: 1.6, radius: 7, damage: 100, armorPen: 0.6, reward: 250, index: 100 },
   smoke: { name: 'Haze canister', price: 280, fuse: 1.7, radius: 4.4, duration: 15 },
 };
 
-// The Fuse Core, this game's bomb objective: armed on a site, disarmed by the defenders.
+// The Fuse Core (objective.js).
 export const OBJECTIVE = {
   plantTime: 3, defuseTime: 7, kitDefuseTime: 3.5, fuse: 38,
-  reach: 1.6, // metres from the core to disarm it
+  reach: 1.6, // metres from the core to pick it up or disarm it
   reward: 250, // to whoever arms or disarms it
   plantBonus: 650, // to each attacker who loses a round after arming
-  blastRadius: 16, blastDamage: 250,
+  blastRadius: 16, blastDamage: 250, armorPen: 0.5,
 };
 
-// Objective wins pay more; each loss in a row raises the next loss pay (the loss bonus).
+// Objective wins pay more; each loss raises the next loss pay one step, each win lowers it one step.
 export const ECON = { start: 900, max: 9500, win: 3100, objectiveWin: 3400, lossBase: 1500, lossStep: 450, lossMax: 3300 };
 
 export const ROUND = {
   freeze: 7, // frozen in spawn, buy menu open
-  live: 110, // round clock
+  live: 110,
   buyWindow: 18, // seconds of the live round the buy menu stays open
   over: 5, matchOver: 9,
-  winsNeeded: 6, half: 5, // first to 6; sides swap after round 5
+  winsNeeded: 6, half: 5, // sides swap after the half
 };
 
 // How far each noise carries (m); through walls only HEARING.muffle of it.

@@ -1,11 +1,12 @@
 // One brain per bot: fills the same command record the player's input fills, every tick.
-import { BOT, DT, WEAPONS, SIDE, OBJECTIVE, HEARING } from './config.js';
+import { BOT, DT, WEAPONS, SIDE, OBJECTIVE, HEARING, BODY } from './config.js';
 import { placeName, siteNear } from './map.js';
 import { canSee } from './senses.js';
-import { LOB } from './grenades.js';
+import { LOB, predictBurst } from './grenades.js';
 import { findPath, createPath } from './nav.js';
 import { eyeOf, heightOf } from './actors.js';
 import { pickHold, radio } from './coach.js';
+import { aliveCount } from './round.js';
 import { wrapAngle, yawTo, dist2 } from './util.js';
 
 const HEARD = { step: 'footsteps', shot: 'gunfire', reload: 'a reload', work: 'the core being worked', bounce: 'a grenade' };
@@ -26,7 +27,7 @@ export function createBrain(skill, role) {
   };
 }
 
-// Priorities: finish arming/disarming, fight, the Fuse Core, frag a target that ducked, chase what it lost, a noise, the plan.
+// Order: finish arming/disarming, fight, the core, frag a ducked target, chase it, a noise, the plan.
 export function think(state, a) {
   const b = a.brain, cmd = a.cmd, core = state.core, now = state.time, defends = state.teams[a.team].side === SIDE.DEFEND;
   cmd.moveX = cmd.moveZ = 0; cmd.fire = cmd.jump = cmd.reload = cmd.walk = cmd.use = cmd.aim = false;
@@ -35,16 +36,18 @@ export function think(state, a) {
   if ((state.tick + a.id) % BOT.thinkEvery === 0) perceive(state, a, b);
   if (b.lastSeenTime > -99 && !state.actors[b.lastSeenId].alive) b.lastSeenTime = -99;
   if (core.worker === a.id && core.progress > 0.6) { cmd.use = true; cmd.crouch = defends; return; }
+  const w = a.slots[a.active];
+  if (!w.mag && !w.reserve) { // dry: the sidearm, else drop the fight rather than strafe unarmed
+    if (a.active === 0 && a.slots[1].mag + a.slots[1].reserve) cmd.slot = 1;
+    else { b.target = -1; b.lastSeenTime = -99; }
+  }
   if (b.target >= 0) { engage(state, a, b, state.actors[b.target]); return; }
   cmd.crouch = false;
-  const w = a.slots[a.active];
   if (w.mag < WEAPONS[w.id].mag * 0.4 && w.reserve > 0) cmd.reload = true;
   if (playObjective(state, a, b)) return;
   const lost = now - b.lastSeenTime;
-  if (lost > 0.6 && lost < 3 && a.grenades.frag > 0 && now - b.fragAt > 8 && clearOfFriends(state, a, b.lastSeenX, b.lastSeenZ)) {
-    const d = Math.hypot(b.lastSeenX - a.pos.x, b.lastSeenZ - a.pos.z);
-    if (d > 6 && d < 20) { b.fragAt = now; toss(a, b.lastSeenX, b.lastSeenZ, 'frag'); return; }
-  }
+  if (lost > 0.6 && lost < 3 && a.grenades.frag > 0 && now - b.fragAt > 8 && away2(a, b.lastSeenX, b.lastSeenZ) < 400
+    && clearOfFriends(state, a, predictBurst(state, a, b.lastSeenX, b.lastSeenZ))) { b.fragAt = now; toss(a, b.lastSeenX, b.lastSeenZ, 'frag'); return; }
   if (a.lastHurtBy >= 0 && now - a.lastHurtTime < 0.2) {
     const s = state.actors[a.lastHurtBy].pos;
     b.heardX = s.x; b.heardZ = s.z; b.heardTime = now;
@@ -59,7 +62,7 @@ export function think(state, a) {
       b.calledAt = now;
       radio(state, a, `${HEARD[b.heardKind]} at ${placeName(state.map, b.heardX, b.heardZ)}`);
     }
-    // Check a noise near it or its post (not anchors); otherwise keep the plan and listen.
+    // Check a noise near it or its post (not anchors), else keep the plan and listen.
     const near = away2(a, b.heardX, b.heardZ) < 400 || dist2(b.holdX, b.holdZ, b.heardX, b.heardZ) < 225;
     if (near && b.plan === 'hold' && !b.anchor) goTo(state, a, b.heardX, b.heardZ, true);
     else followPlan(state, a, b);
@@ -82,7 +85,7 @@ function perceive(state, a, b) {
   }
   const { x, z } = best.pos;
   if (best.id !== b.target && !(best.id === b.lostId && now - b.lostAt < 0.6)) {
-    // A fresh target: slower at range and on the move, faster down a pre-aimed angle (the defenders' edge); sloppy aim first.
+    // A fresh target: slower at range or moving, faster down a pre-aimed angle (the defenders' edge); sloppy aim first.
     const off = Math.abs(wrapAngle(yawFrom(a, x, z) - a.yaw)), moving = Math.hypot(a.vel.x, a.vel.z) > 1.5;
     const slow = (1.25 - b.skill * 0.5) * (1 + Math.sqrt(bestD) / 50) * (off < 0.4 && !moving ? 0.45 : moving ? 1.4 : 1);
     const err = BOT.aimError * slow;
@@ -107,6 +110,7 @@ function playObjective(state, a, b) {
   const coreDist = Math.hypot(a.pos.x - core.x, a.pos.z - core.z);
   if (state.teams[a.team].side === SIDE.ATTACK) {
     if (core.state === 'carried' && core.carrier === a.id) {
+      b.lurk = false; // a lurker with the core joins the push
       if (siteNear(map, a.pos.x, a.pos.z, 0) && quiet) { cmd.use = true; return true; }
       if (b.plan === 'hold') { goTo(state, a, map.sites[b.site].x, map.sites[b.site].z); return true; }
       return false;
@@ -114,7 +118,7 @@ function playObjective(state, a, b) {
     if (core.state === 'dropped' && nearestTo(state, a, core.x, core.z)) { goTo(state, a, core.x, core.z); return true; }
     if (core.state === 'planted') {
       if (core.worker >= 0 && coreDist < HEARING.work) { goTo(state, a, core.x, core.z); return true; } // heard the disarm
-      if (b.site !== core.site || b.plan !== 'hold') { b.site = core.site; b.plan = 'hold'; b.lurk = false; pickHold(state, a, map.postplant[core.site]); }
+      if (b.site !== core.site || b.plan !== 'hold') { b.site = core.site; b.plan = 'hold'; pickHold(state, a, map.postplant[core.site]); }
     }
     return false;
   }
@@ -125,27 +129,30 @@ function playObjective(state, a, b) {
     return false;
   }
   if (coreDist < OBJECTIVE.reach * 0.8 && quiet) {
+    if (core.worker < 0) radio(state, a, 'disarming, cover me'); // once: next tick it is the worker
     cmd.use = cmd.crouch = true;
-    lookAt(a, core.x, core.z, 1, Math.atan2(core.y - (a.pos.y + eyeOf(a)), Math.hypot(core.x - a.pos.x, core.z - a.pos.z)));
+    lookAt(a, core.x, core.z, 1, Math.atan2(core.y - (a.pos.y + eyeOf(a)), coreDist));
   } else goTo(state, a, core.x, core.z);
   return true;
 }
 
+// The player counts only while working the core.
 function nearestTo(state, a, x, z) {
   const d = away2(a, x, z);
-  for (const o of state.actors) if (o !== a && o.alive && o.team === a.team && dist2(o.pos.x, o.pos.z, x, z) < d) return false;
+  for (const o of state.actors) if (o !== a && o.alive && o.team === a.team && (o.isBot || state.core.worker === o.id) && dist2(o.pos.x, o.pos.z, x, z) < d) return false;
   return true;
 }
 
-function clearOfFriends(state, a, x, z) {
-  for (const o of state.actors) if (o.alive && o.team === a.team && dist2(o.pos.x, o.pos.z, x, z) < 64) return false;
+// Nobody on its side within 8 m of p, itself included.
+function clearOfFriends(state, a, p) {
+  for (const o of state.actors) if (o.alive && o.team === a.team && dist2(o.pos.x, o.pos.z, p.x, p.z) < 64) return false;
   return true;
 }
 
 function engage(state, a, b, t) {
   const cmd = a.cmd, w = a.slots[a.active], def = WEAPONS[w.id], rng = state.rng;
-  const th = heightOf(t), ty = t.pos.y + (b.aimHead ? th - 0.16 : th * 0.68), d = Math.hypot(t.pos.x - a.pos.x, t.pos.z - a.pos.z);
-  // Aim error settles while tracking, grows while the target crosses the view fast; the bot pulls down part of its recoil.
+  const th = heightOf(t), ty = t.pos.y + (b.aimHead ? th - BODY.headRadius : th * 0.68), d = Math.hypot(t.pos.x - a.pos.x, t.pos.z - a.pos.z);
+  // Aim error settles while tracking and grows as the target crosses the view; part of the recoil is pulled down.
   const settle = Math.exp(-BOT.aimSettle * (0.6 + b.skill) * DT), lateral = Math.abs(t.vel.x * Math.cos(a.yaw) - t.vel.z * Math.sin(a.yaw));
   b.errYaw = b.errYaw * settle + (rng() - 0.5) * lateral * 0.0025;
   b.errPitch *= settle;
@@ -156,7 +163,7 @@ function engage(state, a, b, t) {
   b.reactTimer -= DT;
   const tolerance = Math.atan2(0.32, d) + 0.01;
   const onTarget = Math.abs(wrapAngle(cmd.yaw - wantYaw)) < tolerance && Math.abs(cmd.pitch - wantPitch) < tolerance * 1.5;
-  // Bursts for automatics (longer up close; the spray resets in the pause), paced taps otherwise; shots counted from the mag.
+  // Automatics burst (longer up close; the spray resets in the pause), others tap; shots counted from the mag.
   const fired = b.magSeen - w.mag;
   b.magSeen = w.mag;
   if (fired > 0 && b.burstLeft > 0 && (b.burstLeft -= fired) <= 0) {
@@ -185,8 +192,9 @@ function followPlan(state, a, b) {
   const map = state.map;
   if (b.plan === 'route') {
     if (b.routeIndex >= b.route.length) { b.plan = 'hold'; return; }
-    const letter = b.route[b.routeIndex], mark = map.marks[letter], near = away2(a, mark.x, mark.z);
-    if (letter === b.stage && (!state.teams[a.team].plan.execute || b.lurk)) {
+    const letter = b.route[b.routeIndex], mark = map.marks[letter], near = away2(a, mark.x, mark.z), plan = state.teams[a.team].plan;
+    // The lurker holds until 8 s after the call, under 35 s left, or alone.
+    if (letter === b.stage && (b.lurk ? state.round.clock > 35 && !(plan.execute && state.time - plan.executedAt > 8) && aliveCount(state, a.team) > 1 : !plan.execute)) {
       // Stage point: arrive walking (silent), wait for the call, aim at the way in.
       if (near > 2.2) { goTo(state, a, mark.x, mark.z, near < 150); return; }
       b.staged = true;

@@ -5,10 +5,8 @@ import { emit, EV } from './events.js';
 import { makeNoise } from './senses.js';
 
 export function moveActor(state, a, cmd, frozen) {
-  a.prev.x = a.pos.x; a.prev.y = a.pos.y; a.prev.z = a.pos.z;
-  a.prevYaw = a.yaw;
   a.yaw = cmd.yaw;
-  a.pitch = Math.max(-1.45, Math.min(1.45, cmd.pitch));
+  a.pitch = Math.max(-MOVE.maxPitch, Math.min(MOVE.maxPitch, cmd.pitch));
   const rate = MOVE.crouchRate * DT;
   a.crouch += Math.max(-rate, Math.min(rate, (cmd.crouch ? 1 : 0) - a.crouch));
 
@@ -28,7 +26,6 @@ export function moveActor(state, a, cmd, frozen) {
     if (cmd.jump && !frozen && a.crouch < 0.5) {
       a.vel.y = MOVE.jumpSpeed;
       a.grounded = false;
-      emit(state.events, EV.JUMP, a.id);
     }
   } else {
     accelerate(a, wx, wz, wishSpeed, MOVE.airAccel);

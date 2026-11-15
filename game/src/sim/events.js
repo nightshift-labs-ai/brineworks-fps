@@ -1,16 +1,16 @@
-// The event ring: the sim writes preallocated records stamped with their sim time t; view and HUD read
-// with their own cursors.
+// The event ring: the sim writes preallocated records stamped with their sim time t; view, HUD and audio
+// read with their own cursors.
 export const EV = {
   SHOT: 1, // a shooter, xyz muzzle, xyz2 tracer end, v weapon index
   IMPACT: 2, // xyz point, xyz2 face normal, v cell kind
   HIT: 3, // a attacker, b victim, v damage, w part (1 head 2 torso 3 legs), x/z damage source
   KILL: 4, // a killer, b victim, v weapon index (100 frag), w 1 = headshot
-  RELOAD: 5, STEP: 6, DRY: 7, JUMP: 9, DRAW: 10, THROW: 13, // a actor (STEP: xyz position)
+  RELOAD: 5, STEP: 6, DRY: 7, // a actor (STEP: xyz position)
   ROUND: 8, // v 0 start / 1 end, a winning team
-  CORE: 11, // a actor, v 0 dropped 1 picked up 2 armed 3 disarmed 4 beep 5 work started
-  BLAST: 12, // xyz centre, v radius, a thrower (-1: the core)
-  BOUNCE: 14, SMOKE: 15, // xyz grenade / cloud
-  RADIO: 16, // a speaking bot, b its team, text the line
+  CORE: 9, // a actor, v 0 dropped 1 picked up 2 armed 3 disarmed 4 beep 5 work started
+  BLAST: 10, // xyz centre, v radius, a thrower (-1: the core)
+  BOUNCE: 11, // a thrower, xyz grenade
+  RADIO: 12, // a speaking bot, b its team, text the line
 };
 
 const SIZE = 512;

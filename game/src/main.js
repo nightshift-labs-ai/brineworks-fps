@@ -13,9 +13,19 @@ const view = createView(state, byId('game'));
 const hud = createHud(state, view.camera);
 let running = false, lastRound = 0;
 
+// Chrome refuses a re-lock for about a second after Esc: say so instead of failing silently.
+const hint = () => { byId('overlay-title').textContent = 'Click again to resume'; };
+function lock() {
+  const p = view.canvas.requestPointerLock();
+  if (p && p.catch) p.catch(hint);
+}
+document.addEventListener('pointerlockerror', hint);
+
 const input = createInput(view.canvas, {
+  lock,
   onLock(locked) {
     running = locked;
+    if (!locked) hud.toggleBuy(false);
     byId('overlay').hidden = locked;
     byId('overlay-title').textContent = 'Paused';
     byId('play').textContent = 'Resume';
@@ -27,11 +37,10 @@ const input = createInput(view.canvas, {
     if (!hud.isBuyOpen()) return false;
     const item = SHOP.find((s) => `Digit${s.key}` === code);
     if (item) buy(state, state.player, item);
-    else if (code === 'Escape') hud.toggleBuy(false);
-    return !!item || code === 'Escape';
+    return !!item;
   },
 });
-byId('play').addEventListener('click', () => view.canvas.requestPointerLock());
+byId('play').addEventListener('click', lock);
 
 function followRounds() { // face the spawn's direction at each new round
   if (state.round.number !== lastRound) { lastRound = state.round.number; input.face(state.player.yaw, 0); }

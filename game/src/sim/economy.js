@@ -2,8 +2,8 @@
 import { ECON, WEAPONS, GRENADES, GEAR, OBJECTIVE, SIDE, ROUND } from './config.js';
 import { giveWeapon, pay } from './actors.js';
 
-// The requisition list in menu order; keys 1..9, 0.
-export const SHOP = ['rivet', 'skiff', 'bollard', 'ballast', 'capstan', 'vest', 'helm', 'kit', 'frag', 'smoke'].map((id, i) => ({ id, key: String((i + 1) % 10) }));
+// Menu order, keys 1-9 (everyone already carries the Rivet-9).
+export const SHOP = ['skiff', 'bollard', 'ballast', 'capstan', 'vest', 'helm', 'kit', 'frag', 'smoke'].map((id, i) => ({ id, key: String(i + 1) }));
 const DEFS = { ...WEAPONS, ...GRENADES, ...GEAR };
 export const itemDef = (item) => DEFS[item.id];
 
@@ -11,10 +11,10 @@ export function canBuy(state, a, { id }) {
   const def = DEFS[id];
   if (!state.round.buyOpen || !a.alive || a.money < def.price) return false;
   if (id === 'vest') return a.armor < 100;
-  if (id === 'helm') return !a.helm;
+  if (id === 'helm') return !a.helm && a.armor > 0; // only on top of a vest
   if (id === 'kit') return !a.kit && state.teams[a.team].side === def.side;
   if (GRENADES[id]) return a.grenades[id] < 1;
-  return a.slots[def.slot === 'primary' ? 0 : 1]?.id !== id;
+  return a.slots[0]?.id !== id;
 }
 
 export function buy(state, a, item) {
@@ -22,21 +22,21 @@ export function buy(state, a, item) {
   const id = item.id;
   a.money -= DEFS[id].price;
   if (id === 'vest') a.armor = 100;
-  else if (id === 'helm') { a.helm = true; a.armor = Math.max(a.armor, 50); }
+  else if (id === 'helm') a.helm = true;
   else if (id === 'kit') a.kit = true;
   else if (GRENADES[id]) a.grenades[id]++;
   else giveWeapon(a, id);
   return true;
 }
 
-export function lossPay(team) { return Math.min(ECON.lossMax, ECON.lossBase + ECON.lossStep * team.lossStreak); }
+export function lossPay(team) { return ECON.lossBase + ECON.lossStep * team.lossStreak; }
 
 export function payRound(state, winnerTeam, reason) {
   for (const team of state.teams) {
     const won = team.id === winnerTeam;
     let amount = won ? (reason === 'detonated' || reason === 'defused' ? ECON.objectiveWin : ECON.win) : lossPay(team);
     if (!won && team.side === SIDE.ATTACK && state.round.planted) amount += OBJECTIVE.plantBonus;
-    team.lossStreak = won ? Math.max(0, team.lossStreak - 1) : Math.min(4, team.lossStreak + 1);
+    team.lossStreak = won ? Math.max(0, team.lossStreak - 1) : Math.min((ECON.lossMax - ECON.lossBase) / ECON.lossStep, team.lossStreak + 1);
     team.lastPay = amount;
     for (const a of state.actors) if (a.team === team.id) pay(a, amount);
   }

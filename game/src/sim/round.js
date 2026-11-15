@@ -29,14 +29,13 @@ function startRound(state) {
     a.cmd.yaw = a.yaw; a.cmd.pitch = 0;
     if (a.isBot) botShop(state, a, calls[a.team], a.brain.role === 'marksman');
   }
-  // The Fuse Core goes to the player when attacking, else to a random attacking bot.
   const attackers = state.actors.filter((a) => state.teams[a.team].side === SIDE.ATTACK);
   resetCore(state, (attackers.includes(state.player) ? state.player : state.rng.pick(attackers)).id);
   for (const t of state.teams) planRound(state, t, calls[t.id]);
   emit(state.events, EV.ROUND, -1, -1, 0);
 }
 
-function aliveCount(state, team) {
+export function aliveCount(state, team) {
   let n = 0;
   for (const a of state.actors) if (a.alive && a.team === team) n++;
   return n;
