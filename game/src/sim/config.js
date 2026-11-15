@@ -23,22 +23,22 @@ export const BODY = { headRadius: 0.16, torsoRadius: 0.27, legRadius: 0.22, legT
 
 // Spread: cone radius (rad) = base + move x speed fraction + air + bloom, x crouch. Recoil: `climb`
 // per shot for `settle` shots, then a quarter of it while the muzzle sways; `recover` (1/s) fades it.
-// Intent: a Ballast headshot (34 x 3.8) beats a helm only up close; a Capstan body shot kills through
+// Intent: a Hawser headshot (34 x 3.8) beats a helm only up close; a Capstan body shot kills through
 // a vest, a leg shot does not; the Skiff is cheap and forgiving on the move but weak far off.
 export const WEAPONS = {
-  rivet: { name: 'Rivet-9', kind: 'pistol', price: 180, mag: 13, reserve: 39, interval: 0.15, damage: 29, headMult: 3.8, armorPen: 0.5, falloff: 0.85, range: 60, reload: 2, speedMult: 1, reward: 250, draw: 0.45,
+  cleat: { name: 'Cleat', cls: 'sidearm', kind: 'pistol', price: 180, mag: 13, reserve: 39, interval: 0.15, damage: 29, headMult: 3.8, armorPen: 0.5, falloff: 0.85, range: 60, reload: 2, speedMult: 1, reward: 250, draw: 0.45,
     spread: { base: 0.006, move: 0.042, air: 0.12, crouch: 0.8, bloom: 0.02 }, recoil: { climb: 0.017, sway: 0.004, settle: 2, recover: 5 } },
-  skiff: { name: 'Skiff SMG', kind: 'smg', price: 1150, mag: 28, reserve: 112, interval: 0.072, auto: true, damage: 24, headMult: 3.4, armorPen: 0.6, falloff: 0.76, range: 50, reload: 2.3, speedMult: 0.98, reward: 550, draw: 0.6,
+  skiff: { name: 'Skiff', cls: 'SMG', kind: 'smg', price: 1150, mag: 28, reserve: 112, interval: 0.072, auto: true, damage: 24, headMult: 3.4, armorPen: 0.6, falloff: 0.76, range: 50, reload: 2.3, speedMult: 0.98, reward: 550, draw: 0.6,
     spread: { base: 0.009, move: 0.021, air: 0.1, crouch: 0.85, bloom: 0.006 }, recoil: { climb: 0.006, sway: 0.008, settle: 5, recover: 7 } },
-  ballast: { name: 'Ballast AR', kind: 'rifle', price: 2600, mag: 30, reserve: 90, interval: 0.095, auto: true, damage: 34, headMult: 3.8, armorPen: 0.8, falloff: 0.95, range: 120, reload: 2.4, speedMult: 0.9, reward: 250, draw: 0.8,
+  hawser: { name: 'Hawser', cls: 'bullpup rifle', kind: 'rifle', price: 2600, mag: 30, reserve: 90, interval: 0.095, auto: true, damage: 34, headMult: 3.8, armorPen: 0.8, falloff: 0.95, range: 120, reload: 2.4, speedMult: 0.9, reward: 250, draw: 0.8,
     spread: { base: 0.0035, move: 0.072, air: 0.16, crouch: 0.75, bloom: 0.0075 }, recoil: { climb: 0.0105, sway: 0.0075, settle: 7, recover: 6 } },
-  bollard: { name: 'Bollard-12', kind: 'shotgun', price: 1000, mag: 6, reserve: 24, interval: 0.9, damage: 16, headMult: 2.2, armorPen: 0.55, falloff: 0.5, range: 40, pellets: 9, reload: 2.8, speedMult: 0.95, reward: 750, draw: 0.7,
+  bollard: { name: 'Bollard', cls: 'pump shotgun', kind: 'shotgun', price: 1000, mag: 6, reserve: 24, interval: 0.9, damage: 16, headMult: 2.2, armorPen: 0.55, falloff: 0.5, range: 40, pellets: 9, reload: 2.8, speedMult: 0.95, reward: 750, draw: 0.7,
     spread: { base: 0.055, move: 0.02, air: 0.06, crouch: 0.95, bloom: 0.01 }, recoil: { climb: 0.05, sway: 0.004, settle: 1, recover: 4 } },
-  capstan: { name: 'Capstan LR', kind: 'marksman', price: 4500, mag: 5, reserve: 15, interval: 1.35, damage: 112, headMult: 2.6, armorPen: 0.95, falloff: 0.99, range: 160, reload: 3.3, speedMult: 0.82, reward: 150, draw: 1,
+  capstan: { name: 'Capstan', cls: 'scoped rifle', kind: 'marksman', price: 4500, mag: 5, reserve: 15, interval: 1.35, damage: 112, headMult: 2.6, armorPen: 0.95, falloff: 0.99, range: 160, reload: 3.3, speedMult: 0.82, reward: 150, draw: 1,
     scope: 0.32, // FOV multiplier while scoped (right mouse); spread.unscoped applies unless scoped
     spread: { base: 0.0008, unscoped: 0.075, move: 0.12, air: 0.25, crouch: 0.85, bloom: 0.02 }, recoil: { climb: 0.045, sway: 0.005, settle: 1, recover: 4 } },
 };
-export const WEAPON_ORDER = ['rivet', 'skiff', 'ballast', 'bollard', 'capstan'];
+export const WEAPON_ORDER = ['cleat', 'skiff', 'hawser', 'bollard', 'capstan'];
 WEAPON_ORDER.forEach((id, index) => {
   const w = WEAPONS[id];
   Object.assign(w, { id, index, slot: w.kind === 'pistol' ? 'secondary' : 'primary', pellets: w.pellets ?? 1, auto: !!w.auto });

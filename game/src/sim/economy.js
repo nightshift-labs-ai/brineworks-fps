@@ -2,8 +2,8 @@
 import { ECON, WEAPONS, GRENADES, GEAR, OBJECTIVE, SIDE, ROUND } from './config.js';
 import { giveWeapon, pay } from './actors.js';
 
-// Menu order, keys 1-9 (everyone already carries the Rivet-9).
-export const SHOP = ['skiff', 'bollard', 'ballast', 'capstan', 'vest', 'helm', 'kit', 'frag', 'smoke'].map((id, i) => ({ id, key: String(i + 1) }));
+// Menu order, keys 1-9 (everyone already carries the Cleat).
+export const SHOP = ['skiff', 'bollard', 'hawser', 'capstan', 'vest', 'helm', 'kit', 'frag', 'smoke'].map((id, i) => ({ id, key: String(i + 1) }));
 const DEFS = { ...WEAPONS, ...GRENADES, ...GEAR };
 export const itemDef = (item) => DEFS[item.id];
 
@@ -47,9 +47,9 @@ export function botShop(state, a, call, marksman) {
   const get = (id) => buy(state, a, { id }), primary = a.slots[0]?.id;
   if (call === 'pistol') { get('vest'); return; }
   if (call === 'save') { if (a.money >= 1600) get('vest'); return; }
-  if (primary !== 'ballast' && primary !== 'capstan') {
+  if (primary !== 'hawser' && primary !== 'capstan') {
     if (call === 'full' && marksman && a.money >= WEAPONS.capstan.price + GEAR.vest.price) get('capstan');
-    else if (call === 'full' && a.money >= WEAPONS.ballast.price + GEAR.vest.price) get('ballast');
+    else if (call === 'full' && a.money >= WEAPONS.hawser.price + GEAR.vest.price) get('hawser');
     else if (!primary) get(state.rng() < 0.6 ? 'skiff' : 'bollard');
   }
   if (a.money >= 600) get('vest');

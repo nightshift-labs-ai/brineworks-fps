@@ -33,7 +33,7 @@ export function createHud(state, camera) {
   const buyRows = SHOP.map((item) => {
     if (HEADERS[item.id]) make(el['buy-list'], 'h3', 1)[0].textContent = HEADERS[item.id];
     const [li] = make(el['buy-list'], 'li', 1), def = itemDef(item);
-    li.innerHTML = `<kbd>${item.key}</kbd><span>${def.name}</span><b>$${def.price}</b>`;
+    li.innerHTML = `<kbd>${item.key}</kbd><span>${def.name} <small>${def.cls ?? ''}</small></span><b>$${def.price}</b>`;
     return li;
   });
   const boardRows = make(el['board-body'], 'tr', state.actors.length);
@@ -81,7 +81,7 @@ export function createHud(state, camera) {
     if (w) {
       show(el.mag, w.mag);
       if (changed('res', w.reserve)) el.reserve.textContent = '/ ' + w.reserve;
-      if (changed('wpn', w.id, p.reloadTimer > 0)) el.weapon.textContent = WEAPONS[w.id].name + (p.reloadTimer > 0 ? '  reloading' : '');
+      if (changed('wpn', w.id, p.reloadTimer > 0)) el.weapon.innerHTML = `${WEAPONS[w.id].name} <small>${p.reloadTimer > 0 ? 'reloading' : WEAPONS[w.id].cls}</small>`;
       toggle(el.ammo, 'empty', w.mag === 0);
     }
     if (changed('frag', p.grenades.frag)) el.frag.textContent = 'G FRAG ' + p.grenades.frag;
@@ -150,7 +150,7 @@ export function createHud(state, camera) {
     toggle(el.progress, 'on', ours);
     if (ours && changed('prog', pct, worker.id)) {
       el.progress.style.setProperty('--p', pct + '%');
-      el['progress-label'].textContent = `${core.state === 'planted' ? 'DISARMING' : 'ARMING'} ${pct}%${worker.kit ? '  KIT' : ''}${worker === p ? '' : '  ' + worker.name}`;
+      el['progress-label'].textContent = `${core.state === 'planted' ? 'DISARMING' : 'ARMING'} FUSE CORE ${pct}%${core.state === 'planted' && worker.kit ? '  KIT' : ''}${worker === p ? '' : '  ' + worker.name}`;
     }
     const live = state.round.phase === 'live' && p.alive && worker !== p; // the bar alone while the player works
     if (!changed('obj', core.state, live ? core.carrier : -2)) return;

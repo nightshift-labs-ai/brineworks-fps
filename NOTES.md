@@ -38,7 +38,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - HUD (items 6, 7 HUD parts; review 4, 7, 10c, 12d, 12e, 13): arming hint, match-win banner,
   docked board, feed limits, reviewer NOTE, overlay text.
 - Audio + pointer lock (review items 7, 8): WebAudio from the event ring, lock() with error hint.
-- Then: restage shots 1, 3, 4 (prompt items 5-7), rename the rifle "Ballast AR" (an entry on the
+- Then: restage shots 1, 3, 4 (prompt items 5-7), rename weapons (done: Hawser, Cleat; the old names are banned) (an entry on the
   board is titled BALLAST).
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)

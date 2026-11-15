@@ -10,15 +10,15 @@ import { yawTo } from './src/sim/util.js';
 // cast: [who, col, row, faces col, faces row, gun]; who: p player, m0.. teammates, f0.. opponents.
 // fire: opponents already engaging the player [who, reaction s]; shoot: tick the player opens fire.
 // side: the side the player must be on (0 attack, 1 defend); core: 'carry' (arming) or 'armed' (disarming).
-const B_SITE = [['m0', 12, 13, 12, 18, 'ballast'], ['m1', 13, 8, 10, 6, 'skiff'], ['f0', 10, 6, 8, 13, 'ballast']];
-const PLANT = { side: 0, round: 2, clock: 92, core: 'carry', ticks: 110, look: [-0.15, -0.36], cast: [['p', 8, 13, 10, 7, 'ballast'], ...B_SITE] };
+const B_SITE = [['m0', 12, 13, 12, 18, 'hawser'], ['m1', 13, 8, 10, 6, 'skiff'], ['f0', 10, 6, 8, 13, 'hawser']];
+const PLANT = { side: 0, round: 2, clock: 92, core: 'carry', ticks: 110, look: [-0.15, -0.36], cast: [['p', 8, 13, 10, 7, 'hawser'], ...B_SITE] };
 const SCENES = {
   1: { round: 5, clock: 95, ticks: 24, shoot: 12, fire: [['f0', 0.3], ['f1', 0.25]],
-    cast: [['p', 24, 30, 25, 27, 'ballast'], ['f0', 25, 27, 24, 30, 'ballast'], ['f1', 31, 24, 24, 30, 'skiff']] },
+    cast: [['p', 24, 30, 25, 27, 'hawser'], ['f0', 25, 27, 24, 30, 'hawser'], ['f1', 31, 24, 24, 30, 'skiff']] },
   2: { round: 7, ticks: 20, buy: true, look: [0.12, -0.03],
-    cast: [['p', 28, 5, 28, 15], ['m0', 24, 4, 26, 9, 'ballast'], ['m1', 31, 2, 28, 8, 'skiff'], ['f0', 28, 16, 28, 9, 'ballast']] },
+    cast: [['p', 28, 5, 28, 15], ['m0', 24, 4, 26, 9, 'hawser'], ['m1', 31, 2, 28, 8, 'skiff'], ['f0', 28, 16, 28, 9, 'hawser']] },
   3: PLANT,
-  4: { side: 1, round: 6, clock: 95, core: 'armed', ticks: 240, end: true, look: [-0.15, -0.36], cast: [['p', 8, 13, 10, 7, 'ballast'], ...B_SITE, ['f1', 4, 8, 8, 13, 'skiff']] },
+  4: { side: 1, round: 6, clock: 95, core: 'armed', ticks: 240, end: true, look: [-0.15, -0.36], cast: [['p', 8, 13, 10, 7, 'hawser'], ...B_SITE, ['f1', 4, 8, 8, 13, 'skiff']] },
 };
 
 function run(ctx, n, script, drawn = 3) { // n ticks; only the last `drawn` are rendered (effects in flight)
@@ -63,7 +63,7 @@ function stage(ctx, sc) {
     if (sc.core === 'carry') Object.assign(state.core, { state: 'carried', carrier: p.id });
     else Object.assign(state.core, { state: 'planted', site: 'B', fuse: 30, carrier: -1, x: p.pos.x - Math.sin(p.yaw) * 1.2, y: 0, z: p.pos.z - Math.cos(p.yaw) * 1.2 });
     state.round.planted = sc.core === 'armed';
-    p.kit = true;
+    p.kit = mySide === 1; // the Spanner kit is the defenders' (it halves disarming)
     Object.assign(state.smokes[0], { live: true, x: 10.5 * state.map.cell, y: 0, z: 7.8 * state.map.cell, age: 2 });
   }
   for (const [k, react] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: 0.01, aimHead: false, lastSeenId: p.id, lastSeenTime: 1e9 });

@@ -16,7 +16,9 @@ const WORDS = [
   'cinder', 'tidewatch', 'lockmere', 'kestrel', 'heron', 'osprey', 'swift', 'shard', 'veil', 'glare', 'cutter',
   'plate vest', 'anvil', 'bramble', 'tallow', 'moth', 'sable', 'kiln', 'soot', 'hale', 'wren', 'orca', 'lumen', 'pike',
   // names crowded in this contest's field (operator's survey) and famous game characters: keep ours distinct
-  'wardens?', 'watch', 'rook', 'vale', 'harrow', 'vultures?', 'saltline', 'cinderline', 'dustline', 'sandline', 'yard', 'depot', 'foundry', 'ember',
+  'wardens?', 'watch', 'rook', 'vale', 'harrow', 'tamsin', 'pell', 'morrow', 'marrow', 'ilse', 'ilsa', 'sorrel',
+  'craddock', 'wick', 'quill', 'talan', 'nessa', 'kael', 'lancer', 'halberd', 'halyard', 'hornet', 'tamper', 'helios', 'rivet',
+  'ballast', 'vultures?', 'saltline', 'cinderline', 'dustline', 'sandline', 'yard', 'depot', 'foundry', 'ember',
 ];
 const CARTRIDGE = /(?<![\d.])\.(338|308|50|45|22)\b|\b(5\.56|7\.62)\b|\b9 ?mm\b/i; // real cartridge names, not decimals
 const CASED = ['CT', 'de_']; // exact case (CT as a word, de_ as a map prefix)

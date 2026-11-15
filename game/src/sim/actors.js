@@ -35,7 +35,7 @@ export function giveWeapon(a, id) {
 // Survivors keep guns, grenades, armour and kit; the dead restart with the sidearm. Guns are refilled.
 export function respawn(a, spawn, yaw) {
   if (!a.alive) { a.slots[0] = a.slots[1] = null; a.armor = 0; a.helm = a.kit = false; a.grenades.frag = a.grenades.smoke = 0; }
-  if (!a.slots[1]) giveWeapon(a, 'rivet');
+  if (!a.slots[1]) giveWeapon(a, 'cleat');
   for (const w of a.slots) if (w) { w.mag = WEAPONS[w.id].mag; w.reserve = WEAPONS[w.id].reserve; }
   a.active = a.slots[0] ? 0 : 1;
   a.alive = true; a.hp = 100;

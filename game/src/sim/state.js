@@ -11,8 +11,8 @@ import { createNades, createSmokes } from './grenades.js';
 
 const ROLES = ['entry', 'support', 'anchor', 'support', 'marksman'];
 const CALLSIGNS = [
-  ['You', 'Carrick', 'Tamsin', 'Ozzy', 'Brandt'],
-  ['Pell', 'Kesh', 'Morrow', 'Ilse', 'Dunmore'],
+  ['You', 'Carrick', 'Skerry', 'Ozzy', 'Brandt'],
+  ['Haldane', 'Kesh', 'Fenn', 'Lowrie', 'Dunmore'],
 ];
 
 export function createState(seed) {
