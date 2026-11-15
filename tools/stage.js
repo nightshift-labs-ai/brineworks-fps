@@ -19,7 +19,7 @@ const SCENES = {
   // Conveyor Court: crouched by the low wall, the player drops one Saltreeve with a headshot, then trades
   // with a second one 7 m out against the lit west wall (his muzzle flash, our hit marker).
   1: { side: 0, round: 5, clock: 91, ticks: 36, core: 'mate', hide: ['damage'],
-    cast: [['p', 25, 26, 28, 24, 'hawser'], ['f0', 27, 23, 25, 26, 'hawser'], ['f1', 28, 24, 25, 26, 'cleat']],
+    cast: [['p', 31, 28, 29, 25, 'hawser'], ['f0', 28, 24, 31, 28, 'hawser'], ['f1', 29, 25, 31, 28, 'cleat']],
     fire: [['f1', 0.42, -0.1]], // his first shots go low: the player survives the trade
     radio: [['m1', 'gunfire at Conveyor Court'], ['m0', 'go B now']], // heard from the cut; the coach's call
     script(i, s) {
