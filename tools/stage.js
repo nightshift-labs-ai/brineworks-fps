@@ -80,7 +80,9 @@ function place(state, a, c, r, fc, fr, gun) {
   a.pos.x = a.prev.x = (c + 0.5) * S; a.pos.z = a.prev.z = (r + 0.5) * S; a.pos.y = a.prev.y = state.map.height[Math.floor(r) * state.map.w + Math.floor(c)];
   a.vel.x = a.vel.z = a.pitch = a.cmd.pitch = 0;
   a.yaw = a.prevYaw = a.cmd.yaw = yawTo(c, r, fc, fr);
-  if (gun) giveWeapon(a, gun);
+  const slot = gun && WEAPONS[gun].slot === 'primary' ? 0 : 1; // a gun already in hand keeps its spent rounds
+  if (gun && a.slots[slot]?.id === gun) a.active = slot;
+  else if (gun) giveWeapon(a, gun);
   a.drawTimer = 0;
   if (a.brain) Object.assign(a.brain, { plan: 'hold', holdX: a.pos.x, holdZ: a.pos.z, lookX: (fc + 0.5) * S, lookZ: (fr + 0.5) * S, target: -1 });
 }
