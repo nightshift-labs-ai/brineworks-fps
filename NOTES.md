@@ -41,13 +41,21 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,238 bytes (157.5 KiB); dossier text 163,662 of 163,840 (no cut). Headroom is ~180
-  bytes: every addition must be paid for by trimming.
+- Source 161,398 bytes (157.6 KiB); dossier text 163,823 of 163,840 (no cut). No headroom: every
+  addition is paid for by a trim (a trim pass found ~0.5 KB without losing "why" comments; the sun
+  halo was dropped for the plan line).
 
-## Next (operator prompt 10 order)
-- K + V palette and visible salt theme (no purple/navy, salt heaps, pink brine pans, sacks),
-  L lighting (sun azimuth vs glow, fog colour, lamp housings), U visible bot plans (plan line,
-  route lines on the radar), then M-Q, X-Z and the rest of the code-review list.
+## Done since prompt 10
+- Names R/T/S/Y: bots, weapons (class captions), kit tag, callouts (Boiling House, Boiler Gate,
+  Jetty Gate, Slipway); old names banned in check-names.
+- J/W/I screenshots restaged; E smaller viewmodel; F short tracers; K one palette (rust, teal,
+  salt-white, rose brine), canvas salt loads; L lamps as housing + lens + glow, fog in the horizon
+  colour; U plan line pinned above the radio; N Fuse Core as a case with window and handle, pistol
+  turned with a gunmetal slide; review 12e radar ring; banner 'Next round in 5 s'.
+
+## Next (each needs bytes: trade before adding)
+- M skyline silhouettes, O salt bloom/rust streaks (texture only), P round indicator + health bars,
+  Q callout signs (data), X loadout row, Z HUD plates; U radar route lines, merged radio lines.
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
