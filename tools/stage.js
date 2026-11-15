@@ -46,7 +46,7 @@ const SCENES = {
     radio: [['m1', 'footsteps at Boiler Gate'], ['m1', 'contact, Boiler Gate']],
     fire: [['f0', 4]], // the smoke's edge hides him: no clear shot either way inside the scene (any clear line
     // past the cloud picks the arming Carrick, the nearest target, and ends the arm)
-    script(i, s) { s.aim(null, -0.14, 9, 9); } },
+    script(i, s) { s.aim(null, -0.14, 9.4, 9); } },
   // A retake of A won by a teammate's disarm with the kit, 2.7 m ahead, looking south down the lane past the
   // pad over two downed Saltreeves: the window turns teal, the banner names the disarm; the match goes on.
   4: { side: 1, round: 7, clock: 95, core: 'armed', site: 'A', ticks: 234, end: 0.017, dead: ['f0', 'f1'],
