@@ -6,7 +6,7 @@ import { emit, EV } from './events.js';
 import { makeNoise } from './senses.js';
 import { throwNade } from './grenades.js';
 
-const worldHit = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, kind: 0 };
+const worldHit = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
 const partOut = { part: 0 };
 
 // Current cone radius (radians) for an actor's weapon: what the dynamic crosshair draws too.
@@ -83,11 +83,11 @@ function traceBullet(state, a, def, ox, oy, oz, dx, dy, dz) {
     const t = rayActor(b, ox, oy, oz, dx, dy, dz, partOut);
     if (t >= 0 && t < bestT) { bestT = t; victim = b; part = partOut.part; }
   }
-  const shot = emit(state.events, EV.SHOT, a.id, victim ? victim.id : -1, def.index, 0, ox, oy, oz);
+  const shot = emit(state.events, EV.SHOT, a.id, -1, def.index, 0, ox, oy, oz);
   shot.x2 = ox + dx * bestT; shot.y2 = oy + dy * bestT; shot.z2 = oz + dz * bestT;
   if (victim) applyDamage(state, victim, a, def, part, bestT);
   else if (hitWall) {
-    const e = emit(state.events, EV.IMPACT, a.id, -1, worldHit.kind, 0, worldHit.x, worldHit.y, worldHit.z);
+    const e = emit(state.events, EV.IMPACT, a.id, -1, 0, 0, worldHit.x, worldHit.y, worldHit.z);
     e.x2 = worldHit.nx; e.y2 = worldHit.ny; e.z2 = worldHit.nz;
   }
 }

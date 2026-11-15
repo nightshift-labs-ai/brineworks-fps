@@ -57,7 +57,7 @@ export function nudgeBody(map, body, dx, dz) {
   sweepAxis(map, body, false, dz, 0);
 }
 
-// Amanatides & Woo grid walk: fills `hit` (t, point, normal, cell kind, 0 floor); true on a hit within maxT.
+// Amanatides & Woo grid walk: fills `hit` (t, point, normal); true on a hit within maxT.
 export function raycast(map, ox, oy, oz, dx, dy, dz, maxT, hit) {
   const size = map.cell;
   let c = Math.floor(ox / size), r = Math.floor(oz / size);
@@ -69,25 +69,24 @@ export function raycast(map, ox, oy, oz, dx, dy, dz, maxT, hit) {
   while (t <= limit) {
     const top = heightAt(map, c, r);
     if (top > 0) {
-      const kind = top === OUTSIDE ? 35 : map.kind[r * map.w + c];
-      if (oy + dy * t < top) return fillHit(hit, t, ox, oy, oz, dx, dy, dz, nx, 0, nz, kind);
-      if (oy + dy * Math.min(nextC, nextR, limit) < top) return fillHit(hit, (top - oy) / dy, ox, oy, oz, dx, dy, dz, 0, 1, 0, kind);
+      if (oy + dy * t < top) return fillHit(hit, t, ox, oy, oz, dx, dy, dz, nx, 0, nz);
+      if (oy + dy * Math.min(nextC, nextR, limit) < top) return fillHit(hit, (top - oy) / dy, ox, oy, oz, dx, dy, dz, 0, 1, 0);
     }
     if (nextC < nextR) { t = nextC; nextC += deltaC; c += stepC; nx = -stepC; nz = 0; }
     else { t = nextR; nextR += deltaR; r += stepR; nz = -stepR; nx = 0; }
   }
-  if (tFloor <= maxT) return fillHit(hit, tFloor, ox, oy, oz, dx, dy, dz, 0, 1, 0, 0);
+  if (tFloor <= maxT) return fillHit(hit, tFloor, ox, oy, oz, dx, dy, dz, 0, 1, 0);
   hit.t = maxT;
   return false;
 }
 
-function fillHit(hit, t, ox, oy, oz, dx, dy, dz, nx, ny, nz, kind) {
+function fillHit(hit, t, ox, oy, oz, dx, dy, dz, nx, ny, nz) {
   hit.t = t; hit.x = ox + dx * t; hit.y = oy + dy * t; hit.z = oz + dz * t;
-  hit.nx = nx; hit.ny = ny; hit.nz = nz; hit.kind = kind;
+  hit.nx = nx; hit.ny = ny; hit.nz = nz;
   return true;
 }
 
-const losHit = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, kind: 0 };
+const losHit = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
 export function clearLine(map, ax, ay, az, bx, by, bz) {
   const dx = bx - ax, dy = by - ay, dz = bz - az, len = Math.hypot(dx, dy, dz);
   return len < 1e-4 || !raycast(map, ax, ay, az, dx / len, dy / len, dz / len, len, losHit);

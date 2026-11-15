@@ -2,7 +2,7 @@
 // read with their own cursors.
 export const EV = {
   SHOT: 1, // a shooter, xyz muzzle, xyz2 tracer end, v weapon index
-  IMPACT: 2, // xyz point, xyz2 face normal, v cell kind
+  IMPACT: 2, // xyz point, xyz2 face normal
   HIT: 3, // a attacker, b victim, v damage, w part (1 head 2 torso 3 legs), x/z damage source
   KILL: 4, // a killer, b victim, v weapon index (100 frag), w 1 = headshot
   RELOAD: 5, STEP: 6, DRY: 7, // a actor (STEP: xyz position)
