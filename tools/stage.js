@@ -41,8 +41,8 @@ const SCENES = {
     script(i, s) { s.aim(null, -0.2, 9, 9); } },
   // A retake of A won by a teammate's disarm with the kit, 2.7 m ahead, looking south down the lane past the
   // pad over two downed Saltreeves: the window turns teal, the banner names the disarm; the match goes on.
-  4: { side: 1, round: 6, clock: 70, core: 'armed', site: 'A', ticks: 100, end: 0.35, dead: ['f0', 'f1'],
-    cast: [['p', 48, 8, 48, 20, 'hawser'], ['m0', 49.6, 10.7, 48.9, 10.3, 'hawser'], ['m1', 46, 15, 47, 20, 'skiff'], ['f0', 47, 13, 51, 13, 'hawser'], ['f1', 50.5, 14.5, 45, 14.5, 'skiff']],
+  4: { side: 1, round: 6, clock: 70, core: 'armed', site: 'A', ticks: 100, end: 0.05, dead: ['f0', 'f1'],
+    cast: [['p', 48, 8, 48, 20, 'hawser'], ['m0', 49.6, 10.7, 48.9, 10.3, 'hawser'], ['m1', 46, 15, 47, 20, 'skiff'], ['f0', 47, 13, 51, 13, 'hawser'], ['f1', 46.3, 12.6, 51, 12.6, 'skiff']],
     radio: [['m1', 'they are on A, rotate']], // Carrick says 'disarming, cover me' himself
     script(i, s) { s.aim(null, -0.28, 48, 20); } },
 };

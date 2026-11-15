@@ -118,7 +118,8 @@ export function buildLevel(map, tex) {
     for (const p of site.cells) { c0 = Math.min(c0, p.c); r0 = Math.min(r0, p.r); c1 = Math.max(c1, p.c + 1); r1 = Math.max(r1, p.r + 1); }
     const x0 = c0 * S - 0.6, z0 = r0 * S - 0.6, x1 = c1 * S + 0.6, z1 = r1 * S + 0.6, size = Math.sqrt(site.cells.length) * S + 1.2;
     for (const [a, b, c, d] of [[x0, z0, x1, z0 + 0.3], [x0, z1 - 0.3, x1, z1], [x0, z0, x0 + 0.3, z1], [x1 - 0.3, z0, x1, z1]]) batch.hazard.add(a, 0, b, c, 0.02, d, 1.2);
-    flat(size, size, std({ map: siteDecal(site.name), transparent: true, depthWrite: false }), site.x, 0.025, site.z);
+    const s = site.name < 'B' ? -size : size; // A upright from its side
+    flat(s, s, std({ map: siteDecal(site.name), transparent: true, depthWrite: false }), site.x, 0.025, site.z);
   }
   const brine = std({ color: PALETTE.brine, roughness: 0.08, metalness: 0.25 });
   for (const [c0, r0, c1, r1] of POOLS) { // brine inside a 15 cm curb
