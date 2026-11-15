@@ -109,6 +109,15 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - Q3: a staged body whose death the fast-forward did not log gets a kill row from a teammate, and
   every kill of the current round stays in the feed: shot 4's two Saltreeves at A have their rows.
 
+## Done in the 12:30 run (operator R1-R2)
+- R1: the stick over the cover enemy's head is the Saltreeves' helmet antenna (characters.js
+  HEADS), shown in play too: no change.
+- Re-read the four shots for HUD/staging contradictions: pips, feed, plan, radio and carrier agree
+  (shot 1's two downed Rakehands have no rows because the feed keeps the newest four, as in play).
+- R2: warmer dusk from constants only (sky stops toward mauve and peach, warmer fog and sun, sun
+  5.2): before/after contact sheets compared, kept. The covers the operator saved under
+  /home/agent/claude-money were not opened (the brief forbids that path).
+
 ## Open
 - S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt, BRINEWORKS stencil: need
   bytes (8 B left).

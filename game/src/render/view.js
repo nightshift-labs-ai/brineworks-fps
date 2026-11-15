@@ -30,7 +30,7 @@ export function createView(state, container) {
   camera.rotation.order = 'YXZ';
 
   const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(), side: THREE.BackSide, fog: false, depthWrite: false }));
-  const sun = new THREE.DirectionalLight(PALETTE.sun, 4.5), map = state.map;
+  const sun = new THREE.DirectionalLight(PALETTE.sun, 5.2), map = state.map;
   sun.position.set(map.width / 2 - 60, 15, map.depth / 2 + 25); // 13 degrees up, west-south-west
   sun.target.position.set(map.width / 2, 0, map.depth / 2);
   sun.castShadow = true;

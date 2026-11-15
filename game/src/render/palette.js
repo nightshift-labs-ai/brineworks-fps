@@ -4,8 +4,8 @@
 import * as THREE from 'three';
 
 export const PALETTE = {
-  sky: [[0, '#26384c'], [0.22, '#3a5068'], [0.36, '#4a6278'], [0.43, '#9a8f96'], [0.475, '#e2a983'], [0.5, '#f6d8b8'], [0.51, '#b4a093'], [1, '#2a2e33']],
-  haze: '#c4ab9a', sun: '#ffac68', skyLight: '#a9b6cf', groundLight: '#6b6458',
+  sky: [[0, '#2b3650'], [0.22, '#4a5470'], [0.36, '#7a6a80'], [0.43, '#c98a78'], [0.475, '#f29a62'], [0.5, '#ffd09a'], [0.51, '#b89282'], [1, '#2a2e33']],
+  haze: '#cfa48c', sun: '#ff9a52', skyLight: '#a8b0cc', groundLight: '#70604f',
   ground: '#858279', concrete: '#aeaaa0', steel: '#56626b', brine: '#ab9693', lamp: '#ffb760', paint: '#efc94c',
   // Per lane: cladding tint, then its accent (containers, sign stripes): rust or weathered teal.
   lanes: { hall: ['#9a5a45', '#56706a'], tanks: ['#d2cfc6', '#9a4a32'], channel: ['#4f8576', '#a24f33'], slip: ['#8c4c38', '#2f7470'], court: ['#c4c0b6', '#93472f'] },
