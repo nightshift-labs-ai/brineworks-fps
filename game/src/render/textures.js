@@ -25,10 +25,10 @@ function paint(w, seed, base, draw, noise = 0, h = w) {
 // Formwork concrete, one tile per wall height (canvas bottom = wall foot).
 const concrete = (ctx, rand) => {
   for (let x = 0; x < 256; x += 64) for (let y = 0; y < 256; y += 128) {
-    rect(ctx, `rgba(${rand() < 0.5 ? '255,255,255' : '0,0,0'},${rand() * 0.04})`, x, y, 64, 128);
-    rect(ctx, '#2a323833', x, y, 1, 128);
-    rect(ctx, '#2a323833', x, y, 64, 1);
-    for (let i = 0; i < 4; i++) rect(ctx, '#2d373e55', x + 15 + (i & 1) * 32, y + 30 + (i >> 1) * 64, 3, 3);
+    rect(ctx, `rgba(${rand() < 0.5 ? '255,255,255' : '0,0,0'},${rand() * 0.1})`, x, y, 64, 128);
+    rect(ctx, '#2a323877', x, y, 1, 128);
+    rect(ctx, '#2a323877', x, y, 64, 1);
+    for (let i = 0; i < 4; i++) rect(ctx, '#2d373e99', x + 15 + (i & 1) * 32, y + 30 + (i >> 1) * 64, 3, 3);
   }
   rect(ctx, gradient(ctx.createLinearGradient(0, 256, 0, 196), [[0, '#efebe08c'], [1, '#efebe000']]), 0, 196, 256, 60); // salt bloom at the foot
 };
@@ -68,7 +68,7 @@ const hazard = (ctx) => {
 
 export function createTextures() {
   const t = {
-    wall: paint(256, 11, PALETTE.concrete, concrete, 6),
+    wall: paint(256, 11, PALETTE.concrete, concrete, 20),
     clad: paint(256, 23, '#e9eceb', cladding, 8),
     crate: paint(128, 41, '#b3a88f', crate, 14),
     ground: paint(512, 61, PALETTE.ground, ground, 10),

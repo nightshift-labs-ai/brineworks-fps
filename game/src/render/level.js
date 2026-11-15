@@ -110,7 +110,7 @@ export function buildLevel(map, tex) {
     batch.trim.add(x0, top - 0.12, z0, x1, top, z1, 1.2);
   });
   for (const code of [49, 50, 51]) each(code, (x0, z0, x1, z1, top) => { // '1' '2' '3': decks and stairs
-    batch.trim.add(x0, 0, z0, x1, top - 0.08, z1, 2);
+    batch.wall.add(x0, 0, z0, x1, top - 0.08, z1, 2);
     batch.grating.add(x0, top - 0.08, z0, x1, top, z1, 1.5);
   });
   for (const site of map.siteList) { // plant zones: hazard edging, decal
