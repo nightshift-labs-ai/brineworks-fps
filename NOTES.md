@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,367 bytes (157.6 KiB); dossier text 163,792 of 163,840 (no cut, ~50 B left). Every
+- Source 161,371 bytes (157.6 KiB); dossier text 163,796 of 163,840 (no cut, ~45 B left). Every
   addition is paid for by a trim: NOTE condensed (-700 B), two trim passes (-0.5 KB, -0.3 KB, sim
   and renders verified identical). Further savings need restructuring (collide.js raycast/fillHit,
   bots.js playObjective/followPlan).
@@ -63,11 +63,22 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - HUD: health amber below 50; armour label 'VEST · HELM' (ARMOUR+HELM banned: the #2 entry's).
 - Rifle: sage-grey polymer with a team-colour band (khaki read as wood).
 
-## Open (each needs bytes: a code-level trim pass is running to fund them)
-- (done 11: a slim evaporator stack at (36,-50) shows in shots 1 and 3) M: more skyline;
-  the first try, a wide cylinder nearer B, covered the B view and was reverted.
-- P round indicator + health bars, Q callout signs, X loadout row, Z HUD plates; U radar route
-  lines and merged radio lines; wall drip streaks (dropped for bytes).
+## Done in the 09:56 run (prompt 12 / benchmark s212 items A-G)
+- A: radio rows are true: older lines cleared, bots silent for the scene, two real lines per
+  scene; the carrier is never the lurker the plan names.
+- B: shot 4 is a teammate's kit disarm on A, 2.7 m ahead, looking south down the lane over two
+  downed Saltreeves. C: shot 3 pitched -0.2 from one step back.
+- Shot 1 faces north-east across the court: CONVEYOR COURT sign whole, target ~7 m (~95 px)
+  against the lit east wall, evaporator stack twice as wide (52 m) in that sky.
+- F: team Rakehands (Rakers was one letter from another entry's RAIDERS); raiders, breakers,
+  breachers, runners, rakers banned.
+
+## Open (each needs bytes; ~45 B left)
+- D radar route lines: tried; staged bots hold (no routes to draw) and it was 240 B over.
+- E conveyor belt over the court: tried as one dark box; without salt lumps and rollers it read
+  as a black beam, so the stack stays.
+- G loadout line, BRINEWORKS stencil on the stack, P round indicator, Q callout signs, X/Z HUD,
+  merged radio lines, wall drip streaks.
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
