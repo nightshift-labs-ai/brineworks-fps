@@ -25,7 +25,7 @@ export function createView(state, container) {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(PALETTE.haze, 35, 170);
+  scene.fog = new THREE.Fog(PALETTE.haze, 28, 165);
   const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.05, 600);
   camera.rotation.order = 'YXZ';
 

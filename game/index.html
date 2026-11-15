@@ -23,7 +23,7 @@ bots), three.js 0.187.0, static ES modules, no image files; written by an AI age
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Brineworks</title>
 <style>
-:root{--ink:#f1f0ea;--muted:#a9b0b5;--panel:#10141aa8;--line:#f1f0ea29;--paint:#efc94c;--bad:#ff5a4a;--mono:ui-monospace,Consolas,monospace}
+:root{--ink:#f1f0ea;--muted:#a9b0b5;--panel:#101216b8;--line:#f1f0ea29;--paint:#efc94c;--bad:#ff5a4a;--mono:ui-monospace,Consolas,monospace}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1014;color:var(--ink);font-family:system-ui,sans-serif}
 #game,#game canvas,#hud,#overlay{position:fixed;inset:0;display:block}
@@ -91,7 +91,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 #damage,#scope{inset:0;opacity:0}
 #damage{background:radial-gradient(transparent 72%,#aa140a44)}
 #damage::after{content:'';position:absolute;left:50%;top:50%;width:150px;height:22px;margin:-11px -75px;background:linear-gradient(#ff3a22,#ff3a2200);clip-path:polygon(0 0,100% 0,70% 100%,30% 100%);transform:rotate(var(--angle)) translateY(-40vh)}
-#progress{top:40%;width:260px;display:none;text-align:center;font-size:12px;text-shadow:0 0 3px #000,0 1px 2px #000}
+#progress{top:40%;width:280px;display:none;text-align:center;font-size:12px;padding:6px 10px;background:var(--panel);border-radius:4px}
 #progress div{height:8px;margin-top:4px;background:linear-gradient(90deg,var(--paint) var(--p),var(--panel) var(--p))}
 #scope{background:radial-gradient(circle,transparent 33vh,#000 calc(33vh + 2px))}
 #banner{top:76px;text-align:center;padding:10px 30px;opacity:0;transition:opacity .2s}
