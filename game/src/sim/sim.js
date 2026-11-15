@@ -17,7 +17,7 @@ export function createGame(seed) {
 
 export function step(state) {
   state.tick++;
-  state.time += DT;
+  state.events.time = state.time += DT;
   updateRound(state);
   const frozen = state.round.phase === 'freeze', actors = state.actors;
   if (state.round.phase === 'live') updateCoach(state);

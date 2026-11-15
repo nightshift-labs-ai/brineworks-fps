@@ -1,7 +1,7 @@
 # NOTES (working log for the build agent)
 
 Game: **Brineworks** (was Saltline), a 5v5 round-based tactical FPS at a salt refinery on a cold
-coast at dusk. Harrow (attack first, vermilion) vs Saltreeves (cobalt). Objective: the Fuse Core.
+coast at dusk. Rakers (attack first, vermilion) vs Saltreeves (cobalt). Objective: the Fuse Core.
 
 ## Status (2026-11-15)
 - C1 complete: pointer-lock look, WASD/jump/crouch/walk, five guns with magazine/reserve/reload/dry

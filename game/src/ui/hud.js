@@ -37,9 +37,9 @@ export function createHud(state, camera) {
   const scores = [el.score0, el.score1], sides = [el.side0, el.side1], radar = createRadar(state, el.radar);
   let cursor = state.events.head, hitTime = -99, hurtTime = -99, hurtAngle = 0, killTime = -99, buyOpen = false, boardOpen = false;
 
-  // Newest first: the kill feed and the team radio strip.
+  // Newest first: the kill feed and the team radio strip; no html clears the list.
   function push(list, rows, html) {
-    list.unshift(html);
+    if (html) list.unshift(html); else list.length = 0;
     if (list.length > rows.length) list.pop();
     for (let i = 0; i < rows.length; i++) rows[i].innerHTML = list[i] ?? '';
   }
@@ -47,15 +47,16 @@ export function createHud(state, camera) {
   function onEvent(e) {
     const p = state.player;
     if (e.type === EV.HIT) {
-      if (e.a === p.id && e.b !== p.id) { hitTime = state.time; toggle(el.hitmarker, 'head', e.w === 1); }
-      if (e.b === p.id) { hurtTime = state.time; hurtAngle = yawTo(p.pos.x, p.pos.z, e.x, e.z); }
+      if (e.a === p.id && e.b !== p.id) { hitTime = e.t; toggle(el.hitmarker, 'head', e.w === 1); }
+      if (e.b === p.id) { hurtTime = e.t; hurtAngle = yawTo(p.pos.x, p.pos.z, e.x, e.z); }
     } else if (e.type === EV.KILL) {
       const k = e.a >= 0 ? state.actors[e.a] : null, v = state.actors[e.b];
       const weapon = e.v === GRENADES.frag.index ? GRENADES.frag.name : e.v >= 0 ? WEAPONS[WEAPON_ORDER[e.v]].name : 'Fuse Core';
       const who = (a) => `<b style="color:${TEAMS[a.team].css}">${a.name}</b>`;
       push(feed, feedRows, `${k === p || v === p ? '<i class="mine"></i>' : ''}${k ? who(k) : ''}<em>${weapon}</em>${e.w ? '<span class="hs">HS</span>' : ''}${who(v)}`);
-      if (k === p) killTime = state.time;
-    } else if (e.type === EV.RADIO && e.b === p.team) push(radio, radioRows, `<b>${state.actors[e.a].name}:</b> ${e.text}`);
+      if (k === p) killTime = e.t;
+    } else if (e.type === EV.ROUND && !e.v) { push(feed, feedRows); push(radio, radioRows); } // a new round: clean strips
+    else if (e.type === EV.RADIO && e.b === p.team) push(radio, radioRows, `<b>${state.actors[e.a].name}:</b> ${e.text}`);
   }
 
   function update() {

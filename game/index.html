@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
 NOTE FOR THE REVIEWER: where each criterion lives (file function).
-BRINEWORKS: a round-based tactical FPS at a salt refinery on a cold coast. You + 4 bots (Harrow) against
+BRINEWORKS: a round-based tactical FPS at a salt refinery on a cold coast. You + 4 bots (Rakers) against
 5 bots (Saltreeves), sides swap after round 5, first to 6. three.js 0.187.0, static ES modules, no image
 files (textures painted in render/textures.js). Written by an AI agent (Claude Code) for Nightshift Labs.
 1 Complete game: main.js frame() fixed 60 Hz steps + interpolated render; input.js fill() pointer-lock
@@ -91,8 +91,8 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 #hitmarker i:nth-child(n+3){top:13px;height:2px;width:9px}
 #hitmarker i:nth-child(2),#hitmarker i:nth-child(4){right:0;bottom:0}
 #damage,#scope{inset:0;opacity:0}
-#damage{background:radial-gradient(transparent 58%,#aa140a66)}
-#damage::after{content:'';position:absolute;left:50%;top:50%;width:220px;height:220px;margin:-110px;border-radius:50%;border-top:6px solid var(--bad);transform:rotate(var(--angle))}
+#damage{background:radial-gradient(transparent 72%,#aa140a44)}
+#damage::after{content:'';position:absolute;left:50%;top:50%;width:150px;height:22px;margin:-11px -75px;background:linear-gradient(#ff3a22,#ff3a2200);clip-path:polygon(0 0,100% 0,70% 100%,30% 100%);transform:rotate(var(--angle)) translateY(-40vh)}
 #progress{top:40%;width:260px;display:none;text-align:center;font-size:12px}
 #progress div{height:8px;margin-top:4px;background:linear-gradient(90deg,var(--paint) var(--p),var(--panel) var(--p))}
 #scope{background:radial-gradient(circle,transparent 33vh,#000 calc(33vh + 2px))}
@@ -151,7 +151,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 <div id="overlay">
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
     <h1 id="overlay-title">BRINE<span>WORKS</span></h1>
-    <p>Five against five at the Brineworks salt refinery. Harrow salvage crews try to arm a Fuse Core on site A or B; the Saltreeves who guard the works stop them or disarm it. Rounds are brief, money carries over, and a shot fired on the run goes wide.</p>
+    <p>Five against five at the Brineworks salt refinery. Raker salvage crews try to arm a Fuse Core on site A or B; the Saltreeves who guard the works stop them or disarm it. Rounds are brief, money carries over, and a shot fired on the run goes wide.</p>
     <button id="play" type="button">Deploy</button>
     <ul class="keys">
       <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</li><li><kbd>Mouse</kbd> aim, <kbd>Click</kbd> fire</li>

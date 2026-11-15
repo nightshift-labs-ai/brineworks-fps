@@ -1,4 +1,5 @@
-// The event ring: the sim writes preallocated records; view and HUD read with their own cursors.
+// The event ring: the sim writes preallocated records stamped with their sim time t; view and HUD read
+// with their own cursors.
 export const EV = {
   SHOT: 1, // a shooter, xyz muzzle, xyz2 tracer end, v weapon index
   IMPACT: 2, // xyz point, xyz2 face normal, v cell kind
@@ -15,13 +16,13 @@ export const EV = {
 const SIZE = 512;
 
 export function createEvents() {
-  const record = () => ({ type: 0, a: -1, b: -1, v: 0, w: 0, x: 0, y: 0, z: 0, x2: 0, y2: 0, z2: 0, text: '' });
-  return { head: 0, list: Array.from({ length: SIZE }, record) };
+  const record = () => ({ type: 0, t: 0, a: -1, b: -1, v: 0, w: 0, x: 0, y: 0, z: 0, x2: 0, y2: 0, z2: 0, text: '' });
+  return { head: 0, time: 0, list: Array.from({ length: SIZE }, record) }; // time: set by step()
 }
 
 export function emit(events, type, a = -1, b = -1, v = 0, w = 0, x = 0, y = 0, z = 0) {
   const e = events.list[events.head++ % SIZE];
-  e.type = type; e.a = a; e.b = b; e.v = v; e.w = w; e.x = x; e.y = y; e.z = z;
+  e.type = type; e.t = events.time; e.a = a; e.b = b; e.v = v; e.w = w; e.x = x; e.y = y; e.z = z;
   e.x2 = e.y2 = e.z2 = 0;
   e.text = '';
   return e;
