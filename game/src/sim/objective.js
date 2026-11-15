@@ -37,8 +37,8 @@ export function updateCore(state) {
       core.state = 'planted'; core.site = site.name; core.fuse = OBJECTIVE.fuse; core.carrier = -1;
       pay(c, OBJECTIVE.reward);
       state.round.planted = true;
-      emit(state.events, EV.CORE, c.id);
-      makeNoise(state, c, 'alarm'); // the armed core's alarm: every defender knows
+      emit(state.events, EV.CORE, c.id, -1, 0);
+      makeNoise(state, c, 'alarm'); // every defender hears it
     }
   } else if (core.state === 'dropped' && state.time - core.droppedAt > 1) { // a second for the dropper to step away
     for (const a of state.actors) {
