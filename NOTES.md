@@ -140,6 +140,8 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   with a warmer ground reached the floor target but saturation stayed .30/.31 (target .33).
   tools/lumsat.py measures both.
 
+- Claim file .makefun/owner.json committed (0d74289, alone); package output unchanged.
+
 ## Open
 - S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt, BRINEWORKS stencil: need
   bytes (8 B left).
