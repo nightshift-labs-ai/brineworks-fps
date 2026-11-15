@@ -46,7 +46,7 @@ export function think(state, a) {
   if (w.mag < WEAPONS[w.id].mag * 0.4 && w.reserve > 0) cmd.reload = true;
   if (playObjective(state, a, b)) return;
   const lost = now - b.lastSeenTime;
-  if (lost > 0.6 && lost < 3 && a.grenades.frag > 0 && now - b.fragAt > 8 && away2(a, b.lastSeenX, b.lastSeenZ) < 400
+  if (lost > 0.6 && lost < 3 && a.grenades.frag > 0 && now - b.fragAt > 8 && away2(a, b.lastSeenX, b.lastSeenZ) < 20 ** 2
     && clearOfFriends(state, a, predictBurst(state, a, b.lastSeenX, b.lastSeenZ))) { b.fragAt = now; toss(a, b.lastSeenX, b.lastSeenZ, 'frag'); return; }
   if (a.lastHurtBy >= 0 && now - a.lastHurtTime < 0.2) {
     const s = state.actors[a.lastHurtBy].pos;
@@ -63,7 +63,7 @@ export function think(state, a) {
       radio(state, a, `${HEARD[b.heardKind]} at ${placeName(state.map, b.heardX, b.heardZ)}`);
     }
     // Check a noise near it or its post (not anchors), else keep the plan and listen.
-    const near = away2(a, b.heardX, b.heardZ) < 400 || dist2(b.holdX, b.holdZ, b.heardX, b.heardZ) < 225;
+    const near = away2(a, b.heardX, b.heardZ) < 20 ** 2 || dist2(b.holdX, b.holdZ, b.heardX, b.heardZ) < 15 ** 2;
     if (near && b.plan === 'hold' && !b.anchor) goTo(state, a, b.heardX, b.heardZ, true);
     else followPlan(state, a, b);
     lookAt(a, b.heardX, b.heardZ);
@@ -99,7 +99,7 @@ function perceive(state, a, b) {
   }
   b.target = b.lastSeenId = best.id; b.lastSeenX = x; b.lastSeenZ = z; b.lastSeenTime = now;
   // Team intel (coach rotations): sightings of different enemies close together add up.
-  const intel = state.intel[a.team], close = now - intel.time < 4 && dist2(intel.x, intel.z, x, z) < 400;
+  const intel = state.intel[a.team], close = now - intel.time < 4 && dist2(intel.x, intel.z, x, z) < 20 ** 2;
   intel.count = close ? intel.count + (intel.id !== best.id ? 1 : 0) : 1;
   intel.x = x; intel.z = z; intel.time = now; intel.id = best.id;
 }
@@ -145,7 +145,7 @@ function nearestTo(state, a, x, z) {
 
 // Nobody on its side within 8 m of p, itself included.
 function clearOfFriends(state, a, p) {
-  for (const o of state.actors) if (o.alive && o.team === a.team && dist2(o.pos.x, o.pos.z, p.x, p.z) < 64) return false;
+  for (const o of state.actors) if (o.alive && o.team === a.team && dist2(o.pos.x, o.pos.z, p.x, p.z) < 8 ** 2) return false;
   return true;
 }
 
@@ -219,12 +219,12 @@ function followPlan(state, a, b) {
 // Walk an A* path to (x, z), re-planning when the goal moves, every 4 s, or when stuck (hop first).
 function goTo(state, a, x, z, quiet = false) {
   const cmd = a.cmd, b = a.brain, p = b.path;
-  if (p.length === 0 || dist2(b.goalX, b.goalZ, x, z) > 2.25 || state.time > b.repathAt) {
+  if (p.length === 0 || dist2(b.goalX, b.goalZ, x, z) > 1.5 ** 2 || state.time > b.repathAt) {
     findPath(state.map, a.pos.x, a.pos.z, x, z, p);
     b.goalX = x; b.goalZ = z; b.repathAt = state.time + 4;
   }
   if (p.index >= p.length) return;
-  if (away2(a, p.xs[p.index], p.zs[p.index]) < 0.36 && p.index < p.length - 1) p.index++;
+  if (away2(a, p.xs[p.index], p.zs[p.index]) < 0.6 ** 2 && p.index < p.length - 1) p.index++;
   const nx = p.xs[p.index], nz = p.zs[p.index], dx = nx - a.pos.x, dz = nz - a.pos.z, len = Math.hypot(dx, dz);
   if (len < 0.15) return;
   lookAt(a, nx, nz, 0.6);
