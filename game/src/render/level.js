@@ -143,9 +143,18 @@ export function buildLevel(map, tex) {
   }
 
   // Beyond the walls, never collided.
-  const salt = std({ color: 0xf2f4f3, roughness: 1 }), steel = std({ color: PALETTE.steel, metalness: 0.4, roughness: 0.6 }), oxide = std({ color: 0x8c4c3a });
+  const salt = std({ color: 0xe8e4d8, emissive: 0x44403a, roughness: 1 }), steel = std({ color: PALETTE.steel, metalness: 0.4, roughness: 0.6 }), oxide = std({ color: 0x8c4c3a });
   const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; group.add(m); };
-  for (const [x, z, r, h] of [[-14, 18, 13, 10], [-10, 50, 10, 8], [W + 16, 30, 15, 11], [W + 12, 70, 11, 8], [27, -36, 24, 30], [64, -18, 16, 15]]) add(new THREE.ConeGeometry(r, h, 28), salt, x, h / 2 - 0.3, z);
+  // Salt heaps: a lathed slump (round crown, spread toe), lumpy in angle so the lathe seam stays closed.
+  const heap = (r, h) => {
+    const g = new THREE.LatheGeometry([[0, 1], [0.25, 0.93], [0.7, 0.45], [1, 0.06], [1.08, 0]].map(([u, v]) => new THREE.Vector2(u * r, v * h)), 16), p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const a = Math.atan2(p.getZ(i), p.getX(i)), k = 1 + 0.08 * Math.sin(a * 3 + r) * Math.cos(a * 5 + h);
+      p.setXYZ(i, p.getX(i) * k, p.getY(i) * (2 - k), p.getZ(i) * k);
+    }
+    return g.computeVertexNormals(), g;
+  };
+  for (const [x, z, r, h] of [[-14, 18, 15, 8], [-6, 30, 10, 6], [-10, 52, 12, 7], [W + 16, 30, 17, 9], [W + 12, 68, 12, 7], [24, -42, 36, 20], [4, -30, 20, 11], [46, -44, 24, 14], [64, -18, 16, 9]]) add(heap(r, h), salt, x, -0.3, z);
   for (const z of [34, 42]) for (const x of [58, 65]) { add(new THREE.CylinderGeometry(3.2, 3.2, 17, 24), steel, x, 8.5, z); add(new THREE.ConeGeometry(3.3, 1.6, 24), oxide, x, 17.8, z); }
   flat(900, 900, std({ color: 0x6f6c66, roughness: 1 }), W / 2, -0.05, D / 2); // salt flats into the fog
   return group;

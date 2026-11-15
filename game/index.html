@@ -1,27 +1,21 @@
 <!doctype html>
 <!--
-NOTE FOR THE REVIEWER: where each criterion lives (file function).
-BRINEWORKS, a 5v5 round-based tactical FPS (you + 4 bots): three.js 0.187.0, static ES modules, no image
-files. Written by an AI agent (Claude Code) for Nightshift Labs.
-1 Complete game: main.js frame() fixed 60 Hz steps + interpolated render; input.js fill() pointer-lock
-  look, WASD, jump, crouch, walk; sim/weapons.js updateWeapon(), fire() magazine, reload, dry fire;
-  sim/bots.js think() fills the same command record as the keyboard; sim/round.js updateRound(),
-  endRound() win/loss and restart; ui/hud.js update() health, armour, ammo, clock, score.
-2 Gunplay: sim/actors.js rayActor() head/torso/leg hitboxes, applyDamage() head multiplier, hurt()
-  armour and helm; sim/weapons.js spreadOf() (speed, air, crouch, bloom), fire() fixed spray pattern;
-  sim/movement.js accelerate(), applyFriction(); sim/collide.js moveBody() step-up, collision.
-3 Tactics: sim/objective.js updateCore() the Fuse Core bomb (carry, drop, arm, fuse, disarm; times
-  in config.js); sim/economy.js payRound() loss pay, buy(), botShop(), teamCall(); kill pay in
-  actors.js hurt(); sim/grenades.js frag + smoke (blocks bot sight), predictBurst(); sim/bots.js
-  perceive() sight and reaction (slower at range, faster on a held angle); think() frag flush, noise
-  check, callouts; engage() bursts with recoil pull-down; followPlan() routes, stage, smoke on the
-  call, holds; playObjective() carrier arms, post-plant holds, retake and disarm; sim/coach.js
-  planRound(), updateCoach(), reviewRound() (avoids a site that just failed); sim/nav.js findPath()
-  A*; sim/senses.js canSee(), makeNoise(); movement.js moveActor() footsteps (walk and crouch are
-  silent); audio.js every sound from the event ring, panned, muffled through walls as bots hear.
-4 Map and look: sim/map.js LAYOUT; render/level.js, textures.js, palette.js, view.js (sun, fog).
-5 Code: sim/ imports no three.js and no DOM; one state from sim/state.js createState(); sim/events.js
-  ring of preallocated records; pooled effects. Screenshots: real renders staged through main.js's dev hook.
+NOTE FOR THE REVIEWER, criterion -> file function(). BRINEWORKS: 5v5 round-based tactical FPS (you + 4
+bots), three.js 0.187.0, static ES modules, no image files; written by an AI agent (Claude Code).
+1 main.js frame() fixed 60 Hz steps, interpolated render; input.js fill(); sim/weapons.js updateWeapon(),
+  fire() (magazine, reload, dry); bots.js think() fills the player's command record; round.js
+  updateRound(), endRound(); ui/hud.js update().
+2 sim/actors.js rayActor() hitboxes, applyDamage() head multiplier, hurt() armour/helm; weapons.js
+  spreadOf() (speed, air, crouch, bloom), fire() spray pattern; movement.js accelerate(), applyFriction();
+  collide.js moveBody().
+3 sim/objective.js updateCore() (the Fuse Core: carry, drop, arm, fuse, disarm); economy.js payRound(),
+  buy(), botShop(), teamCall(); grenades.js predictBurst(); bots.js perceive() (slower at range, faster
+  on a held angle), think(), engage(), followPlan(), playObjective() (retake, disarm); coach.js
+  planRound(), updateCoach(), reviewRound(); nav.js findPath() A*; senses.js canSee(), makeNoise();
+  movement.js moveActor() (walk and crouch are silent); audio.js (heard like the bots hear).
+4 sim/map.js LAYOUT; render/level.js, textures.js, palette.js, view.js.
+5 sim/ has no three.js or DOM; one state (state.js createState()); events.js ring; pooled effects.
+  Screenshots: real renders staged through main.js's dev hook.
 -->
 <html lang="en">
 <head>
