@@ -118,6 +118,16 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   5.2): before/after contact sheets compared, kept. The covers the operator saved under
   /home/agent/claude-money were not opened (the brief forbids that path).
 
+## Done in the 12:54 run (prompt 18: O1-O4, S1-S8)
+- O1: parked bots face away from the map; the cover's Fenn is alive, levelled and firing back.
+- O2: shot 4 captured as the disarm ends (Ozzy kneels at the case under the banner).
+- O3: staged plan lines '2 via Brine Channel, 1 via Pan House' as coach.js prints for four bots.
+- O4/S2: shot 3's Saltreeve clear between the smoke and the crates.
+- S1: sun 20 degrees up, warmer hemisphere fill (shade warm grey, not slate). S3: tan gloves, canvas
+  sleeves. S4: the stack 8 m lower, cap clear of the objective line. S5: anyone dead this round
+  without a visible feed row is back at spawn for the staged HUD. S6: Carrick arms beside the B.
+  S7: work plate names the worker first. S8: shot 2's left teammate faces down the lane.
+
 ## Open
 - S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt, BRINEWORKS stencil: need
   bytes (8 B left).

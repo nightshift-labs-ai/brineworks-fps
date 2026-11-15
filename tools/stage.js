@@ -30,7 +30,7 @@ const SCENES = {
     } },
   // Buy time in the defenders' yard, the low sun across the cladding, teammates armed differently.
   2: { side: 1, round: 7, phase: 'freeze', ticks: 12, buy: true, money: 2350, bare: true,
-    cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 26, 9, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
+    cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 24, 12, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
     script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
   // closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate holds Pan Door.
