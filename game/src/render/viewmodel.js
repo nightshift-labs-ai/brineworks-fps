@@ -89,7 +89,7 @@ export function createViewModel() {
     current.group.rotation.set((pistol ? 0 : 0.05) + kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX + (pistol ? 0.4 : 0.08), reload * 0.4);
     flashTime -= dt;
     flash.visible = flashTime > 0;
-    flash.scale.setScalar(0.1 + kick * 0.03);
+    flash.scale.setScalar(0.2 + kick * 0.06);
   }
 
   function resize(aspect) { camera.aspect = aspect; camera.updateProjectionMatrix(); }
