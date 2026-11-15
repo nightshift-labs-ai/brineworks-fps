@@ -25,7 +25,7 @@ export function build(parts, mats = MATS, group = new THREE.Group()) {
 
 // Grip at the origin, barrel along -z; muzzle [y, z] m; hand: support hand z (0: two-handed pistol).
 export const GUNS = {
-  cleat: { muzzle: [0.08, -0.2], hand: 0, parts: 'b 5 5 22 0 8 -8,k 4.6 3.6 18 0 4 -10,k 4.6 15 6.5 0 -4 1.5 -25,k 3 1.2 7 0 0 -7,m 2.4 2.4 1 0 8.5 -19.3,p 5.2 1.2 2 0 10.9 1.5' },
+  cleat: { muzzle: [0.08, -0.2], hand: 0, parts: 'm 5 5 22 0 8 -8,b 4.6 3.6 18 0 4 -10,k 4.6 15 6.5 0 -4 1.5 -25,k 3 1.2 7 0 0 -7,m 2.4 2.4 1 0 8.5 -19.3,p 5.2 1.2 2 0 10.9 1.5' },
   skiff: { muzzle: [0.04, -0.43], hand: -0.2, parts: 'b 8 11 34 0 3 -8,k 8.2 3 34 0 -3.5 -8,m 6 6 14 0 4 -31,m 2.8 2.8 6 0 4 -40,k 4.5 20 6 0 -12 -15,k 5 12 6 0 -7 2 -25,m 1.6 1.6 24 3 5 20,m 1.6 1.6 24 -3 5 20,k 8 10 2 0 3 32,k 3 3.5 4 0 10 4,p 8.4 11.4 2.5 0 3 -22' },
   // a bullpup: magazine behind the grip
   hawser: { muzzle: [0.04, -0.64], hand: -0.36, parts: 'e 9 12 54 0 2 3,k 9.4 15 6 0 1 29,k 9.2 4 30 0 9.5 11,b 7.5 8.5 24 0 3.5 -36,m 3 3 12 0 4 -54,m 4.5 4.5 5 0 4 -61,m 3 1.6 44 0 8.8 -20,k 6 6.5 11 0 13 -10,r 1.4 1.4 .5 0 13.5 -4.2,k 5 13 6 0 -8 -2 -25,k 5.5 17 8.5 0 -10 16,p 9.6 12.6 3 0 2 -20' },
@@ -86,7 +86,7 @@ export function createViewModel() {
       (pistol ? -0.165 : -0.14) - Math.abs(Math.cos(bob)) * 0.007 * bobAmt - dip - a.crouch * 0.008 - swayY * 0.18,
       (pistol ? -0.34 : -0.5) + kick * 0.02,
     );
-    current.group.rotation.set((pistol ? 0 : 0.05) + kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX + (pistol ? 0.1 : 0.08), reload * 0.4);
+    current.group.rotation.set((pistol ? 0 : 0.05) + kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX + (pistol ? 0.4 : 0.08), reload * 0.4);
     flashTime -= dt;
     flash.visible = flashTime > 0;
     flash.scale.setScalar(0.1 + kick * 0.03);
