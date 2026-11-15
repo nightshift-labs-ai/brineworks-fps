@@ -41,10 +41,8 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,379 bytes (157.6 KiB); dossier text 163,803 of 163,840 (no cut, 37 B left). Every
-  addition is paid for by a trim. The last cuts: dead core events and round reason (-229 B), the
-  unread raycast cell kind and SHOT victim (-189 B); spent on the NOTE, buys on a tick, the
-  falloff/armorPen comment, the hud.js vitals()/clockAndScore() split and metre-squared ranges.
+- Source 161,403 bytes (157.6 KiB); dossier text 163,827 of 163,840 (no cut, 13 B left). Every
+  addition is paid for by a trim (latest: core events renumbered -36 B, pickHold() site -38 B).
 
 ## Done since prompt 10/11
 - Names R/T/S/Y: bots, weapons (class captions), kit tag, callouts (Boiling House, Boiler Gate,
@@ -152,12 +150,19 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   ATTACK_ROUTES/HOLDS, S4 hud.js vitals()/clockAndScore(), S5/S6 honest comments and role labels,
   S7 bots.js ranges as metres squared. Sim output identical through all of them.
 
+## Done in the 16:01 and 17:21 runs (benchmark W-items, X-items)
+- W1/W2 cover: Fenn's head clear, small flash at his rifle, a Hawser across his chest (health 73).
+- W3a salt heaps paler (emissive 0x8c887e); W4 + X2 court containers in teal (#3f8f88, L 31 -> 40).
+- W5/W6 shot 2: vest, Skiff and kit bought ($320), every dimmed row too dear, teammates clear.
+- W8 one hearing rule (senses.js earshot()); W10 pickHold(..., site), d2; W9 NOTE map line.
+- X1 player's muzzle star ~60 px; X9 core events 0/1/2; X3 radio newest last; X5 shot 3 aim (9.4, 9).
+
 ## Open / tried and reverted
-- B7 salt heaps with less self-glow: no visible change (fog dominates the far heaps); reverted.
-- S8 CSS to style.css: the new file's dossier header and link cost more than the 37 B left
-  (cut 209 B); reverted.
-- H1 brighter hemisphere fill: superseded by B1/B2 (both targets now met).
-- Radar route lines, a round line, the conveyor belt, a BRINEWORKS stencil: need bytes.
+- Reverted: H1 brighter fill; B7/W3b heaps glow and shot-4 brine pan (hidden by crates); S8 CSS file
+  (over budget); W7 player at col 8 (crate cut Skerry); X4 lighter Saltreeve helmet (backlit, no
+  visible change in the cover).
+- Not done (time): X6 shot-2 teammate facing, X7 site name in shots 3/4, X8 second plan line and
+  'rush' -> 'push', X10 NOTE radio/criterion-5 wording (13 B left).
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
