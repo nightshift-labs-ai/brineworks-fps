@@ -13,9 +13,9 @@ import { yawTo } from './src/sim/util.js';
 // fire: opponents already engaging the player [who, reaction s]. script(i, s): per tick, s = { ctx, p, who, aim }.
 const SCENES = {
   // Conveyor Court: crouched behind the low wall, the player drops one Saltreeve with a headshot while a
-  // second, half behind the crate at the pan, fires back. A teammate holds the wall's far end.
-  1: { side: 0, round: 5, clock: 80, ticks: 34, hp: 76, core: 'mate',
-    cast: [['p', 25, 30, 23, 23, 'hawser'], ['m0', 28, 28, 31, 21, 'hawser'], ['f0', 25, 24, 25, 30, 'hawser'], ['f1', 24, 23, 25, 30, 'cleat']],
+  // second, beside the crate at the brine pan, fires back.
+  1: { side: 0, round: 5, clock: 80, ticks: 34, core: 'mate',
+    cast: [['p', 25, 30, 23, 23, 'hawser'], ['f0', 25, 24, 25, 30, 'hawser'], ['f1', 24, 23, 25, 30, 'cleat']],
     fire: [['f1', 0.3]],
     script(i, s) {
       s.p.cmd.crouch = true;
@@ -36,8 +36,8 @@ const SCENES = {
   // A retake won by the disarm, seen from the player's eyes: the Spanner kit halves the work, the core's
   // bands turn teal, the banner names the disarm; the match goes on.
   4: { side: 1, round: 6, clock: 70, core: 'armed', ticks: 220, end: 0.35, dead: ['f0', 'f1'],
-    cast: [['p', 8, 13, 9, 9, 'hawser'], ['m0', 12, 12, 10, 6, 'hawser'], ['m1', 5, 9, 10, 6, 'skiff'], ['f0', 10, 10, 8, 13, 'hawser'], ['f1', 6, 10, 8, 13, 'skiff']],
-    script(i, s) { s.p.cmd.use = true; s.aim(null, -0.3, 9.5, 9); } },
+    cast: [['p', 8, 13, 9, 9, 'hawser'], ['m0', 12, 12, 10, 6, 'hawser'], ['m1', 5, 9, 10, 6, 'skiff'], ['f0', 10, 10, 8, 13, 'hawser'], ['f1', 3, 8, 8, 13, 'skiff']],
+    script(i, s) { s.p.cmd.use = true; s.aim(null, -0.17, 9.5, 9); } },
 };
 
 function run(ctx, n, script, drawn = 3) { // n ticks; only the last `drawn` are rendered (effects in flight)

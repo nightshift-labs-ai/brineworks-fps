@@ -174,7 +174,7 @@ export function createHud(state, camera) {
       sub = `${state.teams[0].score} - ${state.teams[1].score}. A new match starts shortly.`;
     } else if (round.phase === 'over') {
       title = `${TEAMS[round.winner].name} ${state.match.winner >= 0 ? `win the match ${state.teams[round.winner].score} - ${state.teams[1 - round.winner].score}` : 'take the round'}`;
-      sub = `${REASONS[round.reason] ?? `${TEAMS[1 - round.winner].name} eliminated`}.  Round +$${state.teams[p.team].lastPay}${p.earned ? `, kills +$${p.earned}` : ''}`;
+      sub = `${REASONS[round.reason] ?? `${TEAMS[1 - round.winner].name} eliminated`}.  Round +$${state.teams[p.team].lastPay}${p.earned ? `, kills +$${p.earned}` : ''}. Next round in ${ROUND.over} s`;
     }
     toggle(el.banner, 'win', round.winner === p.team);
     el['banner-title'].textContent = title;
