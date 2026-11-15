@@ -45,7 +45,7 @@ export function createViewModel() {
     const { muzzle, hand, parts } = GUNS[id], group = build(ARMS, MATS, build(parts));
     group.add(build(SUPPORT).translateZ(hand || 0.03).translateX(hand ? 0 : -0.035).translateY(hand ? 0 : -0.03));
     group.visible = false;
-    group.scale.setScalar(0.5);
+    group.scale.setScalar(0.4);
     holder.add(group);
     models[id] = { group, muzzle: new THREE.Vector3(0, ...muzzle) };
   }
@@ -82,11 +82,11 @@ export function createViewModel() {
     const reload = a.reloadTimer > 0 ? Math.sin((1 - a.reloadTimer / def.reload) * Math.PI) : 0;
     const draw = a.drawTimer > 0 ? Math.min(1, a.drawTimer / def.draw) : 0, dip = reload * 0.08 + draw * 0.18 + low * 0.16;
     current.group.position.set(
-      (pistol ? 0.19 : 0.16) + Math.sin(bob) * 0.008 * bobAmt + swayX * 0.25,
-      (pistol ? -0.165 : -0.105) - Math.abs(Math.cos(bob)) * 0.007 * bobAmt - dip - a.crouch * 0.008 - swayY * 0.18,
+      (pistol ? 0.2 : 0.2) + Math.sin(bob) * 0.008 * bobAmt + swayX * 0.25,
+      (pistol ? -0.165 : -0.14) - Math.abs(Math.cos(bob)) * 0.007 * bobAmt - dip - a.crouch * 0.008 - swayY * 0.18,
       (pistol ? -0.34 : -0.5) + kick * 0.02,
     );
-    current.group.rotation.set((pistol ? 0 : 0.05) + kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX + (pistol ? 0.12 : 0.2), reload * 0.4);
+    current.group.rotation.set((pistol ? 0 : 0.05) + kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX + (pistol ? 0.1 : 0.08), reload * 0.4);
     flashTime -= dt;
     flash.visible = flashTime > 0;
     flash.scale.setScalar(0.1 + kick * 0.03);

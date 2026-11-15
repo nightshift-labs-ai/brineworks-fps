@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { holeTexture, softDot, glow } from './textures.js';
 
-const TRACERS = 48, DECALS = 160, PARTICLES = 400, FLASHES = 10, TRACER_SPEED = 260, STREAK = 5, NEAR_MISS = 2, CUT_BACK = 2.5, OWN_GAP = 1.5;
+const TRACERS = 48, DECALS = 160, PARTICLES = 400, FLASHES = 10, TRACER_SPEED = 420, STREAK = 2.5, NEAR_MISS = 2, CUT_BACK = 2.5, OWN_GAP = 1.5;
 const HIDE = new THREE.Matrix4().makeScale(0, 0, 0), HOT = new THREE.Color(0xf29e40), PALE = new THREE.Color(0xccb393); // pale at 0.6 (additive)
 
 function instanced(scene, geo, mat, n) {
@@ -100,7 +100,7 @@ export function createEffects(scene) {
       const head = Math.min(t.len, t.t), tail = Math.max(0, t.t - STREAK);
       if (tail >= t.len) { t.live = false; tracerMesh.setMatrixAt(i, HIDE); continue; }
       q.setFromUnitVectors(zAxis, t.dir);
-      mat4.compose(v.copy(t.o).addScaledVector(t.dir, tail), q, s.set(0.014, 0.014, Math.max(0.01, head - tail)));
+      mat4.compose(v.copy(t.o).addScaledVector(t.dir, tail), q, s.set(0.01, 0.01, Math.max(0.01, head - tail)));
       tracerMesh.setMatrixAt(i, mat4);
     }
     tracerMesh.instanceMatrix.needsUpdate = tracerMesh.instanceColor.needsUpdate = true;
