@@ -35,7 +35,7 @@ const SCENES = {
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
   // closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate holds Pan Door.
   3: { side: 0, round: 4, clock: 97, core: 'm0', hide: ['hint'], ticks: 40, smoke: [10.5, 6.6],
-    cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 8, 12, 12, 12, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 13, 7, 8, 13, 'hawser']],
+    cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 8, 12, 12, 12, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 12, 8, 8, 13, 'hawser']],
     radio: [['m1', 'holding Pan Door'], ['m1', 'footsteps at Boiler Gate']],
     fire: [['f0', 4]], // he has the player in his sights but will not fire inside the scene
     script(i, s) { s.aim(null, -0.2, 9, 9); } },
