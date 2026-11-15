@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,410 bytes (157.6 KiB); dossier text 163,835 of 163,840 (no cut, 5 B left). Every
+- Source 161,407 bytes (157.6 KiB); dossier text 163,832 of 163,840 (no cut, 8 B left). Every
   addition is paid for by a trim: NOTE condensed (-700 B), two trim passes (-0.5 KB, -0.3 KB, sim
   and renders verified identical). Further savings need restructuring (collide.js raycast/fillHit,
   bots.js playObjective/followPlan).
@@ -90,12 +90,21 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - S6: import order puts movement/weapons early in the dossier walk and audio.js last.
 - M3a/G4: shot 4 in round 7 (5-2 after shot 2's 4-2). Shot 1 wedge and shot 3 buy hint hidden.
 
+## Done in the 11:22 run (prompt 15 / operator P1-P5)
+- P1: the objective line hides while anyone on the player's side works the core (no 'carries'
+  above the ARMING bar).
+- P3: the cover looks north-west past the tower: sky, the evaporator stack's capped top, the
+  whole CONVEYOR COURT board, the low wall as foreground cover, target ~105 px under the crosshair.
+- P5: staged plan lines count the four bots ('1 via ..., 2 via ..., X lurks ...'; '2 A, 1 tower,
+  1 B'); running the fast-forward with the player as a non-bot was tried and reverted (it changed
+  every staged round and made shots worse).
+- G3/M2: bots kneel while arming (Carrick kneels over the case in shot 3).
+
 ## Open
-- S1(b)/H1(b) plan lines count the autopilot player as a 5th bot: running the fast-forward with
-  p.isBot false changes every staged round (the human carries the core in the first half).
-- G3/M2 bots kneel while arming: a sim change that shifts every staged round; needs a restage.
-- O2/L1 shot 1 sky + stack: the close framing leaves no sky under the score bar.
-- S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt: need bytes (5 B left).
+- G4: shots 1 (seed 9) and 2-4 (seed 7, two matches) are not one match; match 2 rounds of seed 7
+  are 16-24 s long, which breaks the scene conditions.
+- S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt, BRINEWORKS stencil: need
+  bytes (8 B left).
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
