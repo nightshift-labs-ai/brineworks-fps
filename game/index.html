@@ -8,11 +8,11 @@ bots), static ES modules, no image files; written by an AI agent (Claude Code).
 2 sim/actors.js rayActor() hitboxes, applyDamage() head/leg multipliers, falloff per 25 m, hurt()
   armour/helm; weapons.js spreadOf() (speed, air, crouch, bloom), fire() spray pattern; movement.js
   accelerate(), applyFriction(); collide.js moveBody().
-3 sim/objective.js updateCore() (the Fuse Core); economy.js payRound(),
-  buy(), botShop(), teamCall(); grenades.js smokeBlocks() (blinds canSee()), predictBurst(); bots.js
-  perceive() (slower at range, faster on a held angle), think(), engage(), followPlan(), playObjective();
-  coach.js planRound(), updateCoach(), reviewRound(); nav.js findPath() A*; senses.js
-  canSee(), makeNoise(); movement.js moveActor() (walk, crouch silent); audio.js.
+3 sim/objective.js updateCore() (the Fuse Core); economy.js payRound(), buy(), botShop(), teamCall();
+  grenades.js predictBurst(); bots.js perceive() (slower at range, faster on a held angle), think(),
+  engage(), followPlan() (map.js ATTACK_ROUTES, HOLDS), playObjective(); coach.js planRound(),
+  updateCoach(), reviewRound(); nav.js findPath() A*; senses.js canSee() (smokeBlocks()), makeNoise();
+  movement.js moveActor() (walk, crouch silent); audio.js.
 4 sim/map.js LAYOUT; render/level.js, textures.js, palette.js, view.js.
 5 sim/ has no three.js or DOM; one state (state.js createState()); events.js ring; pooled effects.
   Shots: 1 hud.js onEvent() feed, radio, coach.js plan line; 2 canBuy(); 3 objective() arm bar; 4 banner(),

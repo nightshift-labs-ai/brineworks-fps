@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { std } from './palette.js';
 import { puffTexture } from './textures.js';
-import { smokeRadius } from '../sim/grenades.js';
+import { smokeRadius } from '../sim/senses.js';
 import { lerp } from '../sim/util.js';
 
 const PUFFS = 28;

@@ -1,4 +1,4 @@
-// Thrown grenades: a pool of bouncing projectiles; the frag bursts, the smoke blocks sight (smokeBlocks).
+// Thrown grenades: a pool of bouncing projectiles; the frag bursts, the smoke blocks sight (senses.js).
 import { DT, GRENADES, MOVE } from './config.js';
 import { heightAt } from './collide.js';
 import { eyeOf, blast } from './actors.js';
@@ -94,20 +94,4 @@ function burst(state, n) {
   emit(state.events, EV.BLAST, n.owner, -1, g.radius, 0, n.x, n.y, n.z);
   noiseAt(state, owner.team, n.x, n.y, n.z, 'shot');
   blast(state, n.x, n.y, n.z, g.radius, g.damage, g.armorPen, owner, g);
-}
-
-// A cloud's radius now (sight and the view's puffs): it grows over 1.2 s and shrinks over its last 2 s.
-export function smokeRadius(s) {
-  return SMOKE.radius * Math.min(1, s.age / 1.2) * Math.min(1, (SMOKE.duration - s.age) / 2);
-}
-
-export function smokeBlocks(state, ax, ay, az, bx, by, bz) {
-  const dx = bx - ax, dy = by - ay, dz = bz - az, len2 = dx * dx + dy * dy + dz * dz;
-  for (const s of state.smokes) {
-    if (!s.live) continue;
-    const r = smokeRadius(s), cy = s.y + 1.2;
-    const t = Math.max(0, Math.min(1, ((s.x - ax) * dx + (cy - ay) * dy + (s.z - az) * dz) / len2));
-    if ((ax + dx * t - s.x) ** 2 + (ay + dy * t - cy) ** 2 + (az + dz * t - s.z) ** 2 < r * r) return true;
-  }
-  return false;
 }

@@ -1,8 +1,7 @@
 // What bots can know: sight (cone, range, line of sight, smoke) and hearing (noises, muffled by walls).
-import { BOT, HEARING } from './config.js';
+import { BOT, HEARING, GRENADES } from './config.js';
 import { clearLine } from './collide.js';
 import { eyeOf, heightOf } from './actors.js';
-import { smokeBlocks } from './grenades.js';
 
 // A noise of `kind` goes straight into the memory of every enemy bot within HEARING[kind].
 export function makeNoise(state, source, kind) {
@@ -30,4 +29,22 @@ export function canSee(state, a, b) {
   if (smokeBlocks(state, ex, ey, ez, b.pos.x, b.pos.y + h * 0.65, b.pos.z)) return false;
   return clearLine(state.map, ex, ey, ez, b.pos.x, b.pos.y + h - 0.15, b.pos.z)
     || clearLine(state.map, ex, ey, ez, b.pos.x, b.pos.y + h * 0.65, b.pos.z);
+}
+
+const SMOKE = GRENADES.smoke;
+
+// A cloud's radius now (sight and the view's puffs): it grows over 1.2 s and shrinks over its last 2 s.
+export function smokeRadius(s) {
+  return SMOKE.radius * Math.min(1, s.age / 1.2) * Math.min(1, (SMOKE.duration - s.age) / 2);
+}
+
+export function smokeBlocks(state, ax, ay, az, bx, by, bz) {
+  const dx = bx - ax, dy = by - ay, dz = bz - az, len2 = dx * dx + dy * dy + dz * dz;
+  for (const s of state.smokes) {
+    if (!s.live) continue;
+    const r = smokeRadius(s), cy = s.y + 1.2;
+    const t = Math.max(0, Math.min(1, ((s.x - ax) * dx + (cy - ay) * dy + (s.z - az) * dz) / len2));
+    if ((ax + dx * t - s.x) ** 2 + (ay + dy * t - cy) ** 2 + (az + dz * t - s.z) ** 2 < r * r) return true;
+  }
+  return false;
 }
