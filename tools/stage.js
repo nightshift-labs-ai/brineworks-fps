@@ -20,13 +20,13 @@ const SCENES = {
   // with a second one 7 m out against the lit west wall (his muzzle flash, our hit marker).
   1: { side: 0, round: 5, clock: 91, ticks: 36, core: 'mate', hide: ['damage'],
     cast: [['p', 32, 26, 28, 25, 'hawser'], ['f0', 28, 24, 32, 26, 'hawser'], ['f1', 29, 25, 32, 26, 'cleat']],
-    fire: [['f1', 0.42, -0.1]], // his first shots go low: the player survives the trade
+    fire: [['f1', 0.55, -0.1]], // his first shot lands in the drawn frames, low: the player survives the trade
     radio: [['m1', 'gunfire at Conveyor Court'], ['m0', 'go B now']], // heard from the cut; the coach's call
     script(i, s) {
       s.p.cmd.crouch = true;
-      if (i === 14) s.aim('f0', 'head');
+      if (i === 11) s.aim('f0', 'head');
       if (i >= 20) s.aim('f1', 'chest');
-      s.p.cmd.fire = i === 15 || i === 31;
+      s.p.cmd.fire = i === 12 || i === 31;
     } },
   // Buy time in the defenders' yard, the low sun across the cladding, teammates armed differently.
   2: { side: 1, round: 7, phase: 'freeze', ticks: 12, buy: true, money: 2350, bare: true,
@@ -97,7 +97,7 @@ function stage(ctx, sc) {
   const who = (k) => (k === 'p' ? p : (picked[k] ??= k[0] === 'm' ? mates[+k[1]] : (sc.dead?.includes(k) && fallen.shift()) || foes[+k[1]]));
   const cast = new Set(sc.cast.map(([k]) => who(k)));
   // The living not cast wait in their own spawn, out of sight.
-  [...mates, ...foes].forEach((a, i) => { const s = state.map.spawns[state.teams[a.team].side][i % 5]; if (!cast.has(a)) place(state, a, s.c, s.r, 27, 20); });
+  [...mates, ...foes].forEach((a, i) => { const s = state.map.spawns[state.teams[a.team].side][i % 5]; if (!cast.has(a)) place(state, a, s.c, s.r, s.c, s.r + (state.teams[a.team].side ? -20 : 20)); }); // facing away from the map
   for (const [k, c, r, fc, fr, gun] of sc.cast) place(state, who(k), c, r, fc, fr, gun);
   if (sc.bare) Object.assign(p, { armor: 0, helm: false, kit: false }), Object.assign(p.grenades, { frag: 0, smoke: 0 });
   else { Object.assign(p.grenades, { frag: 1, smoke: 1 }); p.armor = 100; p.helm = true; p.kit = mySide === 1; } // the kit is the defenders'
