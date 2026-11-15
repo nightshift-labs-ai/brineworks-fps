@@ -42,7 +42,7 @@ export function createAudio(state) {
     o.start(at); o.stop(at + len);
   }
 
-  // Loudness of a `kind` noise at x, y, z for the player (0 unheard); sets pan. Camera right: (cos yaw, -sin yaw).
+  // Loudness of a `kind` noise at x, y, z for the player (0 unheard); sets pan (right: cos yaw, -sin yaw).
   function heard(kind, x, y, z) {
     const p = state.player, dx = x - p.pos.x, dz = z - p.pos.z, d = Math.hypot(dx, dz), r = HEARING[kind];
     pan = d < 1 ? 0 : (dx * Math.cos(p.yaw) - dz * Math.sin(p.yaw)) / d;

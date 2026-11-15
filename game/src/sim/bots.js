@@ -85,7 +85,7 @@ function perceive(state, a, b) {
   }
   const { x, z } = best.pos;
   if (best.id !== b.target && !(best.id === b.lostId && now - b.lostAt < 0.6)) {
-    // A fresh target: slower at range or moving, faster down a pre-aimed angle (the defenders' edge); sloppy aim first.
+    // A fresh target: slower at range or moving, faster down a pre-aimed angle (defenders' edge); sloppy aim first.
     const off = Math.abs(wrapAngle(yawFrom(a, x, z) - a.yaw)), moving = Math.hypot(a.vel.x, a.vel.z) > 1.5;
     const slow = (1.25 - b.skill * 0.5) * (1 + Math.sqrt(bestD) / 50) * (off < 0.4 && !moving ? 0.45 : moving ? 1.4 : 1);
     const err = BOT.aimError * slow;
@@ -178,7 +178,7 @@ function engage(state, a, b, t) {
     cmd.fire = def.auto || !a.triggerHeld;
   }
   if (w.mag === 0) cmd.reload = true;
-  // Stand still to shoot (spread follows speed), strafe between bursts, an SMG closes in; a holding defender stays put.
+  // Stand to shoot (spread follows speed), strafe between bursts, an SMG closes in; a holding defender stays.
   const shooting = b.burstLeft > 0 && ready;
   const dug = b.plan === 'hold' && state.teams[a.team].side === SIDE.DEFEND && away2(a, b.holdX, b.holdZ) < 1;
   cmd.crouch = dug ? (!shooting && a.id % 2 === 0) || b.crouchSpray : shooting && b.crouchSpray && d > 12;

@@ -57,7 +57,7 @@ export function nudgeBody(map, body, dx, dz) {
   sweepAxis(map, body, false, dz, 0);
 }
 
-// Amanatides & Woo grid walk; fills `hit` (t, point, face normal, cell kind; 0 = floor); true on a hit within maxT.
+// Amanatides & Woo grid walk: fills `hit` (t, point, normal, cell kind, 0 floor); true on a hit within maxT.
 export function raycast(map, ox, oy, oz, dx, dy, dz, maxT, hit) {
   const size = map.cell;
   let c = Math.floor(ox / size), r = Math.floor(oz / size);

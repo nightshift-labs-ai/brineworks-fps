@@ -11,9 +11,9 @@ const SETUPS = [ // defence: [weight, where each defender holds] = 2-1-2, 3-1-1,
 
 const mate = (a, team) => a.alive && a.isBot && a.team === team;
 
-export function createPlan() { return { site: 'A', rush: false, execute: false, staged: -99, executedAt: -99, rotated: false, fails: { A: 0, B: 0 } }; }
+export function createPlan() { return { site: 'A', rush: false, execute: false, staged: -99, executedAt: -99, rotated: false, fails: { A: 0, B: 0 }, text: '' }; }
 
-// Attack: a site (less likely one that just failed) split over its two routes plus a lurker, or a save-round rush.
+// Attack: a site (less likely one that just failed) split over its two routes plus a lurker, or a rush.
 // Defence: a weighted setup.
 export function planRound(state, team, call) {
   const plan = team.plan, rng = state.rng, map = state.map;
@@ -37,7 +37,8 @@ export function planRound(state, team, call) {
       b.plan = 'route'; b.route = route.path; b.stage = route.stage; b.site = route.site;
       pickHold(state, a, map.postplant[b.site]);
     });
-    radio(state, bots[0], plan.rush ? `rush ${plan.site}, no waiting` : `we hit ${plan.site}, gather and go together`);
+    const via = (r) => map.marks[r.stage].name, lurker = bots.find((a) => a.brain.lurk), n = bots.length - !!lurker;
+    plan.text = plan.rush ? `plan: rush ${plan.site}` : `plan: ${plan.site}, ${(n + 1) >> 1} via ${via(routes[0])}, ${n >> 1} via ${via(routes[1])}${lurker ? `, ${lurker.name} lurks ${via(lurkRoute)}` : ''}`;
   } else {
     let roll = rng(), setup = SETUPS[0][1];
     for (const [w, sites] of SETUPS) { if (roll < w) { setup = sites; break; } roll -= w; }
@@ -47,6 +48,8 @@ export function planRound(state, team, call) {
       b.site = where === 'tower' ? (rng() < 0.5 ? 'A' : 'B') : where;
       pickHold(state, a, map.holds[where]);
     });
+    const count = (s) => bots.filter((a, i) => setup[i % setup.length] === s).length;
+    plan.text = `setup: ${count('A')} A, ${count('tower')} tower, ${count('B')} B`;
   }
 }
 

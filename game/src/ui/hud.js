@@ -1,4 +1,4 @@
-// The HUD: the only writer of #hud. Each value is written only when it changes, so update() allocates nothing per frame.
+// The HUD, the only writer of #hud: values are written only on change, so update() allocates nothing.
 import { TEAMS, TEAM_SIZE, WEAPONS, WEAPON_ORDER, GRENADES, SIDE, ROUND } from '../sim/config.js';
 import { SHOP, itemDef, canBuy, lossPay } from '../sim/economy.js';
 import { spreadOf } from '../sim/weapons.js';
@@ -123,6 +123,7 @@ export function createHud(state, camera) {
     if (changed('cell', cell)) el.where.textContent = placeName(state.map, p.pos.x, p.pos.z);
     objective(p, core);
     banner(round);
+    show(el.plan, state.teams[p.team].plan.text); // pinned above the radio
     show(el.spectate, !p.alive && round.phase !== 'freeze' ? 'You are down: watching your team' : '');
     show(el.hint, round.buyOpen && p.alive && !buyOpen ? 'B  requisition' : '');
     if (buyOpen && !round.buyOpen) toggleBuy(false);

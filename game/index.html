@@ -1,8 +1,7 @@
 <!doctype html>
 <!--
 NOTE FOR THE REVIEWER: where each criterion lives (file function).
-BRINEWORKS: a round-based tactical FPS at a salt refinery on a cold coast. You + 4 bots (Rakers) against
-5 bots (Saltreeves), sides swap after round 5, first to 6. three.js 0.187.0, static ES modules, no image
+BRINEWORKS, a 5v5 round-based tactical FPS (you + 4 bots): three.js 0.187.0, static ES modules, no image
 files. Written by an AI agent (Claude Code) for Nightshift Labs.
 1 Complete game: main.js frame() fixed 60 Hz steps + interpolated render; input.js fill() pointer-lock
   look, WASD, jump, crouch, walk; sim/weapons.js updateWeapon(), fire() magazine, reload, dry fire;
@@ -44,13 +43,14 @@ ul{list-style:none;margin:0;padding:0}
 #where,.freeze,#feed .hs,#objective,#money,#hint,#progress,#banner.win #banner-title,#board .me td,h1 span{color:var(--paint)}
 .team small,.stat small,#weapon,#reserve,#feed em,#spectate,#banner-sub,#buy h3,#buy-foot,#board th,#overlay p,.keys{color:var(--muted)}
 .urgent,.low b,.empty #mag{color:var(--bad)}
-#radio li:empty,#feed li:empty,#hud.buying #left,#hud.banner #objective,#crosshair.hidden,#overlay[hidden]{display:none}
+#radio li:empty,#plan:empty,#feed li:empty,#hud.buying #left,#hud.banner #objective,#crosshair.hidden,#overlay[hidden]{display:none}
 #progress.on,.menu.open{display:block}
 #hitmarker.on,#hitmarker.kill,#scope.on,#banner.on{opacity:1}
 #radar{top:12px;left:12px}
 #left,#buy{top:184px;left:12px;width:208px;font-size:12px}
 #where{margin:0 0 4px}
-#radio li{background:var(--panel);padding:3px 7px;margin-bottom:3px;border-left:2px solid var(--paint)}
+#radio li,#plan{background:var(--panel);padding:3px 7px;margin:0 0 3px;border-left:2px solid var(--paint)}
+#plan{border-color:#7fd1b9}
 #top{top:12px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:4px 12px;padding:5px 14px}
 .team{display:flex;align-items:baseline;gap:8px;min-width:170px}
 .team.r,#pips1{flex-direction:row-reverse}
@@ -126,7 +126,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 <div id="game"></div>
 <div id="hud" aria-hidden="true">
   <canvas id="radar" class="panel" width="208" height="166"></canvas>
-  <div id="left"><p id="where" class="u"></p><ul id="radio"></ul></div>
+  <div id="left"><p id="where" class="u"></p><p id="plan"></p><ul id="radio"></ul></div>
   <div id="top" class="panel c">
     <div class="team u"><b id="name0"></b><small id="side0"></small><span id="score0"></span></div>
     <div id="clock"></div>

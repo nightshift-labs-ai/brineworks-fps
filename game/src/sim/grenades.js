@@ -38,7 +38,7 @@ export function predictBurst(state, a, x, z) {
   return ghost;
 }
 
-// Launch speed for a lob to land a little before d metres (then it bounces on): bisect the ballistic range.
+// Launch speed for a lob landing a little before d m (it bounces on): bisect the ballistic range.
 function lobSpeed(d) {
   let lo = 2, hi = SPEED;
   for (let i = 0; i < 16; i++) {

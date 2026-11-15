@@ -9,7 +9,7 @@ export const TEAMS = [
 ];
 export const PLAYER_TEAM = 0, TEAM_SIZE = 5;
 
-// Metres and seconds. Quake-style accel/friction, and spread follows speed (weapons.js): to hit, plan the stop.
+// Metres, seconds. Quake-style accel/friction; spread follows speed (weapons.js): plan the stop.
 export const MOVE = {
   runSpeed: 5.2, walkSpeed: 2.6, crouchSpeed: 1.8,
   accel: 6.2, airAccel: 1.2, friction: 6, stopSpeed: 1.8,
@@ -18,7 +18,7 @@ export const MOVE = {
   footstepEvery: 2.2, // metres of running between footstep noises
 };
 
-// Hitboxes: head sphere and torso/leg cylinder radii (m), legTop a fraction of height; the soldier model uses them too.
+// Hitboxes (the soldier model too): head sphere, torso/leg cylinder radii (m), legTop a fraction of height.
 export const BODY = { headRadius: 0.16, torsoRadius: 0.27, legRadius: 0.22, legTop: 0.47, legMult: 0.75, torsoMult: 1 };
 
 // Spread: cone radius (rad) = base + move x speed fraction + air + bloom, x crouch. Recoil: `climb`

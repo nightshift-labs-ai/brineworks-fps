@@ -14,7 +14,7 @@ const view = createView(state, byId('game'));
 const hud = createHud(state, view.camera), audio = createAudio(state);
 let running = false, lastRound = 0;
 
-// Chrome refuses a re-lock for about a second after Esc: say so instead of failing silently.
+// Chrome refuses a re-lock for ~1 s after Esc: say so rather than fail silently.
 const hint = () => { byId('overlay-title').textContent = 'Click again to resume'; };
 function lock() {
   audio.start();
@@ -65,6 +65,6 @@ function frame(now) {
   audio.update();
 }
 
-// Dev hook for tools/ (staged screenshots, the play test): the sim, the view and a switch for the loop.
+// Dev hook for tools/ (staged screenshots, play test).
 if (shot || params.has('test')) window.__brineworks = { state, view, hud, input, step, run: (on) => { running = on; } };
 if (!shot) { followRounds(); requestAnimationFrame(frame); }
