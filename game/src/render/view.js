@@ -89,7 +89,7 @@ export function createView(state, container) {
     else if (t === EV.BLAST) {
       effects.spawnBlast(e.x, e.y, e.z, e.v);
       shake = Math.max(shake, 1 - Math.hypot(e.x - camera.position.x, e.z - camera.position.z) / (e.v * 3));
-    } else if (t === EV.CORE && e.v === 4) props.beep();
+    } else if (t === EV.CORE && e.v === 2) props.beep();
   }
 
   function render(alpha, dt, look) {

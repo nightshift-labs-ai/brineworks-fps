@@ -7,7 +7,7 @@ export const EV = {
   KILL: 4, // a killer, b victim, v weapon index (100 frag), w 1 = headshot
   RELOAD: 5, STEP: 6, DRY: 7, // a actor (STEP: xyz position)
   ROUND: 8, // v 0 start / 1 end, a winning team
-  CORE: 9, // v 2 armed / 3 disarmed by a, 4 beep at xyz
+  CORE: 9, // v 0 armed / 1 disarmed by a, 2 beep at xyz
   BLAST: 10, // xyz centre, v radius, a thrower (-1: the core)
   BOUNCE: 11, // a thrower, xyz grenade
   RADIO: 12, // a speaking bot, b its team, text the line

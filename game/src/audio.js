@@ -50,9 +50,9 @@ export function createAudio(state) {
 
   function play(e) {
     const t = e.type, kind = KIND[t];
-    if (t === EV.CORE && (e.v === 2 || e.v === 3)) { // armed or disarmed: everyone hears it
+    if (t === EV.CORE && e.v < 2) { // armed or disarmed: everyone hears it
       pan = 0;
-      return tone(0.4, 0.5, e.v === 2 ? 440 : 660, e.v === 2 ? 880 : 330);
+      return tone(0.4, 0.5, e.v ? 660 : 440, e.v ? 330 : 880);
     }
     const at = t === EV.RELOAD || t === EV.DRY ? state.actors[e.a].pos : e, v = kind && heard(kind, at.x, at.y, at.z);
     if (!v) return;
@@ -60,7 +60,7 @@ export function createAudio(state) {
     else if (t === EV.STEP) hiss(v / 2, 0.04, 'lowpass', 500);
     else if (t === EV.BLAST) { hiss(v, 0.6, 'lowpass', 400); tone(v, 0.4, 90, 30); }
     else if (t === EV.BOUNCE) tone(v * 0.3, 0.03, 2400, 1200);
-    else if (t === EV.CORE) tone(v / 2, 0.06, 880, 880); // the fuse beep (v 4)
+    else if (t === EV.CORE) tone(v / 2, 0.06, 880, 880); // the fuse beep (v 2)
     else { // a click; a reload also seats the magazine
       tone(v * 0.4, 0.02, 2200, 900);
       if (t === EV.RELOAD) tone(v * 0.4, 0.03, 1400, 600, ctx.currentTime + 0.2);

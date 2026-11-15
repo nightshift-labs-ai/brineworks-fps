@@ -18,7 +18,7 @@ for (let i = 0; i < minutes * 60 * 60; i++) {
     if (e.type === EV.SHOT) shots++;
     if (e.type === EV.ROUND && e.v === 1) { const k = `${state.teams[e.a].side === 0 ? 'ATTACK' : 'DEFEND'} ${state.round.reason}`; tally[k] = (tally[k] ?? 0) + 1; }
     if (e.type === EV.ROUND && e.v === 1) console.log(`round ${state.round.number} -> ${state.teams[e.a].name} (${state.round.reason}) at ${(105 - state.round.clock).toFixed(1)}s  score ${state.teams[0].score}-${state.teams[1].score}  core ${state.core.state} ${state.core.site}`);
-    if (e.type === EV.CORE && e.v !== 4) console.log(`   core event ${['dropped','picked up','armed','disarmed','beep','work'][e.v]} by ${e.a >= 0 ? state.actors[e.a].name : '-'} t=${(105 - state.round.clock).toFixed(1)}`);
+    if (e.type === EV.CORE && e.v !== 2) console.log(`   core event ${['armed','disarmed','beep'][e.v]} by ${e.a >= 0 ? state.actors[e.a].name : '-'} t=${(105 - state.round.clock).toFixed(1)}`);
   });
   if (state.round.phase !== lastPhase) { lastPhase = state.round.phase; }
 }

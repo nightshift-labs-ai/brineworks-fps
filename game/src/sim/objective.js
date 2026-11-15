@@ -37,7 +37,7 @@ export function updateCore(state) {
       core.state = 'planted'; core.site = site.name; core.fuse = OBJECTIVE.fuse; core.carrier = -1;
       pay(c, OBJECTIVE.reward);
       state.round.planted = true;
-      emit(state.events, EV.CORE, c.id, -1, 2);
+      emit(state.events, EV.CORE, c.id);
       makeNoise(state, c, 'alarm'); // the armed core's alarm: every defender knows
     }
   } else if (core.state === 'dropped' && state.time - core.droppedAt > 1) { // a second for the dropper to step away
@@ -50,7 +50,7 @@ export function updateCore(state) {
     core.fuse -= DT;
     if ((core.beep -= DT) <= 0) { // beeps quicken as the fuse burns down
       core.beep = Math.max(0.12, core.fuse / OBJECTIVE.fuse);
-      emit(state.events, EV.CORE, -1, -1, 4, 0, core.x, core.y, core.z);
+      emit(state.events, EV.CORE, -1, -1, 2, 0, core.x, core.y, core.z);
     }
     if (core.fuse <= 0) { // the blast: falls off with distance, blocked by walls; no kill reward
       core.state = 'detonated';
@@ -64,7 +64,7 @@ export function updateCore(state) {
       if (work(state, a, a.kit ? OBJECTIVE.kitDefuseTime : OBJECTIVE.defuseTime)) {
         core.state = 'defused';
         pay(a, OBJECTIVE.reward);
-        emit(state.events, EV.CORE, a.id, -1, 3);
+        emit(state.events, EV.CORE, a.id, -1, 1);
       }
       return;
     }
