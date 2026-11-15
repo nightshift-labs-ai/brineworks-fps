@@ -29,7 +29,7 @@ export function createHud(state, camera) {
 
   const pips = [0, 1].map((t) => make(el[`pips${t}`], 'i', TEAM_SIZE).map((i) => { i.style.background = TEAMS[t].css; return i; }));
   const history = make(el.round, 'i', ROUND.winsNeeded * 2 - 1);
-  const feedRows = make(el.feed, 'li', 4), radioRows = make(el.radio, 'li', 2), feed = [], radio = [];
+  const feedRows = make(el.feed, 'li', 4), radioRows = make(el.radio, 'li', 2).reverse(), feed = [], radio = [];
   const buyRows = SHOP.map((item) => {
     if (HEADERS[item.id]) make(el['buy-list'], 'h3', 1)[0].textContent = HEADERS[item.id];
     const [li] = make(el['buy-list'], 'li', 1), def = itemDef(item);
@@ -42,7 +42,7 @@ export function createHud(state, camera) {
   const scores = [el.score0, el.score1], sides = [el.side0, el.side1], radar = createRadar(state, el.radar);
   let cursor = state.events.head, hitTime = -99, hurtTime = -99, hurtAngle = 0, killTime = -99, buyOpen = false, boardOpen = false;
 
-  // Newest first: kill feed and radio; no html clears the list; rows leave after ROW_LIFE.
+  // Newest first (radio rows reversed: newest last); no html clears the list; rows leave after ROW_LIFE.
   function push(list, rows, html, t) {
     if (html && state.time - t > ROW_LIFE) return; // already stale when drained
     if (html) list.unshift({ html, t }); else list.length = 0;
