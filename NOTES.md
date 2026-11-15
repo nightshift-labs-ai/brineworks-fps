@@ -105,7 +105,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 ## Done in the 12:20 run (operator Q1-Q3)
 - Q2: the cover is shot from (32,26), clear of the low wall: the block is ~12% of the frame, the
   hall, the lamp, the whole CONVEYOR COURT board and the stack's capped top in open sky (stack moved
-  to x -37, z 12, coordinates only). Q1: the target reads ~90 px at 1280x720.
+  to x -37, z 12, coordinates only). Q1: the trading Saltreeve one cell nearer, ~4.5 m, ~150 px tall.
 - Q3: a staged body whose death the fast-forward did not log gets a kill row from a teammate, and
   every kill of the current round stays in the feed: shot 4's two Saltreeves at A have their rows.
 
