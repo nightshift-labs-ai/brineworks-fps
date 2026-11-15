@@ -41,7 +41,7 @@ export function createProps(scene, state) {
     const c = state.core, armed = c.state === 'planted', carrier = c.state === 'carried' ? state.actors[c.carrier] : null;
     core.visible = c.state !== 'detonated' && !(carrier && carrier.id === viewerId && c.progress === 0);
     if (carrier) { // on the back, or set down in front while being armed
-      const placing = c.worker === carrier.id, k = placing ? -1.2 : 0.3, p = core.position.copy(carrier.prev).lerp(carrier.pos, alpha);
+      const placing = c.worker === carrier.id, k = placing ? -0.8 : 0.3, p = core.position.copy(carrier.prev).lerp(carrier.pos, alpha);
       p.set(p.x + Math.sin(carrier.yaw) * k, carrier.pos.y + (placing ? 0 : 0.95), p.z + Math.cos(carrier.yaw) * k);
       core.rotation.set(placing ? 0 : Math.PI / 2, carrier.yaw, 0);
     } else {

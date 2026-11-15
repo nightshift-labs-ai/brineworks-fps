@@ -97,7 +97,7 @@ export function createCharacters(scene, state) {
       rig.trunk.scale.y = torsoLen;
       rig.neck.position.y = torsoLen + BODY.headRadius;
       rig.arms.position.y = torsoLen - 0.12;
-      rig.arms.rotation.x = a.pitch;
+      rig.arms.rotation.x = a.alive ? a.pitch : 1.5; // the dead lay the gun flat
 
       const fall = a.alive ? 0 : Math.min(1, (time - a.diedAt) * 3);
       rig.body.rotation.x = fall * fall * 1.45;
