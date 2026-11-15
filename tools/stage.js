@@ -43,7 +43,7 @@ const SCENES = {
   // pad over two downed Saltreeves: the window turns teal, the banner names the disarm; the match goes on.
   4: { side: 1, round: 7, clock: 95, core: 'armed', site: 'A', ticks: 234, end: 0.017, dead: ['f0', 'f1'],
     cast: [['p', 48, 8, 48, 20, 'hawser'], ['m0', 49.6, 10.7, 48.9, 10.3, 'hawser'], ['m1', 46, 15, 47, 20, 'skiff'], ['f0', 47, 13, 51, 13, 'hawser'], ['f1', 46.3, 12.6, 51, 12.6, 'skiff']],
-    radio: [['m1', 'they are on A, rotate']], // Carrick says 'disarming, cover me' himself
+    radio: [['m0', 'they are on A, rotate']], // the first living bot calls it (coach.js firstBot); Ozzy (m0) says 'disarming, cover me' himself
     script(i, s) { s.aim(null, -0.28, 48, 20); } },
 };
 
