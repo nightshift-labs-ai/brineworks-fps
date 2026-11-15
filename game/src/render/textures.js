@@ -72,7 +72,7 @@ export function createTextures() {
     clad: paint(256, 23, '#e9eceb', cladding, 8),
     crate: paint(128, 41, '#b3a88f', crate, 14),
     ground: paint(512, 61, PALETTE.ground, ground, 10),
-    grating: paint(128, 71, '#3e464b', grating, 12),
+    grating: paint(128, 71, '#6a706c', grating, 12),
     hazard: paint(128, 1, PALETTE.paint, hazard),
     gravel: paint(64, 13, '#a19c92', () => {}, 70),
   };

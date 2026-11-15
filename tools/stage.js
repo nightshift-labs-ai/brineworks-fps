@@ -12,32 +12,32 @@ import { yawTo } from './src/sim/util.js';
 // side: the player's side (0 attack, 1 defend); phase: 'freeze' stages in buy time, else live with clock < clock.
 // fire: opponents already engaging the player [who, reaction s]. script(i, s): per tick, s = { ctx, p, who, aim }.
 const SCENES = {
-  // Conveyor Court: crouched behind the low wall, the player drops one Saltreeve with a headshot while a
-  // second, beside the crate at the brine pan, fires back.
-  1: { side: 0, round: 5, clock: 80, ticks: 34, core: 'mate',
-    cast: [['p', 25, 30, 23, 23, 'hawser'], ['f0', 25, 24, 25, 30, 'hawser'], ['f1', 24, 23, 25, 30, 'cleat']],
-    fire: [['f1', 0.3]],
+  // Conveyor Court: crouched by the low wall, the player drops one Saltreeve with a headshot, then trades
+  // with a second one 7 m out against the lit west wall (his muzzle flash, our hit marker).
+  1: { side: 0, round: 5, clock: 80, ticks: 36, core: 'mate',
+    cast: [['p', 24, 28, 22, 24, 'hawser'], ['f0', 24, 24, 24, 28, 'hawser'], ['f1', 22, 24, 24, 28, 'cleat']],
+    fire: [['f1', 0.35, -0.05]], // his first shots go low: the player survives the trade
     script(i, s) {
       s.p.cmd.crouch = true;
-      if (i === 16) s.aim('f0', 'head');
-      s.p.cmd.fire = i === 17;
-      if (i >= 21) s.aim('f1', 'chest');
+      if (i === 14) s.aim('f0', 'head');
+      if (i >= 20) s.aim('f1', 'chest');
+      s.p.cmd.fire = i === 15 || i === 31;
     } },
   // Buy time in the defenders' yard, the low sun across the cladding, teammates armed differently.
   2: { side: 1, round: 7, phase: 'freeze', ticks: 12, buy: true, money: 5200, bare: true,
     cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 26, 9, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
     script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
-  // Arming on B: a teammate's smoke closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate
-  // already holds Pan Door for the post-plant.
-  3: { side: 0, round: 2, clock: 92, core: 'carry', ticks: 110, smoke: [10.5, 6.6],
-    cast: [['p', 8, 14, 10, 7, 'hawser'], ['m0', 12, 12, 13, 19, 'hawser'], ['f0', 13, 7, 8, 13, 'hawser'], ['m1', 4, 12, 5, 19, 'skiff']],
+  // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
+  // closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate holds Pan Door.
+  3: { side: 0, round: 2, clock: 92, core: 'm0', ticks: 40, smoke: [10.5, 6.6],
+    cast: [['p', 7, 16, 9, 8, 'hawser'], ['m0', 8, 12, 12, 12, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 13, 7, 8, 13, 'hawser']],
     fire: [['f0', 4]], // he has the player in his sights but will not fire inside the scene
-    script(i, s) { s.p.cmd.use = true; s.aim(null, -0.12, 10.6, 7); } },
-  // A retake won by the disarm, seen from the player's eyes: the Spanner kit halves the work, the core's
-  // bands turn teal, the banner names the disarm; the match goes on.
-  4: { side: 1, round: 6, clock: 70, core: 'armed', ticks: 220, end: 0.35, dead: ['f0', 'f1'],
-    cast: [['p', 8, 13, 9, 9, 'hawser'], ['m0', 12, 12, 10, 6, 'hawser'], ['m1', 5, 9, 10, 6, 'skiff'], ['f0', 10, 10, 8, 13, 'hawser'], ['f1', 3, 8, 8, 13, 'skiff']],
-    script(i, s) { s.p.cmd.use = true; s.aim(null, -0.26, 9.5, 9); } },
+    script(i, s) { s.aim(null, -0.08, 9, 8); } },
+  // A retake of A won by the disarm, crouched over the core with the kit, looking up the pad to the deck
+  // and Tank Gate: the window turns teal, the banner names the disarm; the match goes on.
+  4: { side: 1, round: 6, clock: 70, core: 'armed', site: 'A', ticks: 220, end: 0.35, dead: ['f0', 'f1'],
+    cast: [['p', 48, 13, 46, 7, 'hawser'], ['m0', 45, 12, 43, 7, 'hawser'], ['m1', 51, 10, 46, 6, 'skiff'], ['f0', 46, 9, 48, 13, 'hawser'], ['f1', 40, 16, 48, 13, 'skiff']],
+    script(i, s) { s.p.cmd.use = s.p.cmd.crouch = true; s.aim(null, -0.2, 46, 7); } },
 };
 
 function run(ctx, n, script, drawn = 3) { // n ticks; only the last `drawn` are rendered (effects in flight)
@@ -82,11 +82,15 @@ function stage(ctx, sc) {
   p.money = Math.max(p.money, sc.money ?? 3150);
   p.hp = sc.hp ?? 100;
   if (sc.core === 'carry' || sc.core === 'mate') Object.assign(state.core, { state: 'carried', carrier: sc.core === 'mate' ? mates[3].id : p.id });
-  if (sc.core === 'armed') Object.assign(state.core, { state: 'planted', site: 'B', fuse: 25, carrier: -1, x: p.pos.x + 0.3, y: 0, z: p.pos.z - 1.45 });
+  if (sc.core === 'm0') Object.assign(state.core, { state: 'carried', carrier: who('m0').id, worker: who('m0').id, progress: 0.62 }); // mid-arm
+  if (sc.core === 'armed') { // on the ground in front of the player, within disarm reach
+    Object.assign(state.core, { state: 'planted', site: sc.site ?? 'B', fuse: 25, carrier: -1, y: 0 });
+    state.core.x = p.pos.x - Math.sin(p.yaw) * 1.5; state.core.z = p.pos.z - Math.cos(p.yaw) * 1.5;
+  }
   state.round.planted = sc.core === 'armed';
   if (sc.smoke) Object.assign(state.smokes[0], { live: true, x: sc.smoke[0] * S, y: 0, z: sc.smoke[1] * S, age: 2 });
   for (const k of sc.dead ?? []) Object.assign(who(k), { alive: false, hp: 0, diedAt: -99 }); // bodies of an earlier fight
-  for (const [k, react] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: 0.01, aimHead: false, crouchSpray: false, lastSeenId: p.id, lastSeenTime: 1e9 });
+  for (const [k, react, low = 0.01] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: low, aimHead: false, crouchSpray: false, lastSeenId: p.id, lastSeenTime: 1e9 });
   // Look at an actor's head or chest, or (k null) at pitch `part` toward cell (c, r).
   const aim = (k, part, c, r) => {
     const ey = p.pos.y + eyeOf(p);
