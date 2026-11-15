@@ -77,7 +77,7 @@ export function createHud(state, camera) {
     toggle(el.hp.parentNode, 'warn', p.hp < 50);
     toggle(el.hp.parentNode, 'low', p.hp <= 25);
     show(el.armor, Math.round(p.armor));
-    show(el['armor-label'], p.helm ? 'ARMOUR+HELM' : 'ARMOUR');
+    show(el['armor-label'], p.helm ? 'VEST · HELM' : 'VEST');
     if (changed('money', p.money)) el.money.textContent = '$' + p.money;
     if (w) {
       show(el.mag, w.mag);
