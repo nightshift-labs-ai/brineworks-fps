@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,411 bytes (157.6 KiB); dossier text 163,836 of 163,840 (no cut). No headroom: every
+- Source 161,296 bytes (157.5 KiB); dossier text 163,721 of 163,840 (no cut). Little headroom: every
   addition is paid for by a trim. The reviewer NOTE was condensed (-700 B) to pay for the heaps.
 
 ## Done since prompt 10/11
@@ -59,8 +59,8 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - U: the coach's plan pinned above the radio. Review 12e radar ring. Banner 'Next round in 5 s'.
 
 ## Open (each needs bytes: a code-level trim pass is running to fund them)
-- 11/M a skyline landmark (evaporator tower) in the sky gap of shot 1: tried as a tall cylinder;
-  it covered the B view and cost 170 B over budget, so it was reverted.
+- (done 11: a slim evaporator stack at (36,-50) shows in shots 1 and 3) M: more skyline;
+  the first try, a wide cylinder nearer B, covered the B view and was reverted.
 - P round indicator + health bars, Q callout signs, X loadout row, Z HUD plates; U radar route
   lines and merged radio lines; wall drip streaks (dropped for bytes).
 
