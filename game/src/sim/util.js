@@ -12,8 +12,7 @@ export function createRng(seed) { // mulberry32: a seed replays the same match
   return next;
 }
 
-export function wrapAngle(angle) { // into (-PI, PI]
-  let x = angle;
+export function wrapAngle(x) { // into (-PI, PI]
   while (x > Math.PI) x -= Math.PI * 2;
   while (x <= -Math.PI) x += Math.PI * 2;
   return x;

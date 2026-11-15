@@ -18,28 +18,23 @@ const CALLSIGNS = [
 export function createState(seed) {
   const rng = createRng(seed);
   const state = {
-    seed, rng,
-    tick: 0, time: 0,
-    map: buildMap(),
+    seed, rng, tick: 0, time: 0, map: buildMap(),
     teams: TEAMS.map((t, id) => ({ id, name: t.name, side: id, score: 0, lossStreak: 0, lastPay: 0, plan: createPlan() })),
-    actors: [],
-    player: null,
+    actors: [], player: null,
     round: { number: 0, phase: 'freeze', timer: 0, clock: 0, winner: -1, reason: '', buyOpen: false, planted: false, endedAt: -99 },
     core: createCore(),
-    nades: createNades(),
-    smokes: createSmokes(),
+    nades: createNades(), smokes: createSmokes(),
     intel: [0, 1].map(() => ({ x: 0, z: 0, time: -99, id: -1, count: 0, heardX: 0, heardZ: 0, heardTime: -99 })), // per team: last sighting, last noise
     match: { winner: -1, history: [] },
     events: createEvents(),
   };
   for (let team = 0; team < 2; team++) {
     for (let i = 0; i < TEAM_SIZE; i++) {
-      const isBot = !(team === PLAYER_TEAM && i === 0);
-      const a = createActor(state.actors.length, team, CALLSIGNS[team][i], isBot);
+      const isBot = !(team === PLAYER_TEAM && i === 0), a = createActor(state.actors.length, team, CALLSIGNS[team][i], isBot);
       if (isBot) a.brain = createBrain(0.35 + rng() * 0.5, ROLES[i]);
+      else state.player = a;
       state.actors.push(a);
     }
   }
-  state.player = state.actors.find((a) => !a.isBot);
   return state;
 }

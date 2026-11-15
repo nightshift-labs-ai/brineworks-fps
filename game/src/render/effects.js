@@ -1,4 +1,4 @@
-// Pooled combat effects, allocated once: tracer streaks, decals (holes, scorch), particles, flashes, blasts.
+// Pooled combat effects, allocated once: tracers, decals, particles, flashes, blasts.
 import * as THREE from 'three';
 import { holeTexture, softDot, glow } from './textures.js';
 
@@ -15,15 +15,14 @@ function instanced(scene, geo, mat, n) {
 
 export function createEffects(scene) {
   const mat4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), zAxis = new THREE.Vector3(0, 0, 1);
-  // Tracers: a unit box along +z, stretched into a streak that travels along the shot.
+  // Tracers: a unit box along +z, stretched into a streak.
   const tracerMesh = instanced(scene, new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5), new THREE.MeshBasicMaterial({ color: 0xf29e40, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }), TRACERS);
-  const tracers = Array.from({ length: TRACERS }, () => ({ live: false, ox: 0, oy: 0, oz: 0, dir: new THREE.Vector3(), len: 0, t: 0 }));
+  const tracers = Array.from({ length: TRACERS }, () => ({ live: false, o: new THREE.Vector3(), dir: new THREE.Vector3(), len: 0, t: 0 }));
   const decalMesh = instanced(scene, new THREE.PlaneGeometry(0.13, 0.13), new THREE.MeshBasicMaterial({ map: holeTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), DECALS);
-  // Particles: grit, sparks and spray in one Points cloud; the colour's alpha fades with life.
+  // Particle colour alpha fades with life.
   const pPos = new Float32Array(PARTICLES * 3), pCol = new Float32Array(PARTICLES * 4), pVel = new Float32Array(PARTICLES * 3);
   const pLife = new Float32Array(PARTICLES), pMax = new Float32Array(PARTICLES);
-  const pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  const pGeo = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pPos, 3));
   pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 4));
   const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.12, map: softDot(), vertexColors: true, transparent: true, depthWrite: false }));
   points.frustumCulled = false;
@@ -41,11 +40,11 @@ export function createEffects(scene) {
     t.dir.set(x1 - x0, y1 - y0, z1 - z0);
     t.len = t.dir.length();
     if (t.len < 0.5) return;
-    t.ox = x0; t.oy = y0; t.oz = z0; t.t = 0; t.live = true;
+    t.o.set(x0, y0, z0); t.t = 0; t.live = true;
     t.dir.multiplyScalar(1 / t.len);
   }
 
-  // A decal flat on the struck face: a bullet hole, or (size ~25) a blast scorch.
+  // A bullet hole on the struck face, or (size ~25) a blast scorch.
   function spawnDecal(x, y, z, nx, ny, nz, size = 1) {
     q.setFromUnitVectors(zAxis, v.set(nx, ny, nz));
     s.setScalar(size * (0.7 + ((nextDecal * 7919) % 100) / 160));
@@ -57,11 +56,11 @@ export function createEffects(scene) {
 
   function spawnParticles(x, y, z, nx, ny, nz, count, r, g, b, speed) {
     for (let k = 0; k < count; k++) {
-      const i = nextParticle, j = (k * 0.618 + i * 0.137) % 1, h = ((k + 1) * 0.381 + i * 0.071) % 1;
+      const i = nextParticle, p = i * 3, c = i * 4, j = (k * 0.618 + i * 0.137) % 1, h = ((k + 1) * 0.381 + i * 0.071) % 1;
       nextParticle = (nextParticle + 1) % PARTICLES;
-      pPos[i * 3] = x; pPos[i * 3 + 1] = y; pPos[i * 3 + 2] = z;
-      pVel[i * 3] = (nx + (j - 0.5) * 1.4) * speed; pVel[i * 3 + 1] = (ny + h * 0.9) * speed; pVel[i * 3 + 2] = (nz + (h - j) * 1.4) * speed;
-      pCol[i * 4] = r; pCol[i * 4 + 1] = g; pCol[i * 4 + 2] = b; pCol[i * 4 + 3] = 1;
+      pPos[p] = x; pPos[p + 1] = y; pPos[p + 2] = z;
+      pVel[p] = (nx + (j - 0.5) * 1.4) * speed; pVel[p + 1] = (ny + h * 0.9) * speed; pVel[p + 2] = (nz + (h - j) * 1.4) * speed;
+      pCol[c] = r; pCol[c + 1] = g; pCol[c + 2] = b; pCol[c + 3] = 1;
       pLife[i] = pMax[i] = 0.35 + j * 0.5;
     }
   }
@@ -74,7 +73,6 @@ export function createEffects(scene) {
     f.life = 0.05;
   }
 
-  // A blast: flash, a brief light, fire sparks, dark debris and a scorch mark on the ground.
   function spawnBlast(x, y, z, radius) {
     blastSprite.position.set(x, y + 0.6, z);
     blastLight.position.set(x, y + 1.5, z);
@@ -99,17 +97,18 @@ export function createEffects(scene) {
       const head = Math.min(t.len, t.t), tail = Math.max(0, t.t - STREAK);
       if (tail >= t.len) { t.live = false; tracerMesh.setMatrixAt(i, HIDE); continue; }
       q.setFromUnitVectors(zAxis, t.dir);
-      mat4.compose(v.set(t.ox + t.dir.x * tail, t.oy + t.dir.y * tail, t.oz + t.dir.z * tail), q, s.set(0.014, 0.014, Math.max(0.01, head - tail)));
+      mat4.compose(v.copy(t.o).addScaledVector(t.dir, tail), q, s.set(0.014, 0.014, Math.max(0.01, head - tail)));
       tracerMesh.setMatrixAt(i, mat4);
     }
     tracerMesh.instanceMatrix.needsUpdate = true;
     for (let i = 0; i < PARTICLES; i++) {
       if (pLife[i] <= 0) continue;
+      const p = i * 3;
       pLife[i] -= dt;
-      pVel[i * 3 + 1] -= 6 * dt;
-      pPos[i * 3] += pVel[i * 3] * dt;
-      pPos[i * 3 + 1] = Math.max(0.02, pPos[i * 3 + 1] + pVel[i * 3 + 1] * dt);
-      pPos[i * 3 + 2] += pVel[i * 3 + 2] * dt;
+      pVel[p + 1] -= 6 * dt;
+      pPos[p] += pVel[p] * dt;
+      pPos[p + 1] = Math.max(0.02, pPos[p + 1] + pVel[p + 1] * dt);
+      pPos[p + 2] += pVel[p + 2] * dt;
       pCol[i * 4 + 3] = Math.max(0, pLife[i] / pMax[i]);
     }
     pGeo.attributes.position.needsUpdate = pGeo.attributes.color.needsUpdate = true;

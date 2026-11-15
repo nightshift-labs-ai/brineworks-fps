@@ -3,11 +3,6 @@ import { MOVE, BODY, WEAPONS, ECON } from './config.js';
 import { raySphere, rayCylinder, clearLine } from './collide.js';
 import { emit, EV } from './events.js';
 
-// The command record shared by input.js (player) and bots.js (bots); the sim reads only this.
-export function createCommand() {
-  return { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, aim: false, reload: false, crouch: false, walk: false, jump: false, use: false, slot: -1, toss: '', tossRange: 0 };
-}
-
 export function createActor(id, team, name, isBot) {
   return {
     id, team, name, isBot,
@@ -15,11 +10,10 @@ export function createActor(id, team, name, isBot) {
     pos: { x: 0, y: 0, z: 0 }, prev: { x: 0, y: 0, z: 0 }, vel: { x: 0, y: 0, z: 0 },
     yaw: 0, pitch: 0, prevYaw: 0,
     grounded: true, crouch: 0, stride: 0, // crouch 0..1; stride: metres run since the last footstep
-    cmd: createCommand(),
-    slots: [null, null], // primary, sidearm: { id, mag, reserve }
-    active: 1,
-    grenades: { frag: 0, smoke: 0 },
-    scoped: false,
+    // The command record input.js (player) or bots.js fills; the sim reads only this.
+    cmd: { moveX: 0, moveZ: 0, yaw: 0, pitch: 0, fire: false, aim: false, reload: false, crouch: false, walk: false, jump: false, use: false,
+      slot: -1, toss: '', tossRange: 0 },
+    slots: [null, null], active: 1, grenades: { frag: 0, smoke: 0 }, scoped: false, // slots: primary, sidearm ({ id, mag, reserve })
     fireCooldown: 0, reloadTimer: 0, drawTimer: 0, triggerHeld: false,
     bloom: 0, punchPitch: 0, punchYaw: 0, shotsFired: 0,
     kills: 0, deaths: 0, earned: 0, // earned: kill money this round
@@ -30,15 +24,12 @@ export function createActor(id, team, name, isBot) {
 
 export function heightOf(a) { return MOVE.standHeight + (MOVE.crouchHeight - MOVE.standHeight) * a.crouch; }
 export function eyeOf(a) { return MOVE.standEye + (MOVE.crouchEye - MOVE.standEye) * a.crouch; }
-export function weaponDef(a) { const w = a.slots[a.active]; return w ? WEAPONS[w.id] : null; }
+export const pay = (a, amount) => { a.money = Math.min(ECON.max, a.money + amount); };
 
 export function giveWeapon(a, id) {
-  const def = WEAPONS[id];
-  const slot = def.slot === 'primary' ? 0 : 1;
+  const def = WEAPONS[id], slot = def.slot === 'primary' ? 0 : 1;
   a.slots[slot] = { id, mag: def.mag, reserve: def.reserve };
-  a.active = slot;
-  a.drawTimer = def.draw;
-  a.reloadTimer = 0;
+  a.active = slot; a.drawTimer = def.draw; a.reloadTimer = 0;
 }
 
 // Survivors keep guns, grenades and armour; the dead restart with the sidearm. Guns are refilled.
@@ -59,9 +50,7 @@ export function respawn(a, spawn, yaw) {
 
 // Ray against the three hitboxes: distance, and out.part = 1 head, 2 torso, 3 legs.
 export function rayActor(a, ox, oy, oz, dx, dy, dz, out) {
-  const h = heightOf(a);
-  const { x, y, z } = a.pos;
-  const legTop = y + h * BODY.legTop;
+  const h = heightOf(a), { x, y, z } = a.pos, legTop = y + h * BODY.legTop;
   let best = -1;
   const head = raySphere(ox, oy, oz, dx, dy, dz, x, y + h - BODY.headRadius, z, BODY.headRadius);
   if (head >= 0) { best = head; out.part = 1; }
@@ -80,7 +69,7 @@ export function applyDamage(state, victim, attacker, def, part, distance) {
 
 // Every damage ends here: a vest guards the torso, a helm the head, while armour points last (health
 // takes dmg x pen, armour loses half the rest). (fromX, fromZ) is the source, for the HUD's arc.
-export function hurt(state, victim, attacker, amount, pen, part, def, fromX, fromZ) {
+function hurt(state, victim, attacker, amount, pen, part, def, fromX, fromZ) {
   if (!victim.alive) return;
   let dmg = amount;
   if (victim.armor > 0 && (part === 2 || (part === 1 && victim.helm))) {
@@ -92,9 +81,17 @@ export function hurt(state, victim, attacker, amount, pen, part, def, fromX, fro
   victim.hp -= dmg;
   victim.lastHurtTime = state.time;
   victim.lastHurtBy = attacker ? attacker.id : -1;
-  const e = emit(state.events, EV.HIT, attacker ? attacker.id : -1, victim.id, dmg, part);
-  e.x = fromX; e.z = fromZ;
-  if (victim.hp <= 0) kill(state, victim, attacker && attacker.team !== victim.team ? attacker : null, def, part === 1);
+  emit(state.events, EV.HIT, attacker ? attacker.id : -1, victim.id, dmg, part, fromX, 0, fromZ);
+  if (victim.hp > 0) return;
+  // The kill: no credit for a teamkill or the core's blast.
+  const killer = attacker && attacker.team !== victim.team ? attacker : null;
+  victim.hp = 0; victim.alive = false; victim.diedAt = state.time; victim.deaths++;
+  victim.vel.x = victim.vel.z = 0;
+  if (killer) {
+    killer.kills++;
+    if (def) { pay(killer, def.reward); killer.earned += def.reward; }
+  }
+  emit(state.events, EV.KILL, killer ? killer.id : -1, victim.id, def ? def.index : -1, part === 1 ? 1 : 0);
 }
 
 // Radial damage (frag, core): linear to 0 at `radius`, blocked by walls, credited to `owner`.
@@ -104,17 +101,4 @@ export function blast(state, x, y, z, radius, damage, pen, owner, def) {
     if (!a.alive || d > radius || !clearLine(state.map, x, y + 0.2, z, a.pos.x, a.pos.y + 0.9, a.pos.z)) continue;
     hurt(state, a, owner, damage * (1 - d / radius), pen, 2, def, x, z);
   }
-}
-
-export function kill(state, victim, killer, def, headshot) {
-  victim.hp = 0;
-  victim.alive = false;
-  victim.diedAt = state.time;
-  victim.deaths++;
-  victim.vel.x = victim.vel.z = 0;
-  if (killer) {
-    killer.kills++;
-    if (def) { killer.money = Math.min(ECON.max, killer.money + def.reward); killer.earned += def.reward; }
-  }
-  emit(state.events, EV.KILL, killer ? killer.id : -1, victim.id, def ? def.index : -1, headshot ? 1 : 0);
 }

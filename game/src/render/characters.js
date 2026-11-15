@@ -1,22 +1,19 @@
-// Soldiers: one low-poly rig per actor, built once. Proportions follow BODY (sim/config.js): the head
-// is the head hitbox, legs end at legTop. Harrow wear a hood helmet and respirator, the Saltreeves a
-// brimmed helmet and antenna; glowing team bands read at range. Guns are the viewmodel.js models.
+// Soldiers: one low-poly rig per actor, built once, sized by BODY so the head is the head hitbox.
 import * as THREE from 'three';
 import { TEAMS, BODY, MOVE } from '../sim/config.js';
 import { heightOf } from '../sim/actors.js';
 import { wrapAngle } from '../sim/util.js';
 import { MATS, GUNS, build } from './viewmodel.js';
 
-// Rig nodes "name parent x y" (cm) with their parts in the format of build(). Hips, trunk and arms
-// are unit-sized and scaled to the body each frame; boots and hands are scaled back to size.
-// Materials: v vest, l team glow, t dark team tint (trousers, hood), h helmet, c cloth, d dark, s steel.
+// Rig nodes "name parent x y" (cm) with build() parts; hips, trunk, arms are unit-sized, scaled per frame.
+// v vest, l team glow, t dark team tint, h helmet, c cloth, d dark, s steel
 const LEG = 't 17 93 21 0 -46.5,d 19 12 30 0 -95 4', ARM = 'c 11 11 100 0 0 -50,d 9 9 10 0 0 -100';
 const NODES = [
   ['body root'], ['hipL body -11', LEG], ['hipR body 11', LEG], ['chest body'], ['neck chest'],
   ['trunk chest', 'c 44 100 26 0 50,v 50 72 32 0 48,d 32 50 14 0 55 20'],
   ['arms chest', 'l 3 10 14 -27.5 2 -2,l 3 10 14 27.5 2 -2'], ['armL arms -21 -2', ARM], ['armR arms 21 -2', ARM],
 ];
-const HEADS = [ // Harrow, Saltreeves
+const HEADS = [ // Harrow: hood, respirator; Saltreeves: brimmed helmet, antenna
   'c 22 20 22 0 -3,t 30 24 12 0 -10 9,h -18 9 16 0 3.5,h -16 7 9 0 11.5,l -18.5 4 18.5 0 1,s 17 11 6 0 -5 -12,s -5 9 5 4 -7 -16 157',
   'c 24 26 26,h 28 8 30 0 13 1,h 40 2.5 42 0 9,l 28.5 3 30.5 0 11 1,d 22 6 3 0 1 -13.5,d 1.4 26 1.4 10 28 10,l 3 3 3 10 41 10',
 ];
@@ -25,11 +22,11 @@ function teamMaterials(team) {
   const c = new THREE.Color(TEAMS[team].color), m = (color, o) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...o });
   return {
     v: m(c), l: m(c, { emissive: c, emissiveIntensity: 1.5 }), t: m(c.clone().lerp(new THREE.Color(0x56606a), 0.6).multiplyScalar(0.45)),
-    h: m(team ? 0x56616b : 0xc9c4b8, ), c: m(0x4d555c), d: m(0x30353a), s: m(0x7a838b, { metalness: 0.3 }),
+    h: m(team ? 0x56616b : 0xc9c4b8), c: m(0x4d555c), d: m(0x30353a), s: m(0x7a838b, { metalness: 0.3 }),
   };
 }
 
-// Point a unit-length arm from its shoulder at a hand position (arms-group space).
+// Point a unit-length arm at a hand (arms-group space).
 function reach(arm, x, y, z) {
   const p = arm.position, dx = x - p.x, dy = y - p.y, dz = z - p.z, len = Math.hypot(dx, dy, dz);
   arm.rotation.set(Math.asin(dy / len), Math.atan2(-dx, -dz), 0, 'YXZ');
@@ -37,7 +34,6 @@ function reach(arm, x, y, z) {
   arm.children[1].scale.z = 1 / len;
 }
 
-// Show the held gun: right hand on the grip, left on the fore-end or beside the pistol grip.
 function hold(rig, id) {
   if (rig.held) rig.guns[rig.held].visible = false;
   rig.held = id;
@@ -52,14 +48,14 @@ function buildRig(scene, team, mats, gunMats) {
   const rig = { root: new THREE.Group(), guns: {}, held: '', stride: 0 };
   for (const [node, parts] of NODES) {
     const [k, parent, x = 0, y = 0] = node.split(' ');
-    rig[parent].add(rig[k] = parts ? build(parts, new THREE.Group(), mats) : new THREE.Group());
+    rig[parent].add(rig[k] = parts ? build(parts, mats) : new THREE.Group());
     rig[k].position.set(x / 100, y / 100, 0);
   }
-  build(HEADS[team], rig.neck, mats);
+  build(HEADS[team], mats, rig.neck);
   rig.root.traverse((m) => (m.castShadow = true));
   rig.hips = [rig.hipL, rig.hipR];
-  for (const id in GUNS) { // all carried, the held one shown
-    const gun = rig.guns[id] = build(GUNS[id].parts, new THREE.Group(), gunMats), pistol = !GUNS[id].hand;
+  for (const id in GUNS) {
+    const gun = rig.guns[id] = build(GUNS[id].parts, gunMats), pistol = !GUNS[id].hand;
     gun.scale.setScalar(0.75);
     gun.position.set(pistol ? 0.03 : 0.1, -0.1, pistol ? -0.45 : -0.32);
     gun.visible = false;
@@ -74,7 +70,7 @@ export function createCharacters(scene, state) {
   for (const k in MATS) gunMats[k] = MATS[k].clone(); // own copies: the world pass has fog, the gun pass not
   const rigs = state.actors.map((a) => buildRig(scene, a.team, mats[a.team], gunMats));
 
-  // Pose every rig from interpolated sim state. `hideId` is the actor whose eyes we look through.
+  // `hideId`: the actor we look through.
   function update(alpha, dt, hideId, time) {
     for (const a of state.actors) {
       const rig = rigs[a.id];
@@ -103,7 +99,6 @@ export function createCharacters(scene, state) {
       rig.arms.position.y = torsoLen - 0.12;
       rig.arms.rotation.x = a.pitch;
 
-      // Dying: tip over backwards over a third of a second after the moment of death.
       const fall = a.alive ? 0 : Math.min(1, (time - a.diedAt) * 3);
       rig.body.rotation.x = fall * fall * 1.45;
       rig.body.position.y = -fall * 0.1;

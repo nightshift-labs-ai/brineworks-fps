@@ -9,20 +9,25 @@ const SETUPS = [ // defence: [weight, where each defender holds] = 2-1-2, 3-1-1,
   [0.2, ['B', 'B', 'tower', 'A', 'B']],
 ];
 
+const mate = (a, team) => a.alive && a.isBot && a.team === team;
+
 export function createPlan() { return { site: 'A', rush: false, execute: false, staged: -99, rotated: false, fails: { A: 0, B: 0 } }; }
 
-// Jobs for the round. Attack: a site (less likely one that just failed), split over its two routes
-// with a lurker on the other site, or everyone rushing on a save round. Defence: a weighted setup.
+// Attack: a site (less likely one that just failed) split over its two routes plus a lurker, or a save-round rush.
+// Defence: a weighted setup.
 export function planRound(state, team, call) {
-  const plan = team.plan, rng = state.rng, holds = state.map.holds;
+  const plan = team.plan, rng = state.rng, map = state.map;
   const bots = state.actors.filter((a) => a.team === team.id && a.isBot).sort((x, y) => (y.id === state.core.carrier) - (x.id === state.core.carrier));
-  for (const a of bots) resetBrain(a.brain);
+  for (const { brain: b } of bots) {
+    b.target = -1; b.lastSeenTime = b.heardTime = -99; b.path.length = 0;
+    b.burstLeft = b.burstPause = b.stuckTime = 0; b.smoked = b.staged = b.anchor = false;
+  }
   state.intel[team.id].time = -99;
-  plan.execute = false; plan.staged = -99; plan.rotated = false;
+  plan.execute = plan.rotated = false; plan.staged = -99;
   if (team.side === SIDE.ATTACK) {
     const weightA = 0.4 ** plan.fails.A, weightB = 0.4 ** plan.fails.B;
     plan.site = rng() * (weightA + weightB) < weightA ? 'A' : 'B';
-    plan.rush = call === 'save';
+    plan.execute = plan.rush = call === 'save';
     const routes = ATTACK_ROUTES.filter((r) => r.site === plan.site);
     const lurkRoute = rng.pick(ATTACK_ROUTES.filter((r) => r.site !== plan.site));
     bots.forEach((a, i) => {
@@ -30,9 +35,8 @@ export function planRound(state, team, call) {
       b.lurk = !plan.rush && i === bots.length - 1 && bots.length >= 4;
       const route = b.lurk ? lurkRoute : plan.rush ? routes[0] : routes[i % 2];
       b.plan = 'route'; b.route = route.path; b.stage = route.stage; b.site = route.site;
-      pickHold(state, a, state.map.postplant[b.site]);
+      pickHold(state, a, map.postplant[b.site]);
     });
-    plan.execute = plan.rush;
     radio(state, bots[0], plan.rush ? `rush ${plan.site}, no waiting` : `we hit ${plan.site}, gather and go together`);
   } else {
     let roll = rng(), setup = SETUPS[0][1];
@@ -41,85 +45,66 @@ export function planRound(state, team, call) {
       const b = a.brain, where = setup[i % setup.length];
       b.plan = 'hold'; b.anchor = b.role === 'anchor';
       b.site = where === 'tower' ? (rng() < 0.5 ? 'A' : 'B') : where;
-      pickHold(state, a, holds[where]);
+      pickHold(state, a, map.holds[where]);
     });
   }
 }
 
-function resetBrain(b) {
-  b.target = -1; b.lastSeenTime = -99; b.heardTime = -99; b.path.length = 0;
-  b.burstLeft = 0; b.burstPause = 0; b.stuckTime = 0; b.smoked = false; b.staged = false; b.anchor = false;
-}
-
-// Per tick: when the attack executes (the group has gathered, waited enough, been spotted or
-// the clock is low) and when the defence rotates.
+// When the attack executes (gathered, waited enough, spotted or the clock is low) and when the defence rotates.
 export function updateCoach(state) {
   for (const team of state.teams) {
     const plan = team.plan;
     if (team.side === SIDE.ATTACK) {
       if (plan.execute) continue;
       let staged = 0, going = 0;
-      for (const a of state.actors) {
-        if (!a.alive || !a.isBot || a.team !== team.id || a.brain.lurk) continue;
-        going++;
-        if (a.brain.staged) staged++;
-      }
+      for (const a of state.actors) if (mate(a, team.id) && !a.brain.lurk) { going++; if (a.brain.staged) staged++; }
       if (staged && plan.staged < 0) plan.staged = state.time;
-      const spotted = state.time - state.intel[team.id].time < 1.5;
-      if (going && (staged >= going - 1 || (plan.staged >= 0 && state.time - plan.staged > BOT.stageWait) || state.round.clock < 45 || (staged && spotted))) {
+      const spotted = state.time - state.intel[team.id].time < 1.5, waited = plan.staged >= 0 && state.time - plan.staged > BOT.stageWait;
+      if (going && (staged >= going - 1 || waited || state.round.clock < 45 || (staged && spotted))) {
         plan.execute = true;
         radio(state, firstBot(state, team.id), `go ${plan.site} now`);
       }
     } else if (!plan.rotated) {
-      // One rotation a round: to a site where two sightings came in close together, or where the
-      // core is heard being armed. After the core is armed every defender retakes (bots.js).
+      // One rotation a round: to a site with two sightings close together or the core heard being armed.
       const core = state.core, intel = state.intel[team.id];
       const hit = (core.state === 'carried' && core.progress > 0 ? siteNear(state.map, core.x, core.z, 0) : null)
         ?? (intel.count >= 2 && state.time - intel.time < 4 ? siteNear(state.map, intel.x, intel.z, 19) : null);
-      if (hit) { plan.rotated = true; rotateToSite(state, team, hit.name); }
+      if (!hit) continue;
+      plan.rotated = true;
+      for (const a of state.actors) { // every defender bot not fighting or anchoring elsewhere
+        const b = a.brain;
+        if (!mate(a, team.id) || b.target >= 0 || b.site === hit.name || b.anchor) continue;
+        b.site = hit.name; b.plan = 'hold';
+        pickHold(state, a, state.map.holds[hit.name]);
+      }
+      radio(state, firstBot(state, team.id), `they are on ${hit.name}, rotate`);
     }
   }
-}
-
-// Every defender bot not anchoring elsewhere moves to hold the hit site.
-function rotateToSite(state, team, site) {
-  for (const a of state.actors) {
-    if (!a.alive || !a.isBot || a.team !== team.id || a.brain.target >= 0) continue;
-    const b = a.brain;
-    if (b.site === site || b.anchor) continue;
-    b.site = site; b.plan = 'hold';
-    pickHold(state, a, state.map.holds[site]);
-  }
-  radio(state, firstBot(state, team.id), `they are on ${site}, rotate`);
 }
 
 // Take the first spot in `list` no teammate already holds (else the bot's own slot in the list).
 export function pickHold(state, a, list) {
   let pick = list[a.id % list.length];
-  for (const hold of list) {
-    let taken = false;
-    for (const o of state.actors) if (o !== a && o.isBot && o.alive && o.team === a.team && o.brain.holdX === hold.x && o.brain.holdZ === hold.z) taken = true;
-    if (!taken) { pick = hold; break; }
+  spots: for (const hold of list) {
+    for (const o of state.actors) if (o !== a && mate(o, a.team) && o.brain.holdX === hold.x && o.brain.holdZ === hold.z) continue spots;
+    pick = hold;
+    break;
   }
   const b = a.brain;
   b.holdX = pick.x; b.holdZ = pick.z; b.lookX = pick.lookX; b.lookZ = pick.lookZ;
 }
 
 function firstBot(state, team) {
-  for (const a of state.actors) if (a.alive && a.isBot && a.team === team) return a;
-  return null;
+  for (const a of state.actors) if (mate(a, team)) return a;
 }
 
-// A team radio line; hud.js shows the player's team's lines under the radar.
 export function radio(state, a, text) {
   if (a) emit(state.events, EV.RADIO, a.id, a.team).text = text;
 }
 
 // After a round: an attack that failed at a site makes the coach less keen to hit it again.
 export function reviewRound(state, winner) {
-  for (const team of state.teams) {
-    if (team.side !== SIDE.ATTACK) continue;
-    const fails = team.plan.fails;
-    fails[team.plan.site] = winner === team.id ? 0 : Math.min(2, fails[team.plan.site] + 1);
+  for (const { side, plan, id } of state.teams) {
+    if (side === SIDE.ATTACK) plan.fails[plan.site] = winner === id ? 0 : Math.min(2, plan.fails[plan.site] + 1);
   }
 }

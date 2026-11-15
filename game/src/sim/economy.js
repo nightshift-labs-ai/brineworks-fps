@@ -1,31 +1,31 @@
 // Money: round pay with the loss bonus, the buy rules the menu and bots share, the bots' buy calls.
 import { ECON, WEAPONS, GRENADES, GEAR, OBJECTIVE, SIDE, ROUND } from './config.js';
-import { giveWeapon } from './actors.js';
+import { giveWeapon, pay } from './actors.js';
 
 // The requisition list in menu order; keys 1..9, 0.
 export const SHOP = ['rivet', 'skiff', 'bollard', 'ballast', 'capstan', 'vest', 'helm', 'kit', 'frag', 'smoke'].map((id, i) => ({ id, key: String((i + 1) % 10) }));
 const DEFS = { ...WEAPONS, ...GRENADES, ...GEAR };
 export const itemDef = (item) => DEFS[item.id];
 
-export function canBuy(state, a, item) {
-  const def = DEFS[item.id];
+export function canBuy(state, a, { id }) {
+  const def = DEFS[id];
   if (!state.round.buyOpen || !a.alive || a.money < def.price) return false;
-  if (item.id === 'vest') return a.armor < 100;
-  if (item.id === 'helm') return !a.helm;
-  if (item.id === 'kit') return !a.kit && state.teams[a.team].side === def.side;
-  if (GRENADES[item.id]) return a.grenades[item.id] < 1;
-  const owned = a.slots[def.slot === 'primary' ? 0 : 1];
-  return !owned || owned.id !== item.id;
+  if (id === 'vest') return a.armor < 100;
+  if (id === 'helm') return !a.helm;
+  if (id === 'kit') return !a.kit && state.teams[a.team].side === def.side;
+  if (GRENADES[id]) return a.grenades[id] < 1;
+  return a.slots[def.slot === 'primary' ? 0 : 1]?.id !== id;
 }
 
 export function buy(state, a, item) {
   if (!canBuy(state, a, item)) return false;
-  a.money -= DEFS[item.id].price;
-  if (item.id === 'vest') a.armor = 100;
-  else if (item.id === 'helm') { a.helm = true; a.armor = Math.max(a.armor, 50); }
-  else if (item.id === 'kit') a.kit = true;
-  else if (GRENADES[item.id]) a.grenades[item.id]++;
-  else giveWeapon(a, item.id);
+  const id = item.id;
+  a.money -= DEFS[id].price;
+  if (id === 'vest') a.armor = 100;
+  else if (id === 'helm') { a.helm = true; a.armor = Math.max(a.armor, 50); }
+  else if (id === 'kit') a.kit = true;
+  else if (GRENADES[id]) a.grenades[id]++;
+  else giveWeapon(a, id);
   return true;
 }
 
@@ -38,14 +38,13 @@ export function payRound(state, winnerTeam, reason) {
     if (!won && team.side === SIDE.ATTACK && state.round.planted) amount += OBJECTIVE.plantBonus;
     team.lossStreak = won ? Math.max(0, team.lossStreak - 1) : Math.min(4, team.lossStreak + 1);
     team.lastPay = amount;
-    for (const a of state.actors) if (a.team === team.id) a.money = Math.min(ECON.max, a.money + amount);
+    for (const a of state.actors) if (a.team === team.id) pay(a, amount);
   }
 }
 
 // A bot's shopping under its team's call (pistol, save, force or full): gun, armour, grenades, kit.
 export function botShop(state, a, call, marksman) {
-  const get = (id) => buy(state, a, SHOP.find((s) => s.id === id));
-  const primary = a.slots[0] ? a.slots[0].id : '';
+  const get = (id) => buy(state, a, { id }), primary = a.slots[0]?.id;
   if (call === 'pistol') { get('vest'); return; }
   if (call === 'save') { if (a.money >= 1600) get('vest'); return; }
   if (primary !== 'ballast' && primary !== 'capstan') {

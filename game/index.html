@@ -30,51 +30,53 @@ files (textures painted in render/textures.js). Written by an AI agent (Claude C
 :root{--ink:#f1f0ea;--muted:#a9b0b5;--panel:#10141aa8;--line:#f1f0ea29;--paint:#efc94c;--bad:#ff5a4a;--mono:ui-monospace,Consolas,monospace}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1014;color:var(--ink);font-family:system-ui,sans-serif}
-#game,#game canvas,#hud{position:fixed;inset:0;display:block}
+#game,#game canvas,#hud,#overlay{position:fixed;inset:0;display:block}
 #hud{pointer-events:none;text-shadow:0 1px 2px #000a}
 #hud>*{position:absolute}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.panel,kbd,#kit span,#progress div,#buy li{border:1px solid var(--line)}
+.panel{background:var(--panel);border-radius:4px}
 .c{left:50%;transform:translateX(-50%)}
 ul{list-style:none;margin:0;padding:0}
 .u{letter-spacing:.12em;text-transform:uppercase}
+#where,.freeze,#feed .hs,#objective,#money,#hint,#progress,#banner.win #banner-title,#board .me td,h1 span{color:var(--paint)}
+.team small,.stat small,#weapon,#reserve,#feed em,#spectate,#banner-sub,#buy h3,#buy-foot,#board th,#overlay p,.keys{color:var(--muted)}
+.urgent,.low b,.empty #mag{color:var(--bad)}
+#radio li:empty,#feed li:empty,#hud.buying #left,#hud.banner #objective,#crosshair.hidden,#overlay[hidden]{display:none}
+#progress.on,.menu.open{display:block}
+#hitmarker.on,#hitmarker.kill,#scope.on,#banner.on{opacity:1}
 #radar{top:12px;left:12px}
-#left{top:184px;left:12px;width:208px;font-size:12px}
-#where{color:var(--paint);margin:0 0 4px}
+#left,#buy{top:184px;left:12px;width:208px;font-size:12px}
+#where{margin:0 0 4px}
 #radio li{background:var(--panel);padding:3px 7px;margin-bottom:3px;border-left:2px solid var(--paint)}
-#radio li:empty,#hud.buying #left,#hud.banner #objective{display:none}
 #top{top:12px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:4px 12px;padding:5px 14px}
 .team{display:flex;align-items:baseline;gap:8px;min-width:170px}
 .team.r,#pips1{flex-direction:row-reverse}
 .team b{font-size:15px}
-.team small{font-size:10px;color:var(--muted)}
+.team small,#board th,#buy h3{font-size:10px}
 .team span,#clock{font:700 28px var(--mono)}
 #clock{min-width:92px;text-align:center}
-.freeze{color:var(--paint)}
-.urgent{color:var(--bad)}
 #round,.pips{display:flex;justify-content:center;gap:3px}
 #round i{width:9px;height:9px;border-radius:2px;background:#fff2}
 .pips i{width:13px;height:5px}
 .pips i.dead{opacity:.15}
 #feed{top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13px}
-#feed li:empty{display:none}
 #feed li{background:var(--panel);padding:4px 9px;border-radius:3px}
 #feed li:has(.mine){outline:1px solid var(--paint)}
-#feed em{font-style:normal;color:var(--muted);margin:0 4px}
-#feed .hs{color:var(--paint);font:700 10px var(--mono);margin-right:4px}
-#objective{top:96px;font-size:14px;color:var(--paint);white-space:nowrap}
+#feed em{font-style:normal;margin:0 4px}
+#feed .hs{font:700 10px var(--mono);margin-right:4px}
+#objective{top:96px;font-size:14px;white-space:nowrap}
 #vitals{left:12px;bottom:12px;display:flex;gap:16px;align-items:flex-end;padding:8px 14px}
 .stat b,#mag{font:700 40px var(--mono);line-height:1}
-.stat small,#weapon{font-size:11px;color:var(--muted)}
-.low b,.empty #mag{color:var(--bad)}
-#money{font:700 20px var(--mono);color:var(--paint)}
+.stat small,#weapon,#buy-foot{font-size:11px}
+#money{font:700 20px var(--mono)}
 #ammo-box{right:12px;bottom:12px;padding:8px 14px;text-align:right}
-#reserve{font:16px var(--mono);color:var(--muted)}
-#kit span{margin-left:6px;padding:2px 6px;border:1px solid var(--line);border-radius:3px;font:11px var(--mono)}
+#reserve{font:16px var(--mono)}
+kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
+#kit span{margin-left:6px;padding:2px 6px}
 #kit .off{opacity:.3}
-#hint{bottom:16px;font-size:13px;color:var(--paint)}
-#spectate{bottom:110px;font-size:15px;color:var(--muted)}
+#hint{bottom:16px;font-size:13px}
+#spectate{bottom:110px;font-size:15px}
 #crosshair,#hitmarker{left:50%;top:50%}
-#crosshair.hidden{display:none}
 #crosshair i,#hitmarker i{position:absolute;background:#f6f1e6;box-shadow:0 0 2px #000}
 #crosshair i:nth-child(-n+2){width:2px;height:8px;left:-1px}
 #crosshair i:nth-child(n+3){height:2px;width:8px;top:-1px}
@@ -83,7 +85,6 @@ ul{list-style:none;margin:0;padding:0}
 #crosshair i:nth-child(3){right:var(--gap)}
 #crosshair i:nth-child(4){left:var(--gap)}
 #hitmarker{width:28px;height:28px;transform:translate(-50%,-50%) rotate(45deg);opacity:0}
-#hitmarker.on,#hitmarker.kill{opacity:1}
 #hitmarker.head i{background:var(--paint)}
 #hitmarker.kill i{background:var(--bad)}
 #hitmarker i:nth-child(-n+2){left:13px;width:2px;height:9px}
@@ -92,39 +93,29 @@ ul{list-style:none;margin:0;padding:0}
 #damage,#scope{inset:0;opacity:0}
 #damage{background:radial-gradient(transparent 58%,#aa140a66)}
 #damage::after{content:'';position:absolute;left:50%;top:50%;width:220px;height:220px;margin:-110px;border-radius:50%;border-top:6px solid var(--bad);transform:rotate(var(--angle))}
-#progress{top:40%;width:260px;margin-left:-130px;left:50%;display:none;text-align:center;font-size:12px;color:var(--paint)}
-#progress.on{display:block}
-#progress div{height:8px;margin-top:4px;background:linear-gradient(90deg,var(--paint) var(--p),var(--panel) var(--p));border:1px solid var(--line)}
+#progress{top:40%;width:260px;display:none;text-align:center;font-size:12px}
+#progress div{height:8px;margin-top:4px;background:linear-gradient(90deg,var(--paint) var(--p),var(--panel) var(--p))}
 #scope{background:radial-gradient(circle,transparent 33vh,#000 calc(33vh + 2px))}
-#scope.on{opacity:1}
 #banner{top:76px;text-align:center;padding:10px 30px;opacity:0;transition:opacity .2s}
-#banner.on{opacity:1}
 #banner-title{font-size:28px;font-weight:800;white-space:nowrap}
-#banner.win #banner-title{color:var(--paint)}
-#banner-sub{margin-top:3px;font-size:14px;color:var(--muted)}
+#banner-sub{margin-top:3px;font-size:14px}
 .menu{display:none;padding:14px 16px;background:#10141ad6}
-.menu.open{display:block}
-#buy{top:184px;left:12px;width:300px;font-size:12px}
+#buy{width:300px}
 #buy h2{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between}
 #buy-money,#buy b{font-family:var(--mono);color:var(--paint)}
-#buy h3{margin:6px 0 1px;font-size:10px;color:var(--muted)}
-#buy li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;padding:2px 8px;margin-bottom:2px;border:1px solid var(--line);border-radius:3px}
+#buy h3{margin:6px 0 1px}
+#buy li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;padding:2px 8px;margin-bottom:2px;border-radius:3px}
 #buy li.off{opacity:.32}
-#buy-foot{margin-top:8px;font-size:11px;color:var(--muted);white-space:pre-line}
-kbd{padding:0 5px;border:1px solid var(--line);border-radius:3px;font:11px var(--mono)}
+#buy-foot{margin-top:8px;white-space:pre-line}
 #board{top:168px;background:#10141a9e}
 #board table{border-collapse:collapse;font-size:13px}
 #board td,#board th{padding:3px 10px;text-align:left;border-bottom:1px solid var(--line)}
-#board th{font-size:10px;color:var(--muted)}
-#board .me td{color:var(--paint)}
-#overlay{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(#10141acc,#07090cf2)}
-#overlay[hidden]{display:none}
+#overlay{display:grid;place-items:center;background:radial-gradient(#10141acc,#07090cf2)}
 #overlay section{width:min(540px,92vw);padding:28px 32px}
 #overlay h1{margin:0;font-size:50px;letter-spacing:.18em}
-h1 span{color:var(--paint)}
-#overlay p{color:var(--muted);line-height:1.5}
+#overlay p{line-height:1.5}
 #play{font:700 16px system-ui;padding:12px 22px;border:0;border-radius:4px;background:var(--paint);cursor:pointer}
-.keys{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:20px;font-size:13px;color:var(--muted)}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:20px;font-size:13px}
 </style>
 </head>
 <body>
@@ -133,9 +124,9 @@ h1 span{color:var(--paint)}
   <canvas id="radar" class="panel" width="208" height="166"></canvas>
   <div id="left"><p id="where" class="u"></p><ul id="radio"></ul></div>
   <div id="top" class="panel c">
-    <div class="team u"><b id="name0"></b><small id="side0"></small><span id="score0">0</span></div>
-    <div id="clock">0:00</div>
-    <div class="team r u"><b id="name1"></b><small id="side1"></small><span id="score1">0</span></div>
+    <div class="team u"><b id="name0"></b><small id="side0"></small><span id="score0"></span></div>
+    <div id="clock"></div>
+    <div class="team r u"><b id="name1"></b><small id="side1"></small><span id="score1"></span></div>
     <div class="pips" id="pips0"></div><div id="round"></div><div class="pips" id="pips1"></div>
   </div>
   <ul id="feed"></ul>
@@ -144,16 +135,16 @@ h1 span{color:var(--paint)}
   <div id="crosshair"><i></i><i></i><i></i><i></i></div>
   <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
   <div id="damage"></div>
-  <div id="progress" class="u"><span id="progress-label"></span><div></div></div>
+  <div id="progress" class="u c"><span id="progress-label"></span><div></div></div>
   <div id="banner" class="panel c"><div id="banner-title" class="u"></div><div id="banner-sub"></div></div>
   <div id="spectate" class="c"></div>
   <div id="vitals" class="panel">
-    <div class="stat"><b id="hp">100</b><small>HEALTH</small></div>
-    <div class="stat"><b id="armor">0</b><small id="armor-label">ARMOUR</small></div>
-    <div id="money">$0</div>
+    <div class="stat"><b id="hp"></b><small>HEALTH</small></div>
+    <div class="stat"><b id="armor"></b><small id="armor-label"></small></div>
+    <div id="money"></div>
   </div>
   <div id="hint" class="c u"></div>
-  <div id="ammo-box" class="panel"><div id="weapon" class="u"></div><div id="ammo"><span id="mag">0</span> <span id="reserve">/ 0</span></div><div id="kit"><span id="frag">G FRAG</span><span id="smoke">F SMOKE</span><span id="spanner">KIT</span></div></div>
+  <div id="ammo-box" class="panel"><div id="weapon" class="u"></div><div id="ammo"><span id="mag"></span> <span id="reserve"></span></div><div id="kit"><span id="frag"></span><span id="smoke"></span><span id="spanner">KIT</span></div></div>
   <div id="buy" class="menu panel"><h2 class="u">Requisition <span id="buy-money"></span></h2><ul id="buy-list"></ul><div id="buy-foot"></div></div>
   <div id="board" class="menu panel c"><table><thead><tr class="u"><th>Operator</th><th></th><th>K</th><th>D</th><th>$</th></tr></thead><tbody id="board-body"></tbody></table></div>
 </div>

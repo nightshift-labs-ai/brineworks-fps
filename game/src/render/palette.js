@@ -6,7 +6,7 @@ export const PALETTE = {
   haze: '#8f9cad', sun: '#ffd7aa', skyLight: '#a8bcdd', groundLight: '#7d878c',
   ground: '#d8dddc', concrete: '#c8cbc8', steel: '#56626b', brine: '#3e7277', lamp: '#ffb760', paint: '#efc94c',
   lanes: { hall: '#a8634f', tanks: '#e6ebec', channel: '#5f9c8f', quay: '#6c87a6', court: '#c2c5c2' }, // cladding tint per lane
-  boxes: [0x5d6f80, 0x4f8c88, 0x8a98a5], // steel container colours
+  boxes: [0x5d6f80, 0x4f8c88, 0x8a98a5], // containers
 };
 
 // The one material maker for opaque surfaces.

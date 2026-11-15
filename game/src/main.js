@@ -6,22 +6,19 @@ import { createInput } from './input.js';
 import { createHud } from './ui/hud.js';
 import { createView } from './render/view.js';
 
-const params = new URLSearchParams(window.location.search);
-const seed = Number.parseInt(params.get('seed') ?? '7', 10) || 7;
-const shot = params.get('shot');
-
-const state = createGame(seed);
-const view = createView(state, document.getElementById('game'));
+const params = new URLSearchParams(location.search), shot = params.get('shot');
+const byId = (id) => document.getElementById(id);
+const state = createGame(parseInt(params.get('seed'), 10) || 7);
+const view = createView(state, byId('game'));
 const hud = createHud(state, view.camera);
-const overlay = document.getElementById('overlay');
 let running = false, lastRound = 0;
 
 const input = createInput(view.canvas, {
   onLock(locked) {
     running = locked;
-    overlay.hidden = locked;
-    document.getElementById('overlay-title').textContent = 'Paused';
-    document.getElementById('play').textContent = 'Resume';
+    byId('overlay').hidden = locked;
+    byId('overlay-title').textContent = 'Paused';
+    byId('play').textContent = 'Resume';
   },
   onKey(code, down) {
     if (code === 'Tab') { hud.showBoard(down); return true; }
@@ -34,7 +31,7 @@ const input = createInput(view.canvas, {
     return !!item || code === 'Escape';
   },
 });
-document.getElementById('play').addEventListener('click', () => view.canvas.requestPointerLock());
+byId('play').addEventListener('click', () => view.canvas.requestPointerLock());
 
 function followRounds() { // face the spawn's direction at each new round
   if (state.round.number !== lastRound) { lastRound = state.round.number; input.face(state.player.yaw, 0); }

@@ -9,97 +9,65 @@ import { resetCore } from './objective.js';
 export function startMatch(state) {
   for (const t of state.teams) { t.score = 0; t.side = t.id; t.lossStreak = 0; }
   for (const a of state.actors) { a.alive = false; a.money = ECON.start; a.kills = 0; a.deaths = 0; }
-  state.match.winner = -1;
-  state.match.history.length = 0;
-  state.round.number = 0;
+  state.match.winner = -1; state.match.history.length = 0; state.round.number = 0;
   startRound(state);
 }
 
-export function startRound(state) {
+function startRound(state) {
   const round = state.round;
-  round.number++;
-  if (round.number === ROUND.half + 1) swapSides(state);
-  round.phase = 'freeze';
-  round.timer = ROUND.freeze;
-  round.clock = ROUND.live;
-  round.winner = -1;
-  round.reason = '';
-  round.buyOpen = true;
-  round.planted = false;
+  if (++round.number === ROUND.half + 1) { // sides swap: everyone restarts with the sidearm and start money
+    for (const t of state.teams) { t.side = 1 - t.side; t.lossStreak = 0; }
+    for (const a of state.actors) { a.alive = false; a.money = ECON.start; }
+  }
+  Object.assign(round, { phase: 'freeze', timer: ROUND.freeze, clock: ROUND.live, winner: -1, reason: '', buyOpen: true, planted: false });
   for (const n of state.nades) n.live = false;
   for (const s of state.smokes) s.live = false;
-  const used = [0, 0];
-  const calls = state.teams.map((t) => teamCall(state, t));
+  const used = [0, 0], calls = state.teams.map((t) => teamCall(state, t));
   for (const a of state.actors) {
-    const side = state.teams[a.team].side;
-    const spawns = state.map.spawns[side];
-    const spawn = spawns[used[side]++ % spawns.length];
-    respawn(a, spawn, side === SIDE.ATTACK ? 0 : Math.PI);
+    const side = state.teams[a.team].side, spawns = state.map.spawns[side];
+    respawn(a, spawns[used[side]++ % spawns.length], side === SIDE.ATTACK ? 0 : Math.PI);
     a.cmd.yaw = a.yaw; a.cmd.pitch = 0;
     if (a.isBot) botShop(state, a, calls[a.team], a.brain.role === 'marksman');
   }
   // The Fuse Core goes to the player when attacking, else to a random attacking bot.
   const attackers = state.actors.filter((a) => state.teams[a.team].side === SIDE.ATTACK);
-  const carrier = attackers.includes(state.player) ? state.player : state.rng.pick(attackers);
-  resetCore(state, carrier.id);
+  resetCore(state, (attackers.includes(state.player) ? state.player : state.rng.pick(attackers)).id);
   for (const t of state.teams) planRound(state, t, calls[t.id]);
   emit(state.events, EV.ROUND, -1, -1, 0);
 }
 
-function swapSides(state) {
-  for (const t of state.teams) { t.side = 1 - t.side; t.lossStreak = 0; }
-  for (const a of state.actors) { a.alive = false; a.money = ECON.start; }
-}
-
-export function aliveCount(state, team) {
+function aliveCount(state, team) {
   let n = 0;
   for (const a of state.actors) if (a.alive && a.team === team) n++;
   return n;
 }
 
-export function teamOnSide(state, side) { return state.teams[0].side === side ? 0 : 1; }
-
 export function updateRound(state) {
   const round = state.round;
   round.timer -= DT;
-  switch (round.phase) {
-    case 'freeze':
-      if (round.timer <= 0) { round.phase = 'live'; round.timer = 0; }
-      break;
-    case 'live': {
-      // Win conditions. Once the core is armed the clock stops: attackers win on detonation or with
-      // every defender down; defenders must disarm it even if no attacker is left.
-      const atk = teamOnSide(state, SIDE.ATTACK), def = 1 - atk;
-      const core = state.core.state;
-      if (core !== 'planted') round.clock -= DT;
-      round.buyOpen = ROUND.live - round.clock < ROUND.buyWindow && core !== 'planted';
-      if (core === 'detonated') endRound(state, atk, 'detonated');
-      else if (core === 'defused') endRound(state, def, 'defused');
-      else if (aliveCount(state, def) === 0) endRound(state, atk, 'eliminated');
-      else if (aliveCount(state, atk) === 0 && core !== 'planted') endRound(state, def, 'eliminated');
-      else if (round.clock <= 0 && core !== 'planted') endRound(state, def, 'time');
-      break;
-    }
-    case 'over':
-      if (round.timer <= 0) {
-        if (state.match.winner >= 0) { round.phase = 'matchover'; round.timer = ROUND.matchOver; }
-        else startRound(state);
-      }
-      break;
-    case 'matchover':
-      if (round.timer <= 0) startMatch(state);
-      break;
+  if (round.phase === 'freeze') {
+    if (round.timer <= 0) { round.phase = 'live'; round.timer = 0; }
+  } else if (round.phase === 'live') {
+    // Once armed the clock stops: attackers win on detonation or every defender down; defenders must disarm.
+    const atk = state.teams[0].side === SIDE.ATTACK ? 0 : 1, def = 1 - atk, core = state.core.state;
+    if (core !== 'planted') round.clock -= DT;
+    round.buyOpen = ROUND.live - round.clock < ROUND.buyWindow && core !== 'planted';
+    if (core === 'detonated') endRound(state, atk, 'detonated');
+    else if (core === 'defused') endRound(state, def, 'defused');
+    else if (aliveCount(state, def) === 0) endRound(state, atk, 'eliminated');
+    else if (aliveCount(state, atk) === 0 && core !== 'planted') endRound(state, def, 'eliminated');
+    else if (round.clock <= 0 && core !== 'planted') endRound(state, def, 'time');
+  } else if (round.timer <= 0) {
+    if (round.phase === 'matchover') startMatch(state);
+    else if (state.match.winner >= 0) { round.phase = 'matchover'; round.timer = ROUND.matchOver; }
+    else startRound(state);
   }
 }
 
-export function endRound(state, winner, reason) {
+function endRound(state, winner, reason) {
   const round = state.round;
-  round.phase = 'over';
-  round.timer = ROUND.over;
-  round.endedAt = state.time;
-  round.winner = winner;
-  round.reason = reason;
-  round.buyOpen = false;
+  round.phase = 'over'; round.timer = ROUND.over; round.endedAt = state.time;
+  round.winner = winner; round.reason = reason; round.buyOpen = false;
   state.teams[winner].score++;
   state.match.history.push(winner, reason); // pairs: winning team, reason
   payRound(state, winner, reason);

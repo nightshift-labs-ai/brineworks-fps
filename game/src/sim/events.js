@@ -15,16 +15,14 @@ export const EV = {
 const SIZE = 512;
 
 export function createEvents() {
-  const list = [];
-  for (let i = 0; i < SIZE; i++) list.push({ type: 0, a: -1, b: -1, v: 0, w: 0, x: 0, y: 0, z: 0, x2: 0, y2: 0, z2: 0, text: '' });
-  return { head: 0, list };
+  const record = () => ({ type: 0, a: -1, b: -1, v: 0, w: 0, x: 0, y: 0, z: 0, x2: 0, y2: 0, z2: 0, text: '' });
+  return { head: 0, list: Array.from({ length: SIZE }, record) };
 }
 
-export function emit(events, type, a = -1, b = -1, v = 0, w = 0) {
-  const e = events.list[events.head % SIZE];
-  events.head++;
-  e.type = type; e.a = a; e.b = b; e.v = v; e.w = w;
-  e.x = e.y = e.z = e.x2 = e.y2 = e.z2 = 0;
+export function emit(events, type, a = -1, b = -1, v = 0, w = 0, x = 0, y = 0, z = 0) {
+  const e = events.list[events.head++ % SIZE];
+  e.type = type; e.a = a; e.b = b; e.v = v; e.w = w; e.x = x; e.y = y; e.z = z;
+  e.x2 = e.y2 = e.z2 = 0;
   e.text = '';
   return e;
 }

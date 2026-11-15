@@ -1,19 +1,16 @@
-// The Fuse Core, this game's bomb objective: carry, drop, arm on a site, fuse, disarm, detonate.
-// It only moves the core through its states; round.js reads them to decide the round.
-import { DT, OBJECTIVE, SIDE, ECON } from './config.js';
+// The Fuse Core, this game's bomb objective: carry, drop, arm, fuse, disarm, detonate (round.js reads the state).
+import { DT, OBJECTIVE, SIDE } from './config.js';
 import { emit, EV } from './events.js';
 import { makeNoise } from './senses.js';
 import { siteNear } from './map.js';
-import { blast } from './actors.js';
+import { blast, pay } from './actors.js';
 
 export function createCore() {
   return { state: 'carried', carrier: -1, x: 0, y: 0, z: 0, site: '', fuse: 0, progress: 0, worker: -1, beep: 0 };
 }
 
 export function resetCore(state, carrierId) {
-  const core = state.core;
-  core.state = 'carried'; core.carrier = carrierId; core.site = ''; core.fuse = 0;
-  core.progress = 0; core.worker = -1; core.beep = 0;
+  Object.assign(state.core, { state: 'carried', carrier: carrierId, site: '', fuse: 0, progress: 0, worker: -1, beep: 0 });
 }
 
 // Busy arming or disarming: movement and trigger are locked.
@@ -23,12 +20,24 @@ export function updateCore(state) {
   const core = state.core;
   if (core.state === 'carried') {
     const c = state.actors[core.carrier];
-    if (!c.alive) { drop(state, c); return; }
     core.x = c.pos.x; core.y = c.pos.y; core.z = c.pos.z;
-    const site = siteNear(state.map, c.pos.x, c.pos.z, 0);
-    const still = Math.hypot(c.vel.x, c.vel.z) < 0.6 && c.grounded;
-    if (c.cmd.use && site && still && state.round.phase === 'live') { if (work(state, c, OBJECTIVE.plantTime)) plant(state, c, site); }
-    else stopWork(core);
+    if (!c.alive) { // dropped where the carrier fell
+      core.state = 'dropped'; core.carrier = -1;
+      stopWork(core);
+      emit(state.events, EV.CORE, c.id, -1, 0);
+      return;
+    }
+    // Armed standing still on a site, holding use.
+    const site = c.cmd.use && Math.hypot(c.vel.x, c.vel.z) < 0.6 && c.grounded && state.round.phase === 'live'
+      && siteNear(state.map, c.pos.x, c.pos.z, 0);
+    if (!site) stopWork(core);
+    else if (work(state, c, OBJECTIVE.plantTime)) {
+      core.state = 'planted'; core.site = site.name; core.fuse = OBJECTIVE.fuse; core.carrier = -1;
+      pay(c, OBJECTIVE.reward);
+      state.round.planted = true;
+      emit(state.events, EV.CORE, c.id, -1, 2);
+      makeNoise(state, c, 'alarm'); // the armed core's alarm: every defender knows
+    }
   } else if (core.state === 'dropped') {
     for (const a of state.actors) {
       if (!a.alive || state.teams[a.team].side !== SIDE.ATTACK || Math.hypot(a.pos.x - core.x, a.pos.z - core.z) > 1.1) continue;
@@ -38,17 +47,24 @@ export function updateCore(state) {
     }
   } else if (core.state === 'planted') {
     core.fuse -= DT;
-    core.beep -= DT;
-    if (core.beep <= 0) { // beeps quicken as the fuse burns down
+    if ((core.beep -= DT) <= 0) { // beeps quicken as the fuse burns down
       core.beep = Math.max(0.12, core.fuse / OBJECTIVE.fuse);
-      const e = emit(state.events, EV.CORE, -1, -1, 4);
-      e.x = core.x; e.y = core.y; e.z = core.z;
+      emit(state.events, EV.CORE, -1, -1, 4, 0, core.x, core.y, core.z);
     }
-    if (core.fuse <= 0) { detonate(state); return; }
+    if (core.fuse <= 0) { // the blast: falls off with distance, blocked by walls; no kill reward
+      core.state = 'detonated';
+      emit(state.events, EV.BLAST, -1, -1, OBJECTIVE.blastRadius, 0, core.x, core.y + 0.5, core.z);
+      blast(state, core.x, core.y + 0.5, core.z, OBJECTIVE.blastRadius, OBJECTIVE.blastDamage, 0.5, null, null);
+      return;
+    }
     for (const a of state.actors) {
       if (!a.alive || !a.cmd.use || state.teams[a.team].side !== SIDE.DEFEND || !a.grounded
         || Math.hypot(a.pos.x - core.x, a.pos.z - core.z) > OBJECTIVE.reach) continue;
-      if (work(state, a, a.kit ? OBJECTIVE.kitDefuseTime : OBJECTIVE.defuseTime)) defuse(state, a);
+      if (work(state, a, a.kit ? OBJECTIVE.kitDefuseTime : OBJECTIVE.defuseTime)) {
+        core.state = 'defused';
+        pay(a, OBJECTIVE.reward);
+        emit(state.events, EV.CORE, a.id, -1, 3);
+      }
       return;
     }
     stopWork(core);
@@ -70,40 +86,3 @@ function work(state, a, duration) {
 }
 
 function stopWork(core) { core.worker = -1; core.progress = 0; }
-
-function drop(state, carrier) {
-  const core = state.core;
-  core.state = 'dropped';
-  core.carrier = -1;
-  core.x = carrier.pos.x; core.y = carrier.pos.y; core.z = carrier.pos.z;
-  stopWork(core);
-  emit(state.events, EV.CORE, carrier.id, -1, 0);
-}
-
-function plant(state, a, site) {
-  const core = state.core;
-  core.state = 'planted';
-  core.site = site.name;
-  core.fuse = OBJECTIVE.fuse;
-  core.x = a.pos.x; core.y = a.pos.y; core.z = a.pos.z;
-  core.carrier = -1;
-  a.money = Math.min(ECON.max, a.money + OBJECTIVE.reward);
-  state.round.planted = true;
-  emit(state.events, EV.CORE, a.id, -1, 2);
-  makeNoise(state, a, 'alarm'); // the armed core's alarm: every defender knows
-}
-
-function defuse(state, a) {
-  state.core.state = 'defused';
-  a.money = Math.min(ECON.max, a.money + OBJECTIVE.reward);
-  emit(state.events, EV.CORE, a.id, -1, 3);
-}
-
-// The blast: heavy damage falling off with distance, blocked by walls; no kill reward.
-function detonate(state) {
-  const core = state.core;
-  core.state = 'detonated';
-  const e = emit(state.events, EV.BLAST, -1, -1, OBJECTIVE.blastRadius);
-  e.x = core.x; e.y = core.y + 0.5; e.z = core.z;
-  blast(state, core.x, core.y + 0.5, core.z, OBJECTIVE.blastRadius, OBJECTIVE.blastDamage, 0.5, null, null);
-}

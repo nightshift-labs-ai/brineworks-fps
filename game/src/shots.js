@@ -40,7 +40,7 @@ function place(state, a, c, r, fc, fr, gun) {
   const S = state.map.cell;
   a.alive = true; a.hp = 100;
   a.pos.x = a.prev.x = (c + 0.5) * S; a.pos.z = a.prev.z = (r + 0.5) * S; a.pos.y = a.prev.y = state.map.height[r * state.map.w + c];
-  a.vel.x = a.vel.z = a.pitch = a.cmd.pitch = a.drawTimer = 0;
+  a.vel.x = a.vel.z = a.pitch = a.cmd.pitch = 0;
   a.yaw = a.prevYaw = a.cmd.yaw = yawTo(c, r, fc, fr);
   if (gun) giveWeapon(a, gun);
   a.drawTimer = 0;

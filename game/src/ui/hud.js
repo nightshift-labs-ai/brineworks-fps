@@ -7,7 +7,6 @@ import { drain, EV } from '../sim/events.js';
 import { yawTo } from '../sim/util.js';
 import { createRadar } from './radar.js';
 
-const clockText = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 const PHASES = ['live', 'freeze', 'over', 'matchover'];
 const CORE_STATES = ['carried', 'dropped', 'planted', 'defused', 'detonated'];
 const HEADERS = { rivet: 'Sidearm', skiff: 'Primary', vest: 'Gear', frag: 'Grenades' }; // buy menu sections
@@ -15,20 +14,21 @@ const REASONS = { time: 'Time ran out', detonated: 'The Fuse Core detonated', de
 const make = (parent, tag, n) => Array.from({ length: n }, () => parent.appendChild(document.createElement(tag)));
 
 export function createHud(state, camera) {
-  const el = { hud: document.getElementById('hud') };
-  for (const n of document.querySelectorAll('#hud [id]')) el[n.id] = n;
+  const el = {};
+  for (const n of document.querySelectorAll('#hud, #hud [id]')) el[n.id] = n;
   // Text is built only when the value behind it changed, so update() allocates nothing per frame.
   const cache = new Map();
   const changed = (key, value) => { if (cache.get(key) === value) return false; cache.set(key, value); return true; };
+  const show = (node, value) => { if (changed(node, value)) node.textContent = value; };
   const toggle = (node, cls, on) => { if (node.classList.contains(cls) !== on) node.classList.toggle(cls, on); };
 
   const pips = [0, 1].map((t) => make(el[`pips${t}`], 'i', 5).map((i) => { i.style.background = TEAMS[t].css; return i; }));
   const history = make(el.round, 'i', ROUND.winsNeeded * 2 - 1);
   const feedRows = make(el.feed, 'li', 5), radioRows = make(el.radio, 'li', 4), feed = [], radio = [];
   const buyRows = SHOP.map((item) => {
-    if (HEADERS[item.id]) el['buy-list'].appendChild(document.createElement('h3')).textContent = HEADERS[item.id];
-    const li = el['buy-list'].appendChild(document.createElement('li'));
-    li.innerHTML = `<kbd>${item.key}</kbd><span>${itemDef(item).name}</span><b>$${itemDef(item).price}</b>`;
+    if (HEADERS[item.id]) make(el['buy-list'], 'h3', 1)[0].textContent = HEADERS[item.id];
+    const [li] = make(el['buy-list'], 'li', 1), def = itemDef(item);
+    li.innerHTML = `<kbd>${item.key}</kbd><span>${def.name}</span><b>$${def.price}</b>`;
     return li;
   });
   const boardRows = make(el['board-body'], 'tr', state.actors.length);
@@ -61,13 +61,13 @@ export function createHud(state, camera) {
   function update() {
     cursor = drain(state.events, cursor, onEvent);
     const p = state.player, round = state.round, core = state.core, w = p.slots[p.active];
-    if (changed('hp', p.hp)) el.hp.textContent = Math.max(0, p.hp);
+    show(el.hp, Math.max(0, p.hp));
     toggle(el.hp.parentNode, 'low', p.hp <= 25);
-    if (changed('armor', Math.round(p.armor))) el.armor.textContent = Math.round(p.armor);
-    if (changed('helm', p.helm)) el['armor-label'].textContent = p.helm ? 'ARMOUR+HELM' : 'ARMOUR';
+    show(el.armor, Math.round(p.armor));
+    show(el['armor-label'], p.helm ? 'ARMOUR+HELM' : 'ARMOUR');
     if (changed('money', p.money)) el.money.textContent = '$' + p.money;
     if (w) {
-      if (changed('mag', w.mag)) el.mag.textContent = w.mag;
+      show(el.mag, w.mag);
       if (changed('res', w.reserve)) el.reserve.textContent = '/ ' + w.reserve;
       if (changed('wpn', w.id) | changed('rel', p.reloadTimer > 0)) el.weapon.textContent = WEAPONS[w.id].name + (p.reloadTimer > 0 ? '  reloading' : ''); // | updates both keys
       toggle(el.ammo, 'empty', w.mag === 0);
@@ -77,10 +77,9 @@ export function createHud(state, camera) {
     toggle(el.frag, 'off', !p.grenades.frag);
     toggle(el.smoke, 'off', !p.grenades.smoke);
     toggle(el.spanner, 'off', !p.kit);
-    // The clock: freeze countdown, round clock, or the armed core's fuse.
     const armed = core.state === 'planted';
     const secs = Math.max(0, Math.ceil(round.phase === 'freeze' ? round.timer : armed ? core.fuse : round.clock));
-    if (changed('clock', armed ? -secs - 1 : secs)) el.clock.textContent = (armed ? 'CORE ' : '') + clockText(secs);
+    if (changed('clock', armed ? -secs - 1 : secs)) el.clock.textContent = (armed ? 'CORE ' : '') + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
     toggle(el.clock, 'freeze', round.phase === 'freeze');
     toggle(el.clock, 'urgent', armed || (round.phase === 'live' && round.clock < 15));
     for (let t = 0; t < 2; t++) {
@@ -92,7 +91,7 @@ export function createHud(state, camera) {
     let n0 = 0, n1 = 0;
     for (const a of state.actors) toggle(pips[a.team][a.team ? n1++ : n0++], 'dead', !a.alive);
     for (let i = 0; i < history.length; i++) {
-      const won = i * 2 < state.match.history.length ? state.match.history[i * 2] : -1;
+      const won = state.match.history[i * 2] ?? -1;
       if (changed(history[i], won)) history[i].style.background = won < 0 ? '' : TEAMS[won].css;
     }
     // Crosshair gap = the live spread cone projected to pixels.
@@ -112,39 +111,43 @@ export function createHud(state, camera) {
     if (changed('cell', cell)) el.where.textContent = placeName(state.map, p.pos.x, p.pos.z);
     objective(p, core);
     banner(round);
-    const down = !p.alive && round.phase !== 'freeze', hint = round.buyOpen && p.alive && !buyOpen;
-    if (changed('spec', down)) el.spectate.textContent = down ? 'You are down: watching your team' : '';
-    if (changed('hint', hint)) el.hint.textContent = hint ? 'B  requisition' : '';
+    show(el.spectate, !p.alive && round.phase !== 'freeze' ? 'You are down: watching your team' : '');
+    show(el.hint, round.buyOpen && p.alive && !buyOpen ? 'B  requisition' : '');
     if (buyOpen && !round.buyOpen) toggleBuy(false);
     if (buyOpen) {
       if (changed('buyMoney', p.money)) el['buy-money'].textContent = '$' + p.money;
       for (let i = 0; i < SHOP.length; i++) toggle(buyRows[i], 'off', !canBuy(state, p, SHOP[i]));
-      const left = Math.max(0, Math.ceil(round.phase === 'freeze' ? round.timer + ROUND.buyWindow : round.clock - ROUND.live + ROUND.buyWindow));
+      const left = Math.max(0, Math.ceil((round.phase === 'freeze' ? round.timer : round.clock - ROUND.live) + ROUND.buyWindow));
       if (changed('buyFoot', left)) el['buy-foot'].textContent = `Loss pay next round: $${lossPay(state.teams[p.team])}\nKeys 1-0 buy, B or Esc close. Buying closes in ${left} s.`;
     }
-    if (boardOpen || round.phase === 'matchover') drawBoard();
-    toggle(el.board, 'open', boardOpen || round.phase === 'matchover');
+    const board = boardOpen || round.phase === 'matchover';
+    if (board) {
+      for (const a of state.actors) {
+        if (!changed(boardRows[a.id], a.money * 4096 + a.kills * 64 + a.deaths * 2 + (a.alive ? 1 : 0))) continue;
+        boardRows[a.id].innerHTML = `<td style="color:${TEAMS[a.team].css}">${a.name}</td><td>${a.alive ? '' : 'down'}</td><td>${a.kills}</td><td>${a.deaths}</td><td>$${a.money}</td>`;
+      }
+    }
+    toggle(el.board, 'open', board);
     radar.draw();
   }
 
-  // The Fuse Core line for the player's side, rebuilt only when the core's state changes; the bar.
+  // The arm/disarm bar while a teammate works the core; the Fuse Core line, rebuilt only when the core's state changes.
   function objective(p, core) {
-    const worker = core.worker >= 0 && core.progress > 0 ? state.actors[core.worker] : null;
-    toggle(el.progress, 'on', !!worker && worker.team === p.team);
-    if (worker && worker.team === p.team && changed('prog', Math.floor(core.progress * 100) + worker.id * 1000)) {
-      const pct = Math.floor(core.progress * 100);
+    const worker = core.worker >= 0 && core.progress > 0 ? state.actors[core.worker] : null, pct = Math.floor(core.progress * 100);
+    const ours = !!worker && worker.team === p.team;
+    toggle(el.progress, 'on', ours);
+    if (ours && changed('prog', pct + worker.id * 1000)) {
       el.progress.style.setProperty('--p', pct + '%');
       el['progress-label'].textContent = `${core.state === 'planted' ? 'DISARMING' : 'ARMING'} ${pct}%${worker.kit ? '  KIT' : ''}${worker === p ? '' : '  ' + worker.name}`;
     }
     const live = state.round.phase === 'live' && p.alive;
     if (!changed('obj', (live ? 1 : 0) + (core.state === 'carried' ? core.carrier * 10 + 10 : CORE_STATES.indexOf(core.state) * 2))) return;
     const attacking = state.teams[p.team].side === SIDE.ATTACK;
-    let text = '';
-    if (core.state === 'planted') text = `Core armed at ${core.site}: ${attacking ? 'hold the site' : 'hold E on it to disarm'}`;
-    else if (core.state === 'carried' && core.carrier === p.id) text = 'You carry the Fuse Core: hold E on site A or B to arm it';
-    else if (core.state === 'dropped') text = attacking ? 'Fuse Core dropped: pick it up' : 'They dropped the Fuse Core';
-    else if (core.state === 'carried' && attacking) text = `${state.actors[core.carrier].name} carries the Fuse Core`;
-    el.objective.textContent = live ? text : '';
+    el.objective.textContent = !live ? ''
+      : core.state === 'planted' ? `Core armed at ${core.site}: ${attacking ? 'hold the site' : 'hold E on it to disarm'}`
+        : core.state === 'carried' && core.carrier === p.id ? 'You carry the Fuse Core: hold E on site A or B to arm it'
+          : core.state === 'dropped' ? (attacking ? 'Fuse Core dropped: pick it up' : 'They dropped the Fuse Core')
+            : core.state === 'carried' && attacking ? `${state.actors[core.carrier].name} carries the Fuse Core` : '';
   }
 
   function banner(round) {
@@ -166,13 +169,6 @@ export function createHud(state, camera) {
     el['banner-sub'].textContent = sub;
     toggle(el.banner, 'on', title !== '');
     toggle(el.hud, 'banner', title !== '');
-  }
-
-  function drawBoard() {
-    for (const a of state.actors) {
-      if (!changed(boardRows[a.id], a.money * 4096 + a.kills * 64 + a.deaths * 2 + (a.alive ? 1 : 0))) continue;
-      boardRows[a.id].innerHTML = `<td style="color:${TEAMS[a.team].css}">${a.name}</td><td>${a.alive ? '' : 'down'}</td><td>${a.kills}</td><td>${a.deaths}</td><td>$${a.money}</td>`;
-    }
   }
 
   function toggleBuy(open) {

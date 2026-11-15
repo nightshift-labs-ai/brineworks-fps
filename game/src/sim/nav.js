@@ -5,8 +5,8 @@ import { MOVE } from './config.js';
 const MAX_POINTS = 96;
 const DIRS = [1, 0, 1, -1, 0, 1, 0, 1, 1, 0, -1, 1, 1, 1, 1.4142, 1, -1, 1.4142, -1, 1, 1.4142, -1, -1, 1.4142]; // dc, dr, cost
 
-// Reusable search scratch, allocated once per map size (search buffers, not game state).
-const S = { w: 0, size: 0, gen: 0, g: null, f: null, parent: null, heap: null, pos: null, closed: null, stamp: null, gc: 0, gr: 0 };
+// Search scratch, allocated once per map size (buffers, not game state).
+const S = { w: 0, size: 0, gen: 0, gc: 0, gr: 0 };
 function scratch(map) {
   if (S.w === map.w && S.size === map.w * map.h) return;
   const n = S.size = map.w * map.h;
@@ -42,18 +42,18 @@ function estimate(n) {
 }
 
 const passable = (map, from, to) => map.walk[to] === 1 && map.height[to] - map.height[from] <= MOVE.stepHeight;
+const inside = (map, c, r) => c >= 0 && r >= 0 && c < map.w && r < map.h;
+const cellX = (n) => (n % S.w + 0.5) * CELL, cellZ = (n) => (((n / S.w) | 0) + 0.5) * CELL; // a cell's centre
 
 function nearestWalkable(map, c, r) {
-  for (let rad = 0; rad < 4; rad++) {
-    for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad; dc <= rad; dc++) {
-      const cc = c + dc, rr = r + dr;
-      if (cc >= 0 && rr >= 0 && cc < map.w && rr < map.h && map.walk[rr * map.w + cc]) return rr * map.w + cc;
-    }
+  for (let rad = 0; rad < 4; rad++) for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad; dc <= rad; dc++) {
+    const cc = c + dc, rr = r + dr;
+    if (inside(map, cc, rr) && map.walk[rr * map.w + cc]) return rr * map.w + cc;
   }
   return -1;
 }
 
-// Fill `path` with world points from (fx, fz) to (tx, tz); false when there is no route.
+// Fills `path` with points from (fx, fz) to (tx, tz); false when there is no route.
 export function findPath(map, fx, fz, tx, tz, path) {
   scratch(map);
   const W = map.w, { g, f, parent, heap, pos, closed, stamp } = S;
@@ -72,10 +72,8 @@ export function findPath(map, fx, fz, tx, tz, path) {
     closed[n] = 1;
     const c = n % W, r = (n / W) | 0;
     for (let d = 0; d < DIRS.length; d += 3) {
-      const dc = DIRS[d], dr = DIRS[d + 1], cc = c + dc, rr = r + dr;
-      if (cc < 0 || rr < 0 || cc >= map.w || rr >= map.h) continue;
-      const m = rr * W + cc;
-      if (!passable(map, n, m) || (dc && dr && (!passable(map, n, r * W + cc) || !passable(map, n, rr * W + c)))) continue;
+      const dc = DIRS[d], dr = DIRS[d + 1], cc = c + dc, rr = r + dr, m = rr * W + cc;
+      if (!inside(map, cc, rr) || !passable(map, n, m) || (dc && dr && (!passable(map, n, r * W + cc) || !passable(map, n, rr * W + c)))) continue;
       if (stamp[m] !== gen) { stamp[m] = gen; closed[m] = 0; g[m] = Infinity; pos[m] = -1; }
       const cost = g[n] + DIRS[d + 2];
       if (closed[m] || cost >= g[m]) continue;
@@ -85,26 +83,24 @@ export function findPath(map, fx, fz, tx, tz, path) {
     }
   }
   if (!found) return false;
-  // Parents back into the heap buffer (the search is over), then pull the string: from each point
-  // jump to the farthest cell reachable in a straight walkable line.
+  // Parents into the (now free) heap buffer, then pull the string: jump to the farthest cell in a straight walkable line.
   let n = goal, k = 0;
   while (n >= 0 && k < S.size) { heap[k++] = n; n = parent[n]; }
   let x = fx, z = fz, i = k - 1;
   while (i >= 0 && path.length < MAX_POINTS) {
     let j = 0;
-    for (; j < i; j++) if (walkableLine(map, x, z, (heap[j] % W + 0.5) * CELL, (((heap[j] / W) | 0) + 0.5) * CELL)) break;
-    x = (heap[j] % W + 0.5) * CELL; z = (((heap[j] / W) | 0) + 0.5) * CELL;
+    for (; j < i; j++) if (walkableLine(map, x, z, cellX(heap[j]), cellZ(heap[j]))) break;
+    x = cellX(heap[j]); z = cellZ(heap[j]);
     path.xs[path.length] = x; path.zs[path.length] = z; path.length++;
     i = j - 1;
   }
   const end = map.walk[Math.floor(tz / CELL) * W + Math.floor(tx / CELL)];
-  path.xs[path.length - 1] = end ? tx : (S.gc + 0.5) * CELL;
-  path.zs[path.length - 1] = end ? tz : (S.gr + 0.5) * CELL;
+  path.xs[path.length - 1] = end ? tx : cellX(goal);
+  path.zs[path.length - 1] = end ? tz : cellZ(goal);
   return true;
 }
 
-// A body-wide straight line on walkable cells that never climbs more than a step between samples
-// (so it cannot cut onto the deck except up the stairs).
+// A body-wide straight line on walkable cells, never climbing more than a step between samples (onto the deck only by the stairs).
 function walkableLine(map, ax, az, bx, bz) {
   const steps = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.35), r = MOVE.radius + 0.08;
   let last = -1;
@@ -113,7 +109,7 @@ function walkableLine(map, ax, az, bx, bz) {
     let top = 0;
     for (let k = 0; k < 4; k++) {
       const c = Math.floor((x + (k & 1 ? r : -r)) / CELL), rr = Math.floor((z + (k & 2 ? r : -r)) / CELL);
-      if (c < 0 || rr < 0 || c >= map.w || rr >= map.h || !map.walk[rr * map.w + c]) return false;
+      if (!inside(map, c, rr) || !map.walk[rr * map.w + c]) return false;
       top = Math.max(top, map.height[rr * map.w + c]);
     }
     if (last >= 0 && top - last > MOVE.stepHeight) return false;

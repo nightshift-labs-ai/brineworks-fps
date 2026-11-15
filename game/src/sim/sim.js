@@ -19,8 +19,7 @@ export function step(state) {
   state.tick++;
   state.time += DT;
   updateRound(state);
-  const frozen = state.round.phase === 'freeze';
-  const actors = state.actors;
+  const frozen = state.round.phase === 'freeze', actors = state.actors;
   if (state.round.phase === 'live') updateCoach(state);
   for (const a of actors) if (a.alive && a.isBot) think(state, a);
   for (const a of actors) {

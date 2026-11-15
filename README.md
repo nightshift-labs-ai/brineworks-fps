@@ -1,7 +1,7 @@
 # Brineworks
 
 A round-based tactical first-person shooter in three.js, played single-player against bots.
-Five Harrow salvage crew against five Saltreeves at a salt refinery on the coast at dusk: short rounds
+Five Harrow salvage crew against five Saltreeves at a salt refinery on the coast at dusk: brief rounds
 on an original three-lane map, money that carries between rounds, and gunfire where stopping to
 aim beats spraying on the move.
 
@@ -30,6 +30,9 @@ python3 -m http.server 8080 --directory game   # or: node serve.ts
 | Space | jump |
 | R | reload |
 | 1 / 2 | primary / sidearm |
+| Right click | scope (Capstan LR) |
+| G / F | throw a frag / a smoke |
+| E (hold) | arm the Fuse Core on a site / disarm it |
 | B | buy menu (freeze time and the first seconds of a round) |
 | Tab | scoreboard |
 
@@ -37,7 +40,8 @@ python3 -m http.server 8080 --directory game   # or: node serve.ts
 
 - `game/index.html`: HUD markup and styles, the import map, and a short guide to the source.
 - `game/src/sim/`: the fixed-step simulation (no three.js, no DOM): map grid, collision, movement,
-  weapons, bots, rounds, economy, events.
+  weapons, grenades, the Fuse Core objective, bots and their team coach, A* navigation, rounds,
+  economy, events.
 - `game/src/render/`: three.js view of the state: level meshes, textures, characters, effects, gun.
 - `game/src/ui/`: HUD, radar. `game/src/input.js`: keyboard and mouse. `game/src/shots.js`: staged
   screenshot scenes (`?shot=1..4&seed=N`).
