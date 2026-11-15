@@ -75,7 +75,7 @@ export function createView(state, container) {
         vm.fired();
       } else {
         const yaw = state.actors[e.a].yaw, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-        muzzle.set(e.x + (fx * 0.75 - fz * 0.08), e.y - 0.22, e.z + (fz * 0.75 + fx * 0.08));
+        muzzle.set(e.x + (fx * 0.75 - fz * 0.18), e.y - 0.38, e.z + (fz * 0.75 + fx * 0.18));
         effects.spawnFlash(muzzle.x, muzzle.y, muzzle.z);
       }
       effects.spawnTracer(muzzle, e.x2, e.y2, e.z2, camera.position, own);

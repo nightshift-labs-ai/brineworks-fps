@@ -33,7 +33,7 @@ export function createEffects(scene) {
   points.frustumCulled = false;
   scene.add(points);
   const flashMat = glow(0xffd08a);
-  const flashes = Array.from({ length: FLASHES }, () => { const sp = new THREE.Sprite(flashMat); sp.visible = false; sp.scale.setScalar(0.45); scene.add(sp); return { sprite: sp, life: 0 }; });
+  const flashes = Array.from({ length: FLASHES }, () => { const sp = new THREE.Sprite(flashMat); sp.visible = false; sp.scale.setScalar(0.28); scene.add(sp); return { sprite: sp, life: 0 }; });
   const blastSprite = new THREE.Sprite(glow(0xffc070)), blastLight = new THREE.PointLight(0xff9a40, 0, 30);
   blastSprite.visible = false;
   scene.add(blastSprite, blastLight);
