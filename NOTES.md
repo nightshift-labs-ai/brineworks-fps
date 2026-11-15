@@ -1,7 +1,7 @@
 # NOTES (working log for the build agent)
 
 Game: **Brineworks**, a 5v5 round-based tactical FPS at a salt refinery on a cold coast at dusk.
-Rakers (vermilion) vs Saltreeves (cobalt); you play with the Rakers, who attack first. Sides swap
+Rakehands (vermilion) vs Saltreeves (cobalt); you play with the Rakehands, who attack first. Sides swap
 after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A or B, fuse, disarm).
 
 ## Status (2026-11-15, main)
@@ -37,7 +37,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - Audio: game/src/audio.js plays shots, steps, reloads, beeps, blasts, bounces from the event ring,
   muffled through walls by the bots' hearing rule; starts in the pointer-lock click.
 - Pointer lock: lock() catches a refused re-lock and says 'Click again to resume'.
-- Names: bots Carrick, Skerry, Ozzy, Brandt / Haldane, Kesh, Fenn, Lowrie, Dunmore; teams Rakers /
+- Names: bots Carrick, Skerry, Ozzy, Brandt / Haldane, Kesh, Fenn, Lowrie, Dunmore; teams Rakehands /
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)

@@ -13,7 +13,7 @@ const NODES = [
   ['trunk chest', 'c 44 100 26 0 50,v 50 72 32 0 48,d 32 50 14 0 55 20'],
   ['arms chest', 'l 3 10 14 -27.5 2 -2,l 3 10 14 27.5 2 -2'], ['armL arms -21 -2', ARM], ['armR arms 21 -2', ARM],
 ];
-const HEADS = [ // Rakers: hood, respirator; Saltreeves: brimmed helmet, antenna
+const HEADS = [ // Rakehands: hood, respirator; Saltreeves: brimmed helmet, antenna
   'c 22 20 22 0 -3,t 30 24 12 0 -10 9,h -18 9 16 0 3.5,h -16 7 9 0 11.5,l -18.5 4 18.5 0 1,s 17 11 6 0 -5 -12,s -5 9 5 4 -7 -16 157',
   'c 24 26 26,h 28 8 30 0 13 1,h 40 2.5 42 0 9,l 28.5 3 30.5 0 11 1,d 22 6 3 0 1 -13.5,d 1.4 26 1.4 10 28 10,l 3 3 3 10 41 10',
 ];

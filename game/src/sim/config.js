@@ -4,7 +4,7 @@ export const GRAVITY = 20;
 
 export const SIDE = { ATTACK: 0, DEFEND: 1 }; // side 0 carries the Fuse Core
 export const TEAMS = [
-  { name: 'Rakers', color: 0xdd4a32, css: '#ef5a3e' },
+  { name: 'Rakehands', color: 0xdd4a32, css: '#ef5a3e' },
   { name: 'Saltreeves', color: 0x3a86e0, css: '#4d97f0' },
 ];
 export const PLAYER_TEAM = 0, TEAM_SIZE = 5;
