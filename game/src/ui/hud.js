@@ -135,7 +135,7 @@ export function createHud(state, camera) {
 
   function clockAndScore(round, core) {
     const armed = core.state === 'planted';
-    const secs = Math.max(0, Math.ceil(round.phase === 'freeze' ? round.timer : armed ? core.fuse : round.clock));
+    const secs = Math.max(0, Math.ceil(round.phase !== 'live' ? round.timer : armed ? core.fuse : round.clock));
     if (changed('clock', secs, armed)) el.clock.textContent = (armed ? 'CORE ' : '') + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
     toggle(el.clock, 'freeze', round.phase === 'freeze');
     toggle(el.clock, 'urgent', armed || (round.phase === 'live' && round.clock < 15));
