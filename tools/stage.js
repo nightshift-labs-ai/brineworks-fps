@@ -7,16 +7,21 @@ import { DT } from './src/sim/config.js';
 import { giveWeapon, eyeOf, heightOf } from './src/sim/actors.js';
 import { createBrain, think } from './src/sim/bots.js';
 import { yawTo } from './src/sim/util.js';
+import { EV } from './src/sim/events.js';
+import { radio } from './src/sim/coach.js';
 
 // cast: [who, col, row, faces col, faces row, gun]; who: p player, m0.. teammates, f0.. opponents.
 // side: the player's side (0 attack, 1 defend); phase: 'freeze' stages in buy time, else live with clock < clock.
-// fire: opponents already engaging the player [who, reaction s]. script(i, s): per tick, s = { ctx, p, who, aim }.
+// fire: opponents already engaging the player [who, reaction s, aim low]. script(i, s): per tick, s = { ctx, p, who, aim }.
+// radio: the two team-radio lines of the scene, [who, text], each one the game itself says in such a round
+// (bots.js / coach.js wording); everyone else is silent for the scene, and older lines are cleared.
 const SCENES = {
   // Conveyor Court: crouched by the low wall, the player drops one Saltreeve with a headshot, then trades
   // with a second one 7 m out against the lit west wall (his muzzle flash, our hit marker).
   1: { side: 0, round: 5, clock: 80, ticks: 36, core: 'mate',
     cast: [['p', 24, 28, 22, 24, 'hawser'], ['f0', 24, 24, 24, 28, 'hawser'], ['f1', 22, 24, 24, 28, 'cleat']],
     fire: [['f1', 0.35, -0.05]], // his first shots go low: the player survives the trade
+    radio: [['m1', 'gunfire at Conveyor Court'], ['m0', 'go B now']], // heard from the cut; the coach's call
     script(i, s) {
       s.p.cmd.crouch = true;
       if (i === 14) s.aim('f0', 'head');
@@ -30,14 +35,16 @@ const SCENES = {
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
   // closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate holds Pan Door.
   3: { side: 0, round: 2, clock: 92, core: 'm0', ticks: 40, smoke: [10.5, 6.6],
-    cast: [['p', 7, 16, 9, 8, 'hawser'], ['m0', 8, 12, 12, 12, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 13, 7, 8, 13, 'hawser']],
+    cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 8, 12, 12, 12, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 13, 7, 8, 13, 'hawser']],
+    radio: [['m1', 'holding Pan Door'], ['m1', 'footsteps at Boiler Gate']],
     fire: [['f0', 4]], // he has the player in his sights but will not fire inside the scene
-    script(i, s) { s.aim(null, -0.08, 9, 8); } },
-  // A retake of A won by the disarm, crouched over the core with the kit, looking up the pad to the deck
-  // and Tank Gate: the window turns teal, the banner names the disarm; the match goes on.
-  4: { side: 1, round: 6, clock: 70, core: 'armed', site: 'A', ticks: 220, end: 0.35, dead: ['f0', 'f1'],
-    cast: [['p', 48, 13, 46, 7, 'hawser'], ['m0', 45, 12, 43, 7, 'hawser'], ['m1', 51, 10, 46, 6, 'skiff'], ['f0', 46, 9, 48, 13, 'hawser'], ['f1', 40, 16, 48, 13, 'skiff']],
-    script(i, s) { s.p.cmd.use = s.p.cmd.crouch = true; s.aim(null, -0.2, 46, 7); } },
+    script(i, s) { s.aim(null, -0.2, 9, 9); } },
+  // A retake of A won by a teammate's disarm with the kit, 2.7 m ahead, looking south down the lane past the
+  // pad over two downed Saltreeves: the window turns teal, the banner names the disarm; the match goes on.
+  4: { side: 1, round: 6, clock: 70, core: 'armed', site: 'A', ticks: 100, end: 0.35, dead: ['f0', 'f1'],
+    cast: [['p', 48, 8, 48, 20, 'hawser'], ['m0', 49.6, 10.7, 48.9, 10.3, 'hawser'], ['m1', 46, 15, 47, 20, 'skiff'], ['f0', 47, 13, 51, 13, 'hawser'], ['f1', 50.5, 14.5, 45, 14.5, 'skiff']],
+    radio: [['m1', 'they are on A, rotate']], // Carrick says 'disarming, cover me' himself
+    script(i, s) { s.aim(null, -0.28, 48, 20); } },
 };
 
 function run(ctx, n, script, drawn = 3) { // n ticks; only the last `drawn` are rendered (effects in flight)
@@ -60,7 +67,7 @@ function autopilot(ctx, done) {
 function place(state, a, c, r, fc, fr, gun) {
   const S = state.map.cell;
   a.alive = true; a.hp = 100;
-  a.pos.x = a.prev.x = (c + 0.5) * S; a.pos.z = a.prev.z = (r + 0.5) * S; a.pos.y = a.prev.y = state.map.height[r * state.map.w + c];
+  a.pos.x = a.prev.x = (c + 0.5) * S; a.pos.z = a.prev.z = (r + 0.5) * S; a.pos.y = a.prev.y = state.map.height[Math.floor(r) * state.map.w + Math.floor(c)];
   a.vel.x = a.vel.z = a.pitch = a.cmd.pitch = 0;
   a.yaw = a.prevYaw = a.cmd.yaw = yawTo(c, r, fc, fr);
   if (gun) giveWeapon(a, gun);
@@ -81,15 +88,20 @@ function stage(ctx, sc) {
   else { Object.assign(p.grenades, { frag: 1, smoke: 1 }); p.armor = 100; p.helm = true; p.kit = mySide === 1; } // the kit is the defenders'
   p.money = Math.max(p.money, sc.money ?? 3150);
   p.hp = sc.hp ?? 100;
-  if (sc.core === 'carry' || sc.core === 'mate') Object.assign(state.core, { state: 'carried', carrier: sc.core === 'mate' ? mates[3].id : p.id });
+  if (sc.core === 'carry' || sc.core === 'mate') Object.assign(state.core, { state: 'carried', carrier: sc.core === 'mate' ? mates.find((m) => !m.brain.lurk).id : p.id }); // the lurker never carries
   if (sc.core === 'm0') Object.assign(state.core, { state: 'carried', carrier: who('m0').id, worker: who('m0').id, progress: 0.62 }); // mid-arm
-  if (sc.core === 'armed') { // on the ground in front of the player, within disarm reach
-    Object.assign(state.core, { state: 'planted', site: sc.site ?? 'B', fuse: 25, carrier: -1, y: 0 });
-    state.core.x = p.pos.x - Math.sin(p.yaw) * 1.5; state.core.z = p.pos.z - Math.cos(p.yaw) * 1.5;
+  if (sc.core === 'armed') { // 2.7 m in front of the player, 0.6 m left, m0 most of the way through the disarm
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw), m0 = who('m0');
+    Object.assign(state.core, { state: 'planted', site: sc.site ?? 'B', fuse: 25, carrier: -1, y: 0, worker: m0.id, progress: 0.62 });
+    state.core.x = p.pos.x + fx * 2.7 + fz * 0.6; state.core.z = p.pos.z + fz * 2.7 - fx * 0.6;
+    m0.kit = true;
   }
   state.round.planted = sc.core === 'armed';
   if (sc.smoke) Object.assign(state.smokes[0], { live: true, x: sc.smoke[0] * S, y: 0, z: sc.smoke[1] * S, age: 2 });
   for (const k of sc.dead ?? []) Object.assign(who(k), { alive: false, hp: 0, diedAt: -99 }); // bodies of an earlier fight
+  for (const a of [...mates, ...foes]) Object.assign(a.brain, { atHold: true, calledAt: 1e9 }); // silent: no arrival or contact calls
+  for (const e of state.events.list) if (e.type === EV.RADIO) e.type = 0; // older lines (and the autopilot player's)
+  for (const [k, text] of sc.radio ?? []) radio(state, who(k), text);
   for (const [k, react, low = 0.01] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: low, aimHead: false, crouchSpray: false, lastSeenId: p.id, lastSeenTime: 1e9 });
   // Look at an actor's head or chest, or (k null) at pitch `part` toward cell (c, r).
   const aim = (k, part, c, r) => {
