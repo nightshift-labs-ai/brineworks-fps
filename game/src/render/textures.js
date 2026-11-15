@@ -30,7 +30,7 @@ const concrete = (ctx, rand) => {
     rect(ctx, '#2a323833', x, y, 64, 1);
     for (let i = 0; i < 4; i++) rect(ctx, '#2d373e55', x + 15 + (i & 1) * 32, y + 30 + (i >> 1) * 64, 3, 3);
   }
-  rect(ctx, gradient(ctx.createLinearGradient(0, 256, 0, 210), [[0, '#343c4048'], [1, '#343c4000']]), 0, 210, 256, 46);
+  rect(ctx, gradient(ctx.createLinearGradient(0, 256, 0, 196), [[0, '#efebe08c'], [1, '#efebe000']]), 0, 196, 256, 60); // salt bloom at the foot
 };
 
 // Corrugated sheet, near white so lane tints show true.

@@ -120,12 +120,15 @@ export function buildLevel(map, tex) {
     for (const [a, b, c, d] of [[x0, z0, x1, z0 + 0.3], [x0, z1 - 0.3, x1, z1], [x0, z0, x0 + 0.3, z1], [x1 - 0.3, z0, x1, z1]]) batch.hazard.add(a, 0, b, c, 0.02, d, 1.2);
     flat(size, size, std({ map: siteDecal(site.name), transparent: true, depthWrite: false }), site.x, 0.025, site.z);
   }
+  const brine = std({ color: PALETTE.brine, roughness: 0.08, metalness: 0.25 });
+  for (const [c0, r0, c1, r1] of POOLS) { // brine inside a 15 cm curb
+    batch.wall.add(c0 * S, 0, r0 * S, (c1 + 1) * S, 0.15, (r1 + 1) * S, 1);
+    flat((c1 - c0 + 1) * S - 0.3, (r1 - r0 + 1) * S - 0.3, brine, (c0 + c1 + 1) * S / 2, 0.16, (r0 + r1 + 1) * S / 2);
+  }
   for (const k in mats) if (batch[k].pos.length) group.add(batch[k].mesh(mats[k]));
 
   tex.ground.repeat.set(W / 6, D / 6);
   flat(W, D, std({ map: tex.ground, roughness: 0.95 }), W / 2, 0, D / 2);
-  const brine = std({ color: PALETTE.brine, roughness: 0.08, metalness: 0.25 });
-  for (const [c0, r0, c1, r1] of POOLS) flat((c1 - c0 + 1) * S - 0.3, (r1 - r0 + 1) * S - 0.3, brine, (c0 + c1 + 1) * S / 2, 0.015, (r0 + r1 + 1) * S / 2);
 
   const place = (obj, c, r, face, y, off) => { // against a face of cell (c, r)
     const n = { n: [0, -1, Math.PI], s: [0, 1, 0], e: [1, 0, Math.PI / 2], w: [-1, 0, -Math.PI / 2] }[face];
@@ -135,7 +138,7 @@ export function buildLevel(map, tex) {
   };
   for (const [lines, c, r, face] of SIGNS) place(new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), std({ map: signTexture(lines, PALETTE.lanes[laneOf(c, r)][1]), roughness: 0.6 })), c, r, face, 2.6, 0.02);
   const lampMat = std({ color: 0x222222 }), lens = std({ color: 0, emissive: PALETTE.lamp, emissiveIntensity: 3 });
-  for (const [c, r, face] of LAMPS) { // a dark housing, its warm lens underneath, a small glow, the light
+  for (const [c, r, face] of LAMPS) { // dark housing, warm lens, glow, light
     place(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.18, 0.3), lampMat), c, r, face, 3.4, 0.15);
     place(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.22), lens), c, r, face, 3.3, 0.15);
     place(new THREE.Sprite(glow(PALETTE.lamp)), c, r, face, 3.25, 0.2);
@@ -154,7 +157,7 @@ export function buildLevel(map, tex) {
     }
     return g.computeVertexNormals(), g;
   };
-  for (const [x, z, r, h] of [[-14, 18, 15, 8], [-6, 30, 10, 6], [-10, 52, 12, 7], [W + 16, 30, 17, 9], [W + 12, 68, 12, 7], [24, -42, 36, 20], [4, -30, 20, 11], [46, -44, 24, 14], [64, -18, 16, 9]]) add(heap(r, h), salt, x, -0.3, z);
+  for (const [x, z, r, h] of [[-14, 18, 15, 8], [-10, 52, 12, 7], [W + 16, 30, 17, 9], [24, -42, 36, 20], [4, -30, 20, 11], [46, -44, 24, 14], [64, -18, 16, 9]]) add(heap(r, h), salt, x, -0.3, z);
   for (const z of [34, 42]) for (const x of [58, 65]) { add(new THREE.CylinderGeometry(3.2, 3.2, 17, 24), steel, x, 8.5, z); add(new THREE.ConeGeometry(3.3, 1.6, 24), oxide, x, 17.8, z); }
   flat(900, 900, std({ color: 0x6f6c66, roughness: 1 }), W / 2, -0.05, D / 2); // salt flats into the fog
   return group;
