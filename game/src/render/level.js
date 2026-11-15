@@ -160,8 +160,8 @@ export function buildLevel(map, tex) {
   };
   for (const [x, z, r, h] of [[-14, 18, 15, 8], [-10, 52, 12, 7], [W + 16, 30, 17, 9], [24, -42, 36, 20], [4, -30, 20, 11], [46, -44, 24, 14], [64, -18, 16, 9]]) add(heap(r, h), salt, x, -0.3, z);
   for (const z of [34, 42]) for (const x of [58, 65]) { add(new THREE.CylinderGeometry(3.2, 3.2, 17, 24), steel, x, 8.5, z); add(new THREE.ConeGeometry(3.3, 1.6, 24), oxide, x, 17.8, z); }
-  add(new THREE.CylinderGeometry(4.4, 5.6, 40, 16), steel, -25, 20, -10); // the evaporator stack, a landmark east of the works
-  add(new THREE.CylinderGeometry(5.6, 5.6, 2, 16), oxide, -25, 40, -10);
+  add(new THREE.CylinderGeometry(4.4, 5.6, 52, 16), steel, -37, 26, 12); // the evaporator stack, a landmark west of the works
+  add(new THREE.CylinderGeometry(5.6, 5.6, 2, 16), oxide, -37, 52, 12);
   flat(900, 900, std({ color: 0x6f6c66, roughness: 1 }), W / 2, -0.05, D / 2); // salt flats into the fog
   return group;
 }

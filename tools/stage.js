@@ -3,11 +3,11 @@
 // window.__brineworks: the sim plays the match with the player slot on the bot brain up to the scene's
 // round, the cast below is placed for the frame, and the real sim runs the moment (bots think, guns fire,
 // the HUD and view read the events as in play). Not part of the judged game/.
-import { DT } from './src/sim/config.js';
+import { DT, WEAPONS } from './src/sim/config.js';
 import { giveWeapon, eyeOf, heightOf } from './src/sim/actors.js';
 import { createBrain, think } from './src/sim/bots.js';
 import { yawTo } from './src/sim/util.js';
-import { EV } from './src/sim/events.js';
+import { EV, emit } from './src/sim/events.js';
 import { radio } from './src/sim/coach.js';
 
 // cast: [who, col, row, faces col, faces row, gun]; who: p player, m0.. teammates, f0.. opponents.
@@ -19,7 +19,7 @@ const SCENES = {
   // Conveyor Court: crouched by the low wall, the player drops one Saltreeve with a headshot, then trades
   // with a second one 7 m out against the lit west wall (his muzzle flash, our hit marker).
   1: { side: 0, round: 5, clock: 91, ticks: 36, core: 'mate', hide: ['damage'],
-    cast: [['p', 31, 28, 29, 25, 'hawser'], ['f0', 28, 24, 31, 28, 'hawser'], ['f1', 29, 25, 31, 28, 'cleat']],
+    cast: [['p', 32, 26, 28, 25, 'hawser'], ['f0', 27, 24, 32, 26, 'hawser'], ['f1', 28, 25, 32, 26, 'cleat']],
     fire: [['f1', 0.42, -0.1]], // his first shots go low: the player survives the trade
     radio: [['m1', 'gunfire at Conveyor Court'], ['m0', 'go B now']], // heard from the cut; the coach's call
     script(i, s) {
@@ -93,7 +93,7 @@ function stage(ctx, sc) {
   const d = plan.text.match(/^setup: (\d) A, 1 tower, (\d) B$/);
   if (d) plan.text = `setup: ${d[1] - (d[1] === '3')} A, 1 tower, ${d[2] - (d[1] !== '3')} B`;
   const mySide = state.teams[p.team].side, side = (sd, alive) => state.actors.filter((a) => a !== p && a.alive === alive && state.teams[a.team].side === sd);
-  const mates = side(mySide, true), foes = side(1 - mySide, true), fallen = side(1 - mySide, false), picked = {};
+  const mates = side(mySide, true), foes = side(1 - mySide, true), fallen = side(1 - mySide, false), downBefore = new Set(fallen), picked = {};
   const who = (k) => (k === 'p' ? p : (picked[k] ??= k[0] === 'm' ? mates[+k[1]] : (sc.dead?.includes(k) && fallen.shift()) || foes[+k[1]]));
   const cast = new Set(sc.cast.map(([k]) => who(k)));
   // The living not cast wait in their own spawn, out of sight.
@@ -113,10 +113,15 @@ function stage(ctx, sc) {
   }
   state.round.planted = sc.core === 'armed';
   if (sc.smoke) Object.assign(state.smokes[0], { live: true, x: sc.smoke[0] * S, y: 0, z: sc.smoke[1] * S, age: 2 });
-  for (const k of sc.dead ?? []) Object.assign(who(k), { alive: false, hp: 0, diedAt: -99 }); // bodies of an earlier fight
+  for (const k of sc.dead ?? []) { // bodies of an earlier fight; one still alive a moment ago gets his kill row
+    const a = who(k), m = who('m1') ?? p;
+    if (!downBefore.has(a)) emit(state.events, EV.KILL, m.id, a.id, WEAPONS[m.slots[m.active].id].index, 0).t = state.time;
+    Object.assign(a, { alive: false, hp: 0, diedAt: -99 });
+  }
   for (const a of [...mates, ...foes]) Object.assign(a.brain, { atHold: true, calledAt: 1e9 }); // silent: no arrival or contact calls
   for (const e of state.events.list) if (e.type === EV.RADIO) e.type = 0; // older lines (and the autopilot player's)
-  for (const e of state.events.list) if (e.type === EV.KILL && state.time - e.t < 60) e.t = state.time; // this round's kills stay in the feed (rows expire after 10 s)
+  const roundStart = Math.max(...state.events.list.filter((e) => e.type === EV.ROUND && !e.v).map((e) => e.t));
+  for (const e of state.events.list) if (e.type === EV.KILL && e.t >= roundStart) e.t = state.time; // this round's kills stay in the feed (rows expire after 10 s)
   for (const [k, text] of sc.radio ?? []) radio(state, who(k), text);
   for (const [k, react, low = 0.01] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: low, aimHead: false, crouchSpray: false, lastSeenId: p.id, lastSeenTime: 1e9 });
   // Look at an actor's head or chest, or (k null) at pitch `part` toward cell (c, r).

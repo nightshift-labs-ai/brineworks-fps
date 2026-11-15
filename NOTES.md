@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,407 bytes (157.6 KiB); dossier text 163,832 of 163,840 (no cut, 8 B left). Every
+- Source 161,405 bytes (157.6 KiB); dossier text 163,830 of 163,840 (no cut, 10 B left). Every
   addition is paid for by a trim: NOTE condensed (-700 B), two trim passes (-0.5 KB, -0.3 KB, sim
   and renders verified identical). Further savings need restructuring (collide.js raycast/fillHit,
   bots.js playObjective/followPlan).
@@ -101,6 +101,13 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - G3/M2: bots kneel while arming (Carrick kneels over the case in shot 3).
 - G4: all four shots from seed 14's first match (round 4 at 1-2, round 5 at 2-2, round 7 buy at 3-3,
   round 8 retake win at 4-4); scenes start only when the player is alive.
+
+## Done in the 12:20 run (operator Q1-Q3)
+- Q2: the cover is shot from (32,26), clear of the low wall: the block is ~12% of the frame, the
+  hall, the lamp, the whole CONVEYOR COURT board and the stack's capped top in open sky (stack moved
+  to x -37, z 12, coordinates only). Q1: the target reads ~90 px at 1280x720.
+- Q3: a staged body whose death the fast-forward did not log gets a kill row from a teammate, and
+  every kill of the current round stays in the feed: shot 4's two Saltreeves at A have their rows.
 
 ## Open
 - S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt, BRINEWORKS stencil: need
