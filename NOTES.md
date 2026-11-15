@@ -99,10 +99,10 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   1 B'); running the fast-forward with the player as a non-bot was tried and reverted (it changed
   every staged round and made shots worse).
 - G3/M2: bots kneel while arming (Carrick kneels over the case in shot 3).
+- G4: all four shots from seed 14's first match (round 4 at 1-2, round 5 at 2-2, round 7 buy at 3-3,
+  round 8 retake win at 4-4); scenes start only when the player is alive.
 
 ## Open
-- G4: shots 1 (seed 9) and 2-4 (seed 7, two matches) are not one match; match 2 rounds of seed 7
-  are 16-24 s long, which breaks the scene conditions.
 - S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt, BRINEWORKS stencil: need
   bytes (8 B left).
 
