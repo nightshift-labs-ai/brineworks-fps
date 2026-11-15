@@ -1,8 +1,8 @@
 // Boot and the one loop: fixed 1/60 s simulation steps from an accumulator, interpolated rendering.
 import { DT } from './sim/config.js';
+import { createInput } from './input.js';
 import { createGame, step } from './sim/sim.js';
 import { SHOP, buy } from './sim/economy.js';
-import { createInput } from './input.js';
 import { createHud } from './ui/hud.js';
 import { createView } from './render/view.js';
 import { createAudio } from './audio.js';
