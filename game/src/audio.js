@@ -1,8 +1,7 @@
-// Sound from the event ring. A cue fades over its HEARING range, through walls over HEARING.muffle of it
-// (the rule the bots hear by, senses.js noiseAt), so the player hears what they hear; panned by bearing.
-import { HEARING } from './sim/config.js';
+// Sound from the event ring. A cue fades over its range, through walls over a part of it (senses.js
+// earshot(), the rule the bots hear by), so the player hears what they hear; panned by bearing.
 import { drain, EV } from './sim/events.js';
-import { clearLine } from './sim/collide.js';
+import { earshot } from './sim/senses.js';
 
 const SHOT_HZ = [1900, 1500, 1000, 650, 550]; // by weapon index
 const KIND = { [EV.SHOT]: 'shot', [EV.BLAST]: 'shot', [EV.STEP]: 'step', [EV.BOUNCE]: 'bounce', [EV.CORE]: 'work', [EV.RELOAD]: 'reload', [EV.DRY]: 'reload' };
@@ -44,10 +43,9 @@ export function createAudio(state) {
 
   // Loudness of a `kind` noise at x, y, z for the player (0 unheard); sets pan (right: cos yaw, -sin yaw).
   function heard(kind, x, y, z) {
-    const p = state.player, dx = x - p.pos.x, dz = z - p.pos.z, d = Math.hypot(dx, dz), r = HEARING[kind];
+    const p = state.player, dx = x - p.pos.x, dz = z - p.pos.z, d = Math.hypot(dx, dz);
     pan = d < 1 ? 0 : (dx * Math.cos(p.yaw) - dz * Math.sin(p.yaw)) / d;
-    const clear = d < r * HEARING.muffle || clearLine(state.map, p.pos.x, p.pos.y + 1.2, p.pos.z, x, y + 1.2, z);
-    return Math.max(0, 1 - d / (clear ? r : r * HEARING.muffle));
+    return Math.max(0, 1 - d / earshot(state.map, kind, d, x, y, z, p));
   }
 
   function play(e) {

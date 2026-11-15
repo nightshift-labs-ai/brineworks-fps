@@ -8,12 +8,17 @@ export function makeNoise(state, source, kind) {
   noiseAt(state, source.team, source.pos.x, source.pos.y, source.pos.z, kind);
 }
 
+// How far a `kind` noise at x, y, z carries to listener l, d away (less through walls); audio.js uses it too.
+export function earshot(map, kind, d, x, y, z, l) {
+  const r = HEARING[kind];
+  return d <= r * HEARING.muffle || clearLine(map, x, y + 1.2, z, l.pos.x, l.pos.y + 1.2, l.pos.z) ? r : r * HEARING.muffle;
+}
+
 export function noiseAt(state, team, x, y, z, kind) {
-  const radius = HEARING[kind];
   for (const bot of state.actors) {
     if (!bot.isBot || !bot.alive || bot.team === team) continue;
     const d = Math.hypot(bot.pos.x - x, bot.pos.z - z);
-    if (d > radius || (d > radius * HEARING.muffle && !clearLine(state.map, x, y + 1.2, z, bot.pos.x, bot.pos.y + 1.2, bot.pos.z))) continue;
+    if (d > earshot(state.map, kind, d, x, y, z, bot)) continue;
     const mem = bot.brain, intel = state.intel[bot.team]; // intel: the team's last heard enemy (the radar marks it)
     mem.heardX = intel.heardX = x; mem.heardZ = intel.heardZ = z; mem.heardTime = intel.heardTime = state.time;
     mem.heardKind = kind;
