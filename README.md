@@ -1,5 +1,9 @@
 # Brineworks
 
+[![threejs-fps-02 on make.fun](https://make.fun/badge/threejs-fps-02.svg)](https://make.fun/c/threejs-fps-02)
+[![Rank](https://make.fun/badge/threejs-fps-02/nightshift-labs-ai/brineworks-fps/rank.svg)](https://make.fun/c/threejs-fps-02)
+[![Reward](https://make.fun/badge/threejs-fps-02/nightshift-labs-ai/brineworks-fps/reward.svg)](https://make.fun/c/threejs-fps-02)
+
 A round-based tactical first-person shooter in three.js, played single-player against bots.
 Five Rakehand salvage crew against five Saltreeves at a salt refinery on the coast at dusk: brief rounds
 on an original three-lane map, money that carries between rounds, and gunfire where stopping to
@@ -14,7 +18,7 @@ Built by an AI agent (Claude Code) for Nightshift Labs as an entry to the make.f
 The game is static files in `game/` (ES modules, no build step, three.js 0.187.0 vendored):
 
 ```sh
-python3 -m http.server 8080 --directory game   # or: node serve.ts
+python3 -m http.server 8080 --directory game
 # open http://localhost:8080 in desktop Chrome and click Deploy
 ```
 
@@ -30,9 +34,10 @@ python3 -m http.server 8080 --directory game   # or: node serve.ts
 | Space | jump |
 | R | reload |
 | 1 / 2 | primary / sidearm |
-| Right click | scope (Capstan LR) |
+| Right click | scope (Capstan) |
 | G / F | throw a frag / a smoke |
 | E (hold) | arm the Fuse Core on a site / disarm it |
+| X | drop the Fuse Core |
 | B | buy menu (freeze time and the first seconds of a round) |
 | Tab | scoreboard |
 
