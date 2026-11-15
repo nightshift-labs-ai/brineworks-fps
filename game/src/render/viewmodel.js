@@ -8,7 +8,7 @@ const mat = (color, roughness, metalness = 0.1, emissive = 0) => new THREE.MeshS
 // k dark steel, e sage polymer, b olive polymer, m gunmetal, p signal band, r reticle, g gloves, s sleeves, c team cuff
 export const MATS = {
   k: mat(0x41474d, 0.45, 0.3), e: mat(0x7f887c, 0.75), b: mat(0x6f6c48, 0.75), m: mat(0x5c636a, 0.35, 0.5), p: mat(0xefc94c, 0.5),
-  r: mat(0x0c3a34, 0.3, 0, 0x3fe0c0), g: mat(0x2f3236, 0.85), s: mat(0x3c4147, 0.95), c: mat(0xffffff, 0.8),
+  r: mat(0x0c3a34, 0.3, 0, 0x3fe0c0), g: mat(0x8a6a4a, 0.85), s: mat(0x766a55, 0.95), c: mat(0xffffff, 0.8),
 };
 
 // Parts "material w h d x y z pitch yaw" (cm, centiradians, missing 0); negative w: 8-sided cylinder, radii -w, d.
