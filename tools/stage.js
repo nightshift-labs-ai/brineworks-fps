@@ -84,10 +84,10 @@ function stage(ctx, sc) {
     && (sc.phase === 'freeze' ? s.round.phase === 'freeze' : s.round.phase === 'live' && s.round.clock < sc.clock));
   // The cast comes from the living; the round's dead stay down where they fell, so pips and kill feed agree.
   // A scene's bodies (sc.dead) are opponents already down when there are any.
-  // The fast-forward ran the player on a bot brain, so an attack plan counted him with the four bots: take
-  // his own route out of the pinned plan line (before the cast resets his brain).
-  const plan = state.teams[p.team].plan, slot = `via ${state.map.marks[p.brain.stage]?.name}`;
-  if (plan.text.startsWith('plan')) plan.text = plan.text.replace(new RegExp(`(\\d+) ${slot}`), (_, n) => `${n - 1} ${slot}`);
+  // The fast-forward ran the player on a bot brain, so an attack plan split five: coach.js prints (n+1)>>1 and
+  // n>>1 for n bots off the lurk, so with the four bots of play the second count is one lower.
+  const plan = state.teams[p.team].plan;
+  plan.text = plan.text.replace(/^(plan: \w, \d via [^,]+, )(\d)/, (_, a, n) => a + (n - 1));
   // A defence setup names five slots; with four bots the coach fills the first four (the fifth of each SETUPS
   // entry is the site with three, else B).
   const d = plan.text.match(/^setup: (\d) A, 1 tower, (\d) B$/);
