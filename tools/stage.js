@@ -7,6 +7,7 @@ import { DT, WEAPONS } from './src/sim/config.js';
 import { giveWeapon, eyeOf, heightOf } from './src/sim/actors.js';
 import { createBrain, think } from './src/sim/bots.js';
 import { yawTo } from './src/sim/util.js';
+import { buy } from './src/sim/economy.js';
 import { EV, emit } from './src/sim/events.js';
 import { radio } from './src/sim/coach.js';
 
@@ -28,10 +29,15 @@ const SCENES = {
       if (i >= 20) s.aim('f1', 'waist'); // low on the torso: the marker clears his muzzle flash
       s.p.cmd.fire = i === 12 || i === 31;
     } },
-  // Buy time in the defenders' yard, the low sun across the cladding, teammates armed differently.
-  2: { side: 1, round: 7, phase: 'freeze', ticks: 12, buy: true, money: 2350, bare: true,
+  // Buy time in the defenders' yard, the low sun across the cladding, teammates armed differently; the
+  // player buys a vest and a Skiff through the menu's own buy() and has the SMG up by the frame.
+  2: { side: 1, round: 7, phase: 'freeze', ticks: 44, buy: true, money: 2350, bare: true,
     cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 24, 12, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
-    script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
+    script(i, s) {
+      if (!i) for (const id of ['vest', 'skiff']) buy(s.ctx.state, s.p, { id });
+      s.aim(null, 0.05, 27.5, 8);
+      if (i === 40) for (let k = 0; k < 2; k++) s.ctx.view.render(1, 1, s.ctx.input.look); // settle the gun's sway from the jump in look
+    } },
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
   // closes Boiler Gate 12 m out, a Saltreeve works round its edge, Skerry has him spotted.
   3: { side: 0, round: 4, clock: 97, core: 'm0', hide: ['hint'], ticks: 40, smoke: [10.5, 6.6],
