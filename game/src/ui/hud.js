@@ -152,7 +152,7 @@ export function createHud(state, camera) {
     toggle(el.progress, 'on', ours);
     if (ours && changed('prog', pct, worker.id)) {
       el.progress.style.setProperty('--p', pct + '%');
-      el['progress-label'].textContent = `${core.state === 'planted' ? 'DISARMING' : 'ARMING'} FUSE CORE ${pct}%${core.state === 'planted' && worker.kit ? '  KIT' : ''}${worker === p ? '' : '  ' + worker.name}`;
+      el['progress-label'].textContent = `${worker === p ? '' : worker.name + '  '}${core.state === 'planted' ? 'DISARMING' : 'ARMING'} FUSE CORE ${pct}%${core.state === 'planted' && worker.kit ? '  KIT' : ''}`;
     }
     const live = state.round.phase === 'live' && p.alive && !ours; // the bar alone while our side works
     if (!changed('obj', core.state, live ? core.carrier : -2)) return;
