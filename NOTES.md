@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,403 bytes (157.6 KiB); dossier text 163,828 of 163,840 (no cut, ~12 B left). Every
+- Source 161,410 bytes (157.6 KiB); dossier text 163,835 of 163,840 (no cut, 5 B left). Every
   addition is paid for by a trim: NOTE condensed (-700 B), two trim passes (-0.5 KB, -0.3 KB, sim
   and renders verified identical). Further savings need restructuring (collide.js raycast/fillHit,
   bots.js playObjective/followPlan).
@@ -81,14 +81,21 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - L7: the dead lay their gun flat; the core is set 0.8 m in front of the worker.
 - G5: shot 4 captured with Carrick at the case, both bodies in view.
 
+## Done in the 11:08 run (prompt 14 + benchmark s213 S/H/M items)
+- G1/H1(a)/S1(a): staging casts only the living and leaves the round's dead down; this round's
+  kills stay in the feed; pips and feed agree in all four shots (shot 3 staged earlier in round 2).
+- S2/H2: a second render after the fast-forward settles the viewmodel sway (shot 4's rifle).
+- S3/S4: reviewer NOTE true (think() fills a bot's record; falloff per 25 m; smokeBlocks; each shot
+  mapped to its code), paid by trims (hud.js header, view.js, the Cleat's unread price).
+- S6: import order puts movement/weapons early in the dossier walk and audio.js last.
+- M3a/G4: shot 4 in round 7 (5-2 after shot 2's 4-2). Shot 1 wedge and shot 3 buy hint hidden.
+
 ## Open
-- G1/L2 (shot 3 shows four kills but all pips lit) and G4 (all shots one match): tried; keeping the
-  dead dead breaks scenes whose cast slots are then empty, and match 2 of seed 7 has short rounds
-  (16-24 s) that change every scene. Needs scene casts chosen from the living at stage time.
-- G3/L3(1) bots kneel while arming: a sim change shifts every staged round history; do it together
-  with a full restage.
-- L1/O2 shot 1 sky + stack: the closer framing leaves no sky gap under the score bar.
-- G2 radar routes, E belt, G8 round line, stencil: need bytes (12 B left).
+- S1(b)/H1(b) plan lines count the autopilot player as a 5th bot: running the fast-forward with
+  p.isBot false changes every staged round (the human carries the core in the first half).
+- G3/M2 bots kneel while arming: a sim change that shifts every staged round; needs a restage.
+- O2/L1 shot 1 sky + stack: the close framing leaves no sky under the score bar.
+- S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt: need bytes (5 B left).
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
