@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,403 bytes (157.6 KiB); dossier text 163,827 of 163,840 (no cut, 13 B left). Every
+- Source 161,412 bytes (157.6 KiB); dossier text 163,836 of 163,840 (no cut, 4 B left). Every
   addition is paid for by a trim (latest: core events renumbered -36 B, pickHold() site -38 B).
 
 ## Done since prompt 10/11
@@ -156,13 +156,15 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - W5/W6 shot 2: vest, Skiff and kit bought ($320), every dimmed row too dear, teammates clear.
 - W8 one hearing rule (senses.js earshot()); W10 pickHold(..., site), d2; W9 NOTE map line.
 - X1 player's muzzle star ~60 px; X9 core events 0/1/2; X3 radio newest last; X5 shot 3 aim (9.4, 9).
+- X6 shot 2's left teammate faces down the lane; X8 save-round plan 'push'; X10 NOTE radio pointers.
 
 ## Open / tried and reverted
 - Reverted: H1 brighter fill; B7/W3b heaps glow and shot-4 brine pan (hidden by crates); S8 CSS file
   (over budget); W7 player at col 8 (crate cut Skerry); X4 lighter Saltreeve helmet (backlit, no
   visible change in the cover).
-- Not done (time): X6 shot-2 teammate facing, X7 site name in shots 3/4, X8 second plan line and
-  'rush' -> 'push', X10 NOTE radio/criterion-5 wording (13 B left).
+- X7 site name in shot 4 (player one cell onto A): Ozzy filled the frame standing; reverted. Shot 3 would
+  need the player three cells nearer B. X8's second plan line for shot 3 skipped: the named lurker
+  must be the bot that lurks.
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
