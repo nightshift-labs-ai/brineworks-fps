@@ -38,7 +38,7 @@ export function planRound(state, team, call) {
       pickHold(state, a, map.postplant[b.site]);
     });
     const via = (r) => map.marks[r.stage].name, lurker = bots.find((a) => a.brain.lurk), n = bots.length - !!lurker;
-    plan.text = plan.rush ? `plan: rush ${plan.site}` : `plan: ${plan.site}, ${(n + 1) >> 1} via ${via(routes[0])}, ${n >> 1} via ${via(routes[1])}${lurker ? `, ${lurker.name} lurks ${via(lurkRoute)}` : ''}`;
+    plan.text = plan.rush ? `plan: push ${plan.site}` : `plan: ${plan.site}, ${(n + 1) >> 1} via ${via(routes[0])}, ${n >> 1} via ${via(routes[1])}${lurker ? `, ${lurker.name} lurks ${via(lurkRoute)}` : ''}`;
   } else {
     let roll = rng(), setup = SETUPS[0][1];
     for (const [w, sites] of SETUPS) { if (roll < w) { setup = sites; break; } roll -= w; }
