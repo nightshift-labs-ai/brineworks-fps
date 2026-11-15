@@ -1,4 +1,4 @@
-// The HUD: the only writer of #hud, writing each value only when it changes.
+// The HUD: the only writer of #hud. Each value is written only when it changes, so update() allocates nothing per frame.
 import { TEAMS, TEAM_SIZE, WEAPONS, WEAPON_ORDER, GRENADES, SIDE, ROUND } from '../sim/config.js';
 import { SHOP, itemDef, canBuy, lossPay } from '../sim/economy.js';
 import { spreadOf } from '../sim/weapons.js';
@@ -9,13 +9,13 @@ import { createRadar } from './radar.js';
 
 const HEADERS = { skiff: 'Primary', vest: 'Gear', frag: 'Grenades' }; // buy menu sections
 const ROW_LIFE = 10; // s a kill-feed or radio row stays up
+const KIT = { frag: 'G FRAG ', smoke: 'F SMOKE ' }; // grenade counts in the ammo box, with their keys
 const REASONS = { time: 'Time ran out', detonated: 'The Fuse Core detonated', defused: 'The Fuse Core was disarmed' };
 const make = (parent, tag, n) => Array.from({ length: n }, () => parent.appendChild(document.createElement(tag)));
 
 export function createHud(state, camera) {
   const el = {};
   for (const n of document.querySelectorAll('#hud, #hud [id]')) el[n.id] = n;
-  // Text is built only when the value behind it changed, so update() allocates nothing per frame.
   const cache = new Map();
   const changed = (key, a, b = 0) => { // two values per key; NaN never matches, so the first call writes
     let r = cache.get(key);
@@ -84,10 +84,10 @@ export function createHud(state, camera) {
       if (changed('wpn', w.id, p.reloadTimer > 0)) el.weapon.innerHTML = `${WEAPONS[w.id].name} <small>${p.reloadTimer > 0 ? 'reloading' : WEAPONS[w.id].cls}</small>`;
       toggle(el.ammo, 'empty', w.mag === 0);
     }
-    if (changed('frag', p.grenades.frag)) el.frag.textContent = 'G FRAG ' + p.grenades.frag;
-    if (changed('smoke', p.grenades.smoke)) el.smoke.textContent = 'F SMOKE ' + p.grenades.smoke;
-    toggle(el.frag, 'off', !p.grenades.frag);
-    toggle(el.smoke, 'off', !p.grenades.smoke);
+    for (const k in KIT) {
+      if (changed(k, p.grenades[k])) el[k].textContent = KIT[k] + p.grenades[k];
+      toggle(el[k], 'off', !p.grenades[k]);
+    }
     toggle(el.spanner, 'off', !p.kit);
     const armed = core.state === 'planted';
     const secs = Math.max(0, Math.ceil(round.phase === 'freeze' ? round.timer : armed ? core.fuse : round.clock));

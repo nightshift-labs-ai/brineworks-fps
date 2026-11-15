@@ -19,7 +19,7 @@ const hint = () => { byId('overlay-title').textContent = 'Click again to resume'
 function lock() {
   audio.start();
   const p = view.canvas.requestPointerLock();
-  if (p && p.catch) p.catch(hint);
+  p?.catch(hint);
 }
 document.addEventListener('pointerlockerror', hint);
 

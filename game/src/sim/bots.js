@@ -14,7 +14,7 @@ const away2 = (a, x, z) => dist2(a.pos.x, a.pos.z, x, z), yawFrom = (a, x, z) =>
 
 export function createBrain(skill, role) {
   return {
-    skill, role, // skill 0..1 scales reaction, aim and head aim; role: entry, support, anchor, marksman
+    skill, role, // skill 0..1 scales reaction, aim and head aim
     plan: 'hold', // 'route' walks `route` (waiting at `stage` until the team executes), then holds
     route: '', routeIndex: 0, stage: '', staged: false, lurk: false, site: 'A', anchor: false,
     holdX: 0, holdZ: 0, lookX: 0, lookZ: 0, atHold: false,

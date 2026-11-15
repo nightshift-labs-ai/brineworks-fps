@@ -3,14 +3,14 @@
 NOTE FOR THE REVIEWER: where each criterion lives (file function).
 BRINEWORKS: a round-based tactical FPS at a salt refinery on a cold coast. You + 4 bots (Rakers) against
 5 bots (Saltreeves), sides swap after round 5, first to 6. three.js 0.187.0, static ES modules, no image
-files (textures painted in render/textures.js). Written by an AI agent (Claude Code) for Nightshift Labs.
+files. Written by an AI agent (Claude Code) for Nightshift Labs.
 1 Complete game: main.js frame() fixed 60 Hz steps + interpolated render; input.js fill() pointer-lock
   look, WASD, jump, crouch, walk; sim/weapons.js updateWeapon(), fire() magazine, reload, dry fire;
   sim/bots.js think() fills the same command record as the keyboard; sim/round.js updateRound(),
   endRound() win/loss and restart; ui/hud.js update() health, armour, ammo, clock, score.
 2 Gunplay: sim/actors.js rayActor() head/torso/leg hitboxes, applyDamage() head multiplier, hurt()
-  armour and helm; sim/weapons.js spreadOf() (speed, air, crouch, bloom), fire() fixed spray pattern on the
-  bullet; sim/movement.js accelerate(), applyFriction(); sim/collide.js moveBody() step-up, collision.
+  armour and helm; sim/weapons.js spreadOf() (speed, air, crouch, bloom), fire() fixed spray pattern;
+  sim/movement.js accelerate(), applyFriction(); sim/collide.js moveBody() step-up, collision.
 3 Tactics: sim/objective.js updateCore() the Fuse Core bomb (carry, drop, arm, fuse, disarm; times
   in config.js); sim/economy.js payRound() loss pay, buy(), botShop(), teamCall(); kill pay in
   actors.js hurt(); sim/grenades.js frag + smoke (blocks bot sight), predictBurst(); sim/bots.js
@@ -94,7 +94,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 #hitmarker.kill i{background:var(--bad)}
 #hitmarker i:nth-child(-n+2){left:13px;width:2px;height:9px}
 #hitmarker i:nth-child(n+3){top:13px;height:2px;width:9px}
-#hitmarker i:nth-child(2),#hitmarker i:nth-child(4){right:0;bottom:0}
+#hitmarker i:nth-child(2n){right:0;bottom:0}
 #damage,#scope{inset:0;opacity:0}
 #damage{background:radial-gradient(transparent 72%,#aa140a44)}
 #damage::after{content:'';position:absolute;left:50%;top:50%;width:150px;height:22px;margin:-11px -75px;background:linear-gradient(#ff3a22,#ff3a2200);clip-path:polygon(0 0,100% 0,70% 100%,30% 100%);transform:rotate(var(--angle)) translateY(-40vh)}
@@ -167,13 +167,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
     </ul>
   </section>
 </div>
-<script type="importmap">
-{
-  "imports": {
-    "three": "./vendor/three/three.module.min.js"
-  }
-}
-</script>
+<script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

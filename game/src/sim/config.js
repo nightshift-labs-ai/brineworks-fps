@@ -1,8 +1,8 @@
-// Rules and numbers of Brineworks, one table per topic. No three.js, no DOM.
+// Rules and numbers of Brineworks, one table per topic.
 export const DT = 1 / 60; // fixed simulation step (s)
 export const GRAVITY = 20;
 
-export const SIDE = { ATTACK: 0, DEFEND: 1 }; // side 0 carries the Fuse Core; teams swap after the half
+export const SIDE = { ATTACK: 0, DEFEND: 1 }; // side 0 carries the Fuse Core
 export const TEAMS = [
   { name: 'Rakers', color: 0xdd4a32, css: '#ef5a3e' },
   { name: 'Saltreeves', color: 0x3a86e0, css: '#4d97f0' },
@@ -35,7 +35,7 @@ export const WEAPONS = {
   bollard: { name: 'Bollard', cls: 'pump shotgun', kind: 'shotgun', price: 1000, mag: 6, reserve: 24, interval: 0.9, damage: 16, headMult: 2.2, armorPen: 0.55, falloff: 0.5, range: 40, pellets: 9, reload: 2.8, speedMult: 0.95, reward: 750, draw: 0.7,
     spread: { base: 0.055, move: 0.02, air: 0.06, crouch: 0.95, bloom: 0.01 }, recoil: { climb: 0.05, sway: 0.004, settle: 1, recover: 4 } },
   capstan: { name: 'Capstan', cls: 'scoped rifle', kind: 'marksman', price: 4500, mag: 5, reserve: 15, interval: 1.35, damage: 112, headMult: 2.6, armorPen: 0.95, falloff: 0.99, range: 160, reload: 3.3, speedMult: 0.82, reward: 150, draw: 1,
-    scope: 0.32, // FOV multiplier while scoped (right mouse); spread.unscoped applies unless scoped
+    scope: 0.32, // FOV multiplier while scoped; spread.unscoped applies unless scoped
     spread: { base: 0.0008, unscoped: 0.075, move: 0.12, air: 0.25, crouch: 0.85, bloom: 0.02 }, recoil: { climb: 0.045, sway: 0.005, settle: 1, recover: 4 } },
 };
 export const WEAPON_ORDER = ['cleat', 'skiff', 'hawser', 'bollard', 'capstan'];
@@ -47,7 +47,7 @@ WEAPON_ORDER.forEach((id, index) => {
 // The vest guards the torso, the helm (on a vest) the head; the kit halves disarming.
 export const GEAR = { vest: { name: 'Hull vest', price: 600 }, helm: { name: 'Hull helm', price: 300 }, kit: { name: 'Spanner kit', price: 330, side: SIDE.DEFEND } };
 
-// Thrown with G (frag) and F (smoke). index 100: the frag's kill-feed id.
+// index 100: the frag's kill-feed id.
 export const GRENADES = {
   frag: { name: 'Clatter frag', price: 240, fuse: 1.6, radius: 7, damage: 100, armorPen: 0.6, reward: 250, index: 100 },
   smoke: { name: 'Haze canister', price: 280, fuse: 1.7, radius: 4.4, duration: 15 },

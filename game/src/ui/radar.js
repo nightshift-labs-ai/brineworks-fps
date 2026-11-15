@@ -1,5 +1,4 @@
-// Radar: the map drawn once onto an offscreen canvas; each frame the team with facing cones, enemies a
-// teammate has eyes on, the team's last heard enemy noise (a fading ring) and the Fuse Core.
+// Radar: the map drawn once onto an offscreen canvas, then each frame the live marks over it.
 import { TEAMS, SIDE } from '../sim/config.js';
 
 export function createRadar(state, canvas) {
@@ -22,7 +21,7 @@ export function createRadar(state, canvas) {
   b.fillStyle = 'rgba(239,201,76,0.95)';
   b.textAlign = 'center';
   b.textBaseline = 'middle';
-  for (const site of Object.values(map.sites)) b.fillText(site.name, sx(site.x), sy(site.z));
+  for (const site of map.siteList) b.fillText(site.name, sx(site.x), sy(site.z));
   const ctx = canvas.getContext('2d');
 
   function dot(a, color, size) {
@@ -46,7 +45,7 @@ export function createRadar(state, canvas) {
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(base, 0, 0);
     const p = state.player, intel = state.intel[p.team], core = state.core;
-    const heard = 1 - (state.time - intel.heardTime) / 4; // the ring fades over 4 s
+    const heard = 1 - (state.time - intel.heardTime) / 4; // the team's last heard enemy noise: a ring fading over 4 s
     if (heard > 0) {
       ctx.strokeStyle = `rgba(255,90,74,${heard.toFixed(2)})`;
       ctx.lineWidth = 2;
@@ -67,7 +66,7 @@ export function createRadar(state, canvas) {
       cone(p, 'rgba(255,255,255,0.35)', 22);
       ctx.translate(sx(p.pos.x), sy(p.pos.z));
       ctx.rotate(-p.yaw);
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = '#fff';
       ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(4.5, 5); ctx.lineTo(-4.5, 5); ctx.closePath(); ctx.fill();
       ctx.resetTransform();
     }

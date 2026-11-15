@@ -11,7 +11,7 @@ export function createCore() {
 }
 
 export function resetCore(state, carrierId) {
-  Object.assign(state.core, { state: 'carried', carrier: carrierId, site: '', fuse: 0, progress: 0, worker: -1, beep: 0 });
+  Object.assign(state.core, createCore(), { carrier: carrierId });
 }
 
 // Who is arming or disarming (-1: nobody): their movement and trigger are locked.

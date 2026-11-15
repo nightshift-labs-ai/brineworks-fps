@@ -82,7 +82,7 @@ export function createViewModel() {
     const reload = a.reloadTimer > 0 ? Math.sin((1 - a.reloadTimer / def.reload) * Math.PI) : 0;
     const draw = a.drawTimer > 0 ? Math.min(1, a.drawTimer / def.draw) : 0, dip = reload * 0.08 + draw * 0.18 + low * 0.16;
     current.group.position.set(
-      (pistol ? 0.2 : 0.2) + Math.sin(bob) * 0.008 * bobAmt + swayX * 0.25,
+      0.2 + Math.sin(bob) * 0.008 * bobAmt + swayX * 0.25,
       (pistol ? -0.165 : -0.14) - Math.abs(Math.cos(bob)) * 0.007 * bobAmt - dip - a.crouch * 0.008 - swayY * 0.18,
       (pistol ? -0.34 : -0.5) + kick * 0.02,
     );

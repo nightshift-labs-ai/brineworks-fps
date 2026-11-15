@@ -41,22 +41,15 @@ export function createInput(canvas, handlers) {
   document.addEventListener('keyup', (e) => { held.delete(e.code); handlers.onKey(e.code, false); });
 
   function fill(cmd) {
-    cmd.moveZ = axis('KeyW', 'KeyS');
-    cmd.moveX = axis('KeyD', 'KeyA');
-    cmd.yaw = look.yaw;
-    cmd.pitch = look.pitch;
-    cmd.fire = fire && locked;
-    cmd.aim = aim && locked;
+    cmd.moveZ = axis('KeyW', 'KeyS'); cmd.moveX = axis('KeyD', 'KeyA');
+    cmd.yaw = look.yaw; cmd.pitch = look.pitch;
+    cmd.fire = fire && locked; cmd.aim = aim && locked;
     cmd.toss = performance.now() < tossUntil ? toss : ''; // one of each kind: no double throw
     cmd.crouch = held.has('KeyC'); // not Ctrl: Ctrl+W would close the tab
     cmd.walk = held.has('ShiftLeft');
-    cmd.jump = jump;
-    cmd.reload = reload;
-    cmd.drop = drop;
-    cmd.slot = slot;
     cmd.use = held.has('KeyE');
-    jump = reload = drop = false;
-    slot = -1;
+    cmd.jump = jump; cmd.reload = reload; cmd.drop = drop; cmd.slot = slot;
+    jump = reload = drop = false; slot = -1; // latched keys count once
   }
 
   return { fill, look, face(yaw, pitch) { look.yaw = yaw; look.pitch = pitch; } };

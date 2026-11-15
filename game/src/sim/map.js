@@ -1,5 +1,5 @@
-// The Brineworks map, a salt refinery on a cold coast: one ASCII grid drives collision, sight,
-// bot navigation and the rendered level. North is up; a cell is CELL metres.
+// The Brineworks map: one ASCII grid drives collision, sight, bot navigation and the rendered level.
+// North is up; a cell is CELL metres.
 //   # perimeter wall   H refinery building   X stacked crates   x crate (vaultable)   - low wall   . floor
 //   1 2 3 stairs / deck (HEIGHTS)   A B Fuse Core sites   a d attacker / defender spawns   other letters: waypoints
 // Lanes: west Brine Channel to B; Conveyor Court in the middle (its tower blocks spawn-to-spawn
