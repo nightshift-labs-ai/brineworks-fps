@@ -33,7 +33,7 @@ const SCENES = {
   // player buys a vest, a Skiff and the kit through the menu's own buy(): $320 left, so every dimmed row
   // is too dear and the helm and grenades stay lit.
   2: { side: 1, round: 7, phase: 'freeze', ticks: 44, buy: true, money: 2400, bare: true,
-    cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 24, 12, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
+    cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 24, 12, 'skiff'], ['m1', 29, 5, 36, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
     script(i, s) {
       if (!i) for (const id of ['vest', 'skiff', 'kit']) buy(s.ctx.state, s.p, { id });
       s.aim(null, 0.05, 26.5, 8);
