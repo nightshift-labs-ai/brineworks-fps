@@ -18,7 +18,7 @@ import { radio } from './src/sim/coach.js';
 const SCENES = {
   // Conveyor Court: crouched by the low wall, the player drops one Saltreeve with a headshot, then trades
   // with a second one 7 m out against the lit west wall (his muzzle flash, our hit marker).
-  1: { side: 0, round: 5, clock: 80, ticks: 36, core: 'mate',
+  1: { side: 0, round: 5, clock: 91, ticks: 36, core: 'mate', hide: ['damage'],
     cast: [['p', 25, 26, 28, 24, 'hawser'], ['f0', 27, 23, 25, 26, 'hawser'], ['f1', 28, 24, 25, 26, 'cleat']],
     fire: [['f1', 0.42, -0.1]], // his first shots go low: the player survives the trade
     radio: [['m1', 'gunfire at Conveyor Court'], ['m0', 'go B now']], // heard from the cut; the coach's call
@@ -34,7 +34,7 @@ const SCENES = {
     script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
   // closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate holds Pan Door.
-  3: { side: 0, round: 2, clock: 92, core: 'm0', ticks: 40, smoke: [10.5, 6.6],
+  3: { side: 0, round: 2, clock: 97, core: 'm0', hide: ['hint'], ticks: 40, smoke: [10.5, 6.6],
     cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 8, 12, 12, 12, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 13, 7, 8, 13, 'hawser']],
     radio: [['m1', 'holding Pan Door'], ['m1', 'footsteps at Boiler Gate']],
     fire: [['f0', 4]], // he has the player in his sights but will not fire inside the scene
@@ -64,6 +64,7 @@ function autopilot(ctx, done) {
   for (let i = 0; i < 60 * 60 * 40 && !done(state); i++) { if (p.alive) think(state, p); ctx.step(state); }
   p.isBot = false;
   ctx.view.render(1, 1, ctx.input.look); // consume the fast-forward's events: the scene starts clean
+  ctx.view.render(1, 1, ctx.input.look); // and settle the gun's sway from the jump in look
 }
 
 function place(state, a, c, r, fc, fr, gun) {
@@ -81,16 +82,20 @@ function stage(ctx, sc) {
   const { state } = ctx, p = state.player, S = state.map.cell;
   autopilot(ctx, (s) => s.round.number >= sc.round && s.teams[p.team].side === sc.side
     && (sc.phase === 'freeze' ? s.round.phase === 'freeze' : s.round.phase === 'live' && s.round.clock < sc.clock));
-  const mySide = state.teams[p.team].side, team = (side) => state.actors.filter((a) => a !== p && state.teams[a.team].side === side);
-  const mates = team(mySide), foes = team(1 - mySide), who = (k) => (k === 'p' ? p : (k[0] === 'm' ? mates : foes)[+k[1]]);
-  // Everyone not cast waits in their own spawn, out of sight.
-  [...mates, ...foes].forEach((a, i) => { const s = state.map.spawns[state.teams[a.team].side][i % 5]; place(state, a, s.c, s.r, 27, 20); });
+  // The cast comes from the living; the round's dead stay down where they fell, so pips and kill feed agree.
+  // A scene's bodies (sc.dead) are opponents already down when there are any.
+  const mySide = state.teams[p.team].side, side = (sd, alive) => state.actors.filter((a) => a !== p && a.alive === alive && state.teams[a.team].side === sd);
+  const mates = side(mySide, true), foes = side(1 - mySide, true), fallen = side(1 - mySide, false), picked = {};
+  const who = (k) => (k === 'p' ? p : (picked[k] ??= k[0] === 'm' ? mates[+k[1]] : (sc.dead?.includes(k) && fallen.shift()) || foes[+k[1]]));
+  const cast = new Set(sc.cast.map(([k]) => who(k)));
+  // The living not cast wait in their own spawn, out of sight.
+  [...mates, ...foes].forEach((a, i) => { const s = state.map.spawns[state.teams[a.team].side][i % 5]; if (!cast.has(a)) place(state, a, s.c, s.r, 27, 20); });
   for (const [k, c, r, fc, fr, gun] of sc.cast) place(state, who(k), c, r, fc, fr, gun);
   if (sc.bare) Object.assign(p, { armor: 0, helm: false, kit: false }), Object.assign(p.grenades, { frag: 0, smoke: 0 });
   else { Object.assign(p.grenades, { frag: 1, smoke: 1 }); p.armor = 100; p.helm = true; p.kit = mySide === 1; } // the kit is the defenders'
   p.money = sc.money ?? Math.max(p.money, 3150); // exact when the scene sets it
   p.hp = sc.hp ?? 100;
-  if (sc.core === 'carry' || sc.core === 'mate') Object.assign(state.core, { state: 'carried', carrier: sc.core === 'mate' ? mates.find((m) => !m.brain.lurk).id : p.id }); // the lurker never carries
+  if (sc.core === 'carry' || sc.core === 'mate') Object.assign(state.core, { state: 'carried', carrier: (sc.core === 'mate' && mates.find((m) => !m.brain.lurk) || p).id }); // the lurker never carries
   if (sc.core === 'm0') Object.assign(state.core, { state: 'carried', carrier: who('m0').id, worker: who('m0').id, progress: 0.62 }); // mid-arm
   if (sc.core === 'armed') { // 2.7 m in front of the player, 0.6 m left, m0 most of the way through the disarm
     const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw), m0 = who('m0');
@@ -103,6 +108,7 @@ function stage(ctx, sc) {
   for (const k of sc.dead ?? []) Object.assign(who(k), { alive: false, hp: 0, diedAt: -99 }); // bodies of an earlier fight
   for (const a of [...mates, ...foes]) Object.assign(a.brain, { atHold: true, calledAt: 1e9 }); // silent: no arrival or contact calls
   for (const e of state.events.list) if (e.type === EV.RADIO) e.type = 0; // older lines (and the autopilot player's)
+  for (const e of state.events.list) if (e.type === EV.KILL && state.time - e.t < 60) e.t = state.time; // this round's kills stay in the feed (rows expire after 10 s)
   for (const [k, text] of sc.radio ?? []) radio(state, who(k), text);
   for (const [k, react, low = 0.01] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: low, aimHead: false, crouchSpray: false, lastSeenId: p.id, lastSeenTime: 1e9 });
   // Look at an actor's head or chest, or (k null) at pitch `part` toward cell (c, r).
@@ -119,6 +125,7 @@ function stage(ctx, sc) {
     run(ctx, Math.round(sc.end / DT), () => {});
   }
   if (sc.buy) ctx.hud.toggleBuy(true);
+  for (const id of sc.hide ?? []) document.getElementById(id).hidden = true; // the cover's wedge reads as a scoreboard tab; shot 3's buy hint as site B
 }
 
 const ctx = window.__brineworks, name = new URLSearchParams(location.search).get('shot');
