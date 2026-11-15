@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,412 bytes (157.6 KiB); dossier text 163,836 of 163,840 (no cut, 4 B left). Every
+- Source 161,399 bytes (157.6 KiB); dossier text 163,823 of 163,840 (no cut, 17 B left). Every
   addition is paid for by a trim (latest: core events renumbered -36 B, pickHold() site -38 B).
 
 ## Done since prompt 10/11
@@ -157,6 +157,10 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - W8 one hearing rule (senses.js earshot()); W10 pickHold(..., site), d2; W9 NOTE map line.
 - X1 player's muzzle star ~60 px; X9 core events 0/1/2; X3 radio newest last; X5 shot 3 aim (9.4, 9).
 - X6 shot 2's left teammate faces down the lane; X8 save-round plan 'push'; X10 NOTE radio pointers.
+- Y1/Y2 (18:27 run): kept both strip orders (kill feed newest on top as players expect; radio newest
+  last so it reads as a story under the plan line; reversing the feed too would cost 10 B) and made the
+  hud.js comment say so. Y3 shot 2's left teammate faces (31, 11): Bollard visible at his side, aimed at
+  no one. Y4 objective.js passes the 'armed' value 0 explicitly.
 
 ## Open / tried and reverted
 - Reverted: H1 brighter fill; B7/W3b heaps glow and shot-4 brine pan (hidden by crates); S8 CSS file
