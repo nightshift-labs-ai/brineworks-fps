@@ -1,5 +1,5 @@
 // The look: a salt refinery on a cold coast at dusk, a low warm sun over cool shadows. Five hues for the
-// works (salt-white concrete, rust, weathered teal, rose brine, hazard yellow on the objective only), so the
+// works (salt-white concrete, rust, weathered teal, rose brine, hazard yellow on the objective), so the
 // teams' vermilion and cobalt are the only saturated colours on people.
 import * as THREE from 'three';
 

@@ -156,7 +156,7 @@ function stage(ctx, sc) {
 
 const ctx = window.__brineworks, name = new URLSearchParams(location.search).get('shot');
 document.getElementById('overlay').hidden = true;
-ctx.state.player.brain = createBrain(0.7, 'entry');
+ctx.state.player.brain = createBrain(0.7, 'rifle');
 stage(ctx, SCENES[name] ?? SCENES[1]);
 ctx.hud.update();
 requestAnimationFrame(() => { ctx.hud.update(); window.__shotReady = true; });

@@ -9,7 +9,7 @@ import { createPlan } from './coach.js';
 import { createCore } from './objective.js';
 import { createNades, createSmokes } from './grenades.js';
 
-const ROLES = ['entry', 'support', 'anchor', 'support', 'marksman'];
+const ROLES = ['rifle', 'rifle', 'anchor', 'rifle', 'marksman'];
 const CALLSIGNS = [
   ['You', 'Carrick', 'Skerry', 'Ozzy', 'Brandt'],
   ['Haldane', 'Kesh', 'Fenn', 'Lowrie', 'Dunmore'],
