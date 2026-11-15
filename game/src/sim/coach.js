@@ -77,16 +77,15 @@ export function updateCoach(state) {
       for (const a of state.actors) {
         const b = a.brain;
         if (!mate(a, team.id) || b.target >= 0 || b.site === hit.name || b.anchor) continue;
-        b.site = hit.name; b.plan = 'hold';
-        pickHold(state, a, state.map.holds[hit.name]);
+        pickHold(state, a, state.map.holds[hit.name], hit.name);
       }
       radio(state, firstBot(state, team.id), `they are on ${hit.name}, rotate`);
     }
   }
 }
 
-// Take the first spot in `list` no teammate already holds (else the bot's own slot in the list).
-export function pickHold(state, a, list) {
+// Take the first spot in `list` no teammate already holds (else the bot's own slot); with a site, hold it.
+export function pickHold(state, a, list, site) {
   let pick = list[a.id % list.length];
   spots: for (const hold of list) {
     for (const o of state.actors) if (o !== a && mate(o, a.team) && o.brain.holdX === hold.x && o.brain.holdZ === hold.z) continue spots;
@@ -95,6 +94,7 @@ export function pickHold(state, a, list) {
   }
   const b = a.brain;
   b.holdX = pick.x; b.holdZ = pick.z; b.lookX = pick.lookX; b.lookZ = pick.lookZ;
+  if (site) { b.site = site; b.plan = 'hold'; }
 }
 
 function firstBot(state, team) {

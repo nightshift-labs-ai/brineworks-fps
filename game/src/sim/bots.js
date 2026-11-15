@@ -118,14 +118,14 @@ function playObjective(state, a, b) {
     if (core.state === 'dropped' && nearestTo(state, a, core.x, core.z)) { goTo(state, a, core.x, core.z); return true; }
     if (core.state === 'planted') {
       if (core.worker >= 0 && coreDist < HEARING.work) { goTo(state, a, core.x, core.z); return true; } // heard the disarm
-      if (b.site !== core.site || b.plan !== 'hold') { b.site = core.site; b.plan = 'hold'; pickHold(state, a, map.postplant[core.site]); }
+      if (b.site !== core.site || b.plan !== 'hold') pickHold(state, a, map.postplant[core.site], core.site);
     }
     return false;
   }
   if (core.state !== 'planted') return false;
   // Retake: whoever is closest disarms when the coast is clear; the others cover the site.
   if (!nearestTo(state, a, core.x, core.z)) {
-    if (b.site !== core.site) { b.site = core.site; b.plan = 'hold'; pickHold(state, a, map.holds[core.site]); }
+    if (b.site !== core.site) pickHold(state, a, map.holds[core.site], core.site);
     return false;
   }
   if (coreDist < OBJECTIVE.reach * 0.8 && quiet) {
@@ -192,11 +192,11 @@ function followPlan(state, a, b) {
   const map = state.map;
   if (b.plan === 'route') {
     if (b.routeIndex >= b.route.length) { b.plan = 'hold'; return; }
-    const letter = b.route[b.routeIndex], mark = map.marks[letter], near = away2(a, mark.x, mark.z), plan = state.teams[a.team].plan;
+    const letter = b.route[b.routeIndex], mark = map.marks[letter], d2 = away2(a, mark.x, mark.z), plan = state.teams[a.team].plan;
     // The lurker holds until 8 s after the call, under 35 s left, or alone.
     if (letter === b.stage && (b.lurk ? state.round.clock > 35 && !(plan.execute && state.time - plan.executedAt > 8) && aliveCount(state, a.team) > 1 : !plan.execute)) {
       // Stage point: arrive walking (silent), wait for the call, aim at the way in.
-      if (near > 2.2) { goTo(state, a, mark.x, mark.z, near < 150); return; }
+      if (d2 > 2.2) { goTo(state, a, mark.x, mark.z, d2 < 150); return; }
       b.staged = true;
       const next = map.marks[b.route[b.routeIndex + 1]];
       turnToward(a, yawFrom(a, next.x, next.z) + Math.sin(state.time + a.id) * 0.3, 0, 2.5);
@@ -206,7 +206,7 @@ function followPlan(state, a, b) {
     if (letter !== b.stage && b.staged && !b.smoked && a.grenades.smoke > 0) {
       b.smoked = true;
       toss(a, map.holds[b.site][0].x, map.holds[b.site][0].z, 'smoke');
-    } else if (near < 2.2) b.routeIndex++;
+    } else if (d2 < 2.2) b.routeIndex++;
     else goTo(state, a, mark.x, mark.z);
     return;
   }
