@@ -9,13 +9,17 @@ files (textures painted in render/textures.js). Written by an AI agent (Claude C
   sim/bots.js think() fills the same command record as the keyboard; sim/round.js updateRound(),
   endRound() win/loss and restart; ui/hud.js update() health, armour, ammo, clock, score.
 2 Gunplay: sim/actors.js rayActor() head/torso/leg hitboxes, applyDamage() head multiplier, hurt()
-  armour and helm; sim/weapons.js spreadOf() (speed, air, crouch, bloom), kick() spray pattern on the
+  armour and helm; sim/weapons.js spreadOf() (speed, air, crouch, bloom), fire() fixed spray pattern on the
   bullet; sim/movement.js accelerate(), applyFriction(); sim/collide.js moveBody() step-up, collision.
-3 Tactics: sim/objective.js the Fuse Core bomb objective (arm 3 s, fuse 38 s, disarm 7 s, 3.5 s with
-  kit); sim/economy.js payRound() loss bonus, buy(), botShop(), teamCall(); kill pay in actors.js
-  kill(); sim/grenades.js frag + smoke (blocks bot sight); sim/coach.js planRound() staged executes,
-  rush, lurker, defence setups, updateCoach() rotations; sim/nav.js findPath() A*; sim/senses.js
-  canSee(), makeNoise() (walking and crouching are silent); team radio and callouts in ui/hud.js.
+3 Tactics: sim/objective.js updateCore() the Fuse Core bomb (carry, drop, arm, fuse, disarm; times
+  in config.js); sim/economy.js payRound() loss pay, buy(), botShop(), teamCall(); kill pay in
+  actors.js hurt(); sim/grenades.js frag + smoke (blocks bot sight), predictBurst(); sim/bots.js
+  perceive() sight and reaction (slower at range, faster on a held angle); think() frag flush, noise
+  check, callouts; engage() bursts with recoil pull-down; followPlan() routes, stage, smoke on the
+  call, holds; playObjective() carrier arms, post-plant holds, retake and disarm; sim/coach.js
+  planRound(), updateCoach(), reviewRound() (avoids a site that just failed); sim/nav.js findPath()
+  A*; sim/senses.js canSee(), makeNoise(); movement.js moveActor() footsteps (walk and crouch are
+  silent); audio.js every sound from the event ring, panned, muffled through walls as bots hear.
 4 Map and look: LAYOUT in sim/map.js; render/level.js, textures.js, palette.js, view.js (sun,
   shadows, fog, environment light).
 5 Code: sim/ imports no three.js and no DOM; one state from sim/state.js createState(); sim/events.js

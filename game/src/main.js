@@ -4,18 +4,20 @@ import { createGame, step } from './sim/sim.js';
 import { SHOP, buy } from './sim/economy.js';
 import { createInput } from './input.js';
 import { createHud } from './ui/hud.js';
+import { createAudio } from './audio.js';
 import { createView } from './render/view.js';
 
 const params = new URLSearchParams(location.search), shot = params.get('shot');
 const byId = (id) => document.getElementById(id);
 const state = createGame(parseInt(params.get('seed'), 10) || 7);
 const view = createView(state, byId('game'));
-const hud = createHud(state, view.camera);
+const hud = createHud(state, view.camera), audio = createAudio(state);
 let running = false, lastRound = 0;
 
 // Chrome refuses a re-lock for about a second after Esc: say so instead of failing silently.
 const hint = () => { byId('overlay-title').textContent = 'Click again to resume'; };
 function lock() {
+  audio.start();
   const p = view.canvas.requestPointerLock();
   if (p && p.catch) p.catch(hint);
 }
@@ -60,6 +62,7 @@ function frame(now) {
   }
   view.render(acc / DT, dt, input.look);
   hud.update();
+  audio.update();
 }
 
 // Dev hook for tools/ (staged screenshots, the play test): the sim, the view and a switch for the loop.
