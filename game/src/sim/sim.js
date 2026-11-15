@@ -19,7 +19,7 @@ export function step(state) {
   const actors = state.actors;
   state.tick++;
   state.events.time = state.time += DT;
-  for (const a of actors) { a.prev.x = a.pos.x; a.prev.y = a.pos.y; a.prev.z = a.pos.z; a.prevYaw = a.yaw; }
+  for (const a of actors) { Object.assign(a.prev, a.pos); a.prevYaw = a.yaw; }
   updateRound(state);
   const frozen = state.round.phase === 'freeze', busy = workerOf(state.core);
   if (state.round.phase === 'live') updateCoach(state);

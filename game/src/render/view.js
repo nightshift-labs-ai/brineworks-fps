@@ -67,43 +67,29 @@ export function createView(state, container) {
   }
 
   function onEvent(e) {
-    const p = state.player;
-    switch (e.type) {
-      case EV.SHOT: {
-        const own = e.a === p.id && p.alive;
-        if (own) {
-          vm.muzzleWorld(camera, muzzle);
-          vm.fired();
-        } else {
-          const yaw = state.actors[e.a].yaw, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-          muzzle.set(e.x + (fx * 0.75 - fz * 0.08), e.y - 0.12 - 0.1, e.z + (fz * 0.75 + fx * 0.08));
-          effects.spawnFlash(muzzle.x, muzzle.y, muzzle.z);
-        }
-        effects.spawnTracer(muzzle, e.x2, e.y2, e.z2, camera.position, own);
-        break;
+    const p = state.player, t = e.type;
+    if (t === EV.SHOT) {
+      const own = e.a === p.id && p.alive;
+      if (own) {
+        vm.muzzleWorld(camera, muzzle);
+        vm.fired();
+      } else {
+        const yaw = state.actors[e.a].yaw, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+        muzzle.set(e.x + (fx * 0.75 - fz * 0.08), e.y - 0.12 - 0.1, e.z + (fz * 0.75 + fx * 0.08));
+        effects.spawnFlash(muzzle.x, muzzle.y, muzzle.z);
       }
-      case EV.IMPACT:
-        effects.spawnDecal(e.x, e.y, e.z, e.x2, e.y2, e.z2);
-        effects.spawnParticles(e.x, e.y, e.z, e.x2, e.y2, e.z2, 6, 0.85, 0.78, 0.66, 2.2);
-        break;
-      case EV.HIT: {
-        const v = state.actors[e.b].pos;
-        effects.spawnParticles(v.x, v.y + (e.w === 1 ? 1.6 : e.w === 2 ? 1.2 : 0.5), v.z, 0, 0.3, 0, e.w === 1 ? 10 : 6, 0.55, 0.08, 0.06, 1.6);
-        break;
-      }
-      case EV.ROUND:
-        if (e.v === 0) effects.clearDecals();
-        break;
-      case EV.BLAST: {
-        effects.spawnBlast(e.x, e.y, e.z, e.v);
-        const d = Math.hypot(e.x - camera.position.x, e.z - camera.position.z);
-        shake = Math.max(shake, 0, 1 - d / (e.v * 3));
-        break;
-      }
-      case EV.CORE:
-        if (e.v === 4) props.beep();
-        break;
-    }
+      effects.spawnTracer(muzzle, e.x2, e.y2, e.z2, camera.position, own);
+    } else if (t === EV.IMPACT) {
+      effects.spawnDecal(e.x, e.y, e.z, e.x2, e.y2, e.z2);
+      effects.spawnParticles(e.x, e.y, e.z, e.x2, e.y2, e.z2, 6, 0.85, 0.78, 0.66, 2.2);
+    } else if (t === EV.HIT) {
+      const v = state.actors[e.b].pos;
+      effects.spawnParticles(v.x, v.y + (e.w === 1 ? 1.6 : e.w === 2 ? 1.2 : 0.5), v.z, 0, 0.3, 0, e.w === 1 ? 10 : 6, 0.55, 0.08, 0.06, 1.6);
+    } else if (t === EV.ROUND && e.v === 0) effects.clearDecals();
+    else if (t === EV.BLAST) {
+      effects.spawnBlast(e.x, e.y, e.z, e.v);
+      shake = Math.max(shake, 0, 1 - Math.hypot(e.x - camera.position.x, e.z - camera.position.z) / (e.v * 3));
+    } else if (t === EV.CORE && e.v === 4) props.beep();
   }
 
   function render(alpha, dt, look) {

@@ -30,7 +30,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1014;color:var(--in
 #hud{pointer-events:none;text-shadow:0 1px 2px #000a}
 #hud>*{position:absolute}
 .panel,kbd,#kit span,#progress div,#buy li{border:1px solid var(--line)}
-.panel{background:var(--panel);border-radius:4px}
+.panel,#progress,#feed li{background:var(--panel);border-radius:4px}
 .c{left:50%;transform:translateX(-50%)}
 ul{list-style:none;margin:0;padding:0}
 .u{letter-spacing:.12em;text-transform:uppercase}
@@ -57,7 +57,7 @@ ul{list-style:none;margin:0;padding:0}
 .pips i{width:13px;height:5px}
 .pips i.dead{opacity:.15}
 #feed{top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13px}
-#feed li{background:var(--panel);padding:4px 9px;border-radius:3px}
+#feed li{padding:4px 9px;border-radius:3px}
 #feed li:has(.mine){outline:1px solid var(--paint)}
 #feed em{font-style:normal;margin:0 4px}
 #feed .hs{font:700 10px var(--mono);margin-right:4px}
@@ -91,7 +91,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 #damage,#scope{inset:0;opacity:0}
 #damage{background:radial-gradient(transparent 72%,#aa140a44)}
 #damage::after{content:'';position:absolute;left:50%;top:50%;width:150px;height:22px;margin:-11px -75px;background:linear-gradient(#ff3a22,#ff3a2200);clip-path:polygon(0 0,100% 0,70% 100%,30% 100%);transform:rotate(var(--angle)) translateY(-40vh)}
-#progress{top:40%;width:280px;display:none;text-align:center;font-size:12px;padding:6px 10px;background:var(--panel);border-radius:4px}
+#progress{top:40%;width:280px;display:none;text-align:center;font-size:12px;padding:6px 10px}
 #progress div{height:8px;margin-top:4px;background:linear-gradient(90deg,var(--paint) var(--p),var(--panel) var(--p))}
 #scope{background:radial-gradient(circle,transparent 33vh,#000 calc(33vh + 2px))}
 #banner{top:76px;text-align:center;padding:10px 30px;opacity:0;transition:opacity .2s}

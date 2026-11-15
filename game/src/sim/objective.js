@@ -21,7 +21,7 @@ export function updateCore(state) {
   const core = state.core, map = state.map;
   if (core.state === 'carried') {
     const c = state.actors[core.carrier];
-    core.x = c.pos.x; core.y = c.pos.y; core.z = c.pos.z;
+    Object.assign(core, c.pos);
     if (!c.alive || c.cmd.drop) { // fell or let go (X): onto the floor of the nearest cell bots can walk to
       const n = nearestWalkable(map, core.x, core.z);
       core.x = (n % map.w + 0.5) * map.cell; core.y = map.height[n]; core.z = ((n / map.w | 0) + 0.5) * map.cell;

@@ -5,10 +5,15 @@ import { holeTexture, softDot, glow } from './textures.js';
 const TRACERS = 48, DECALS = 160, PARTICLES = 400, FLASHES = 10, TRACER_SPEED = 420, STREAK = 2.5, NEAR_MISS = 2, CUT_BACK = 2.5, OWN_GAP = 1.5;
 const HIDE = new THREE.Matrix4().makeScale(0, 0, 0), HOT = new THREE.Color(0xf29e40), PALE = new THREE.Color(0xccb393); // pale at 0.6 (additive)
 
+function hideAll(m) {
+  for (let i = 0; i < m.count; i++) m.setMatrixAt(i, HIDE);
+  m.instanceMatrix.needsUpdate = true;
+}
+
 function instanced(scene, geo, mat, n) {
   const m = new THREE.InstancedMesh(geo, mat, n);
   m.frustumCulled = false;
-  for (let i = 0; i < n; i++) m.setMatrixAt(i, HIDE);
+  hideAll(m);
   scene.add(m);
   return m;
 }
@@ -118,10 +123,5 @@ export function createEffects(scene) {
     for (const f of flashes) if (f.life > 0) f.sprite.visible = (f.life -= dt) > 0;
   }
 
-  function clearDecals() {
-    for (let i = 0; i < DECALS; i++) decalMesh.setMatrixAt(i, HIDE);
-    decalMesh.instanceMatrix.needsUpdate = true;
-  }
-
-  return { spawnTracer, spawnDecal, spawnParticles, spawnFlash, spawnBlast, update, clearDecals };
+  return { spawnTracer, spawnDecal, spawnParticles, spawnFlash, spawnBlast, update, clearDecals: () => hideAll(decalMesh) };
 }
