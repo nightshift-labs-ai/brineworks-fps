@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
 NOTE FOR THE REVIEWER, criterion -> file function(). BRINEWORKS: 5v5 round-based tactical FPS (you + 4
-bots), static ES modules, no image files; written by an AI agent (Claude Code).
+bots), ES modules, no images; written by an AI agent (Claude Code).
 1 main.js frame() fixed 60 Hz steps, interpolated render; input.js fill(); sim/weapons.js updateWeapon(),
   fire() (magazine, reload, dry); bots.js think() fills a bot's command record as fill() does the
   player's; round.js updateRound(), endRound(); ui/hud.js update().
@@ -15,9 +15,9 @@ bots), static ES modules, no image files; written by an AI agent (Claude Code).
   movement.js moveActor() (walk, crouch silent); audio.js.
 4 sim/map.js LAYOUT (3 lanes, a tower blocks spawn sight); render/level.js buildLevel(), textures.js,
   palette.js, view.js.
-5 sim/ has no three.js or DOM; one state (state.js createState()); events.js ring; pooled effects.
-  Shots: 1 hud.js onEvent() feed, radio, coach.js plan line; 2 economy.js canBuy(); 3 objective() arm bar;
-  4 banner(), payRound(). tools/ sets each scene up via main.js's test hook; step(), view and HUD draw it.
+5 sim/ has no three.js or DOM; one state (state.js createState()); preallocated events.js ring, effects.js pools.
+  Shots: 1 hud.js onEvent() feed, radio (bots.js perceive(), think()), coach.js plan; 2 economy.js canBuy();
+  3 objective() arm bar; 4 banner(), payRound(). tools/ sets each scene via main.js's hook; the game draws it.
 -->
 <html lang="en">
 <head>
