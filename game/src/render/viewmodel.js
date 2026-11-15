@@ -5,9 +5,9 @@ import { wrapAngle } from '../sim/util.js';
 import { glow, starTexture } from './textures.js';
 
 const mat = (color, roughness, metalness = 0.1, emissive = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive });
-// k dark steel, e sand polymer, b olive polymer, m gunmetal, p signal band, r reticle, g gloves, s sleeves, c team cuff
+// k dark steel, e sage polymer, b olive polymer, m gunmetal, p signal band, r reticle, g gloves, s sleeves, c team cuff
 export const MATS = {
-  k: mat(0x41474d, 0.45, 0.3), e: mat(0xbcab80, 0.75), b: mat(0x6f6c48, 0.75), m: mat(0x5c636a, 0.35, 0.5), p: mat(0xefc94c, 0.5),
+  k: mat(0x41474d, 0.45, 0.3), e: mat(0x7f887c, 0.75), b: mat(0x6f6c48, 0.75), m: mat(0x5c636a, 0.35, 0.5), p: mat(0xefc94c, 0.5),
   r: mat(0x0c3a34, 0.3, 0, 0x3fe0c0), g: mat(0x2f3236, 0.85), s: mat(0x3c4147, 0.95), c: mat(0xffffff, 0.8),
 };
 
@@ -28,7 +28,7 @@ export const GUNS = {
   cleat: { muzzle: [0.08, -0.2], hand: 0, parts: 'm 5 5 22 0 8 -8,b 4.6 3.6 18 0 4 -10,k 4.6 15 6.5 0 -4 1.5 -25,k 3 1.2 7 0 0 -7,m 2.4 2.4 1 0 8.5 -19.3,p 5.2 1.2 2 0 10.9 1.5' },
   skiff: { muzzle: [0.04, -0.43], hand: -0.2, parts: 'b 8 11 34 0 3 -8,k 8.2 3 34 0 -3.5 -8,m 6 6 14 0 4 -31,m 2.8 2.8 6 0 4 -40,k 4.5 20 6 0 -12 -15,k 5 12 6 0 -7 2 -25,m 1.6 1.6 24 3 5 20,m 1.6 1.6 24 -3 5 20,k 8 10 2 0 3 32,k 3 3.5 4 0 10 4,p 8.4 11.4 2.5 0 3 -22' },
   // a bullpup: magazine behind the grip
-  hawser: { muzzle: [0.04, -0.64], hand: -0.36, parts: 'e 9 12 54 0 2 3,k 9.4 15 6 0 1 29,k 9.2 4 30 0 9.5 11,b 7.5 8.5 24 0 3.5 -36,m 3 3 12 0 4 -54,m 4.5 4.5 5 0 4 -61,m 3 1.6 44 0 8.8 -20,k 6 6.5 11 0 13 -10,r 1.4 1.4 .5 0 13.5 -4.2,k 5 13 6 0 -8 -2 -25,k 5.5 17 8.5 0 -10 16,p 9.6 12.6 3 0 2 -20' },
+  hawser: { muzzle: [0.04, -0.64], hand: -0.36, parts: 'e 9 12 54 0 2 3,k 9.4 15 6 0 1 29,k 9.2 4 30 0 9.5 11,b 7.5 8.5 24 0 3.5 -36,m 3 3 12 0 4 -54,m 4.5 4.5 5 0 4 -61,m 3 1.6 44 0 8.8 -20,k 6 6.5 11 0 13 -10,r 1.4 1.4 .5 0 13.5 -4.2,k 5 13 6 0 -8 -2 -25,k 5.5 17 8.5 0 -10 16,c 9.6 12.6 3 0 2 -20' },
   bollard: { muzzle: [0.065, -0.67], hand: -0.42, parts: 'e 9 12 34 0 3 -6,m 5 5 44 0 6.5 -45,k 5 5 36 0 0 -40,b 8.5 8.5 20 0 1.5 -42,m 2 1.2 44 0 9.6 -45,k 5.5 13 6.5 0 -7 3 -30,k 7.5 12 26 0 -1 24 8,p 8.8 8.8 3 0 1.5 -48' },
   capstan: { muzzle: [0.04, -1.01], hand: -0.42, parts: 'k 8 10 42 0 3 -8,e 7 7.5 36 0 3.5 -47,m 3 3 30 0 4 -80,m 5 5 8 0 4 -97,k -2.8 42 2.8 0 14 -12 157,k -3.8 8 3.8 0 14 -35 157,k -3.3 6 3.3 0 14 10 157,m 3 3 3 0 9.5 -22,m 3 3 3 0 9.5,k 5 12 6.5 0 -7 2 -30,k 5 11 7 0 -6 -15,e 6 4 30 0 6 28,e 6 4 26 0 -6 27,k 7 17 4 0 0 42,p 7.4 8 3 0 3.5 -60' },
 };
