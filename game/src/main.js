@@ -12,7 +12,7 @@ const byId = (id) => document.getElementById(id);
 const state = createGame(parseInt(params.get('seed'), 10) || 7);
 const view = createView(state, byId('game'));
 const hud = createHud(state, view.camera), audio = createAudio(state);
-let running = false, lastRound = 0;
+let running = false, lastRound = 0, order = null;
 
 // Chrome refuses a re-lock for ~1 s after Esc: say so rather than fail silently.
 const hint = () => { byId('overlay-title').textContent = 'Click again to resume'; };
@@ -38,7 +38,7 @@ const input = createInput(view.canvas, {
     if (code === 'KeyB') { hud.toggleBuy(); return true; }
     if (!hud.isBuyOpen()) return false;
     const item = SHOP.find((s) => `Digit${s.key}` === code);
-    if (item) buy(state, state.player, item);
+    if (item) order = item;
     return !!item;
   },
 });
@@ -56,6 +56,7 @@ function frame(now) {
   if (running) {
     for (acc += dt; acc >= DT; acc -= DT) {
       input.fill(state.player.cmd);
+      if (order) { buy(state, state.player, order); order = null; } // menu buys land on a tick
       step(state);
       followRounds();
     }

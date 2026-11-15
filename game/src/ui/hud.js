@@ -104,7 +104,7 @@ export function createHud(state, camera) {
     let n0 = 0, n1 = 0;
     for (const a of state.actors) toggle(pips[a.team][a.team ? n1++ : n0++], 'dead', !a.alive);
     for (let i = 0; i < history.length; i++) {
-      const won = state.match.history[i * 2] ?? -1;
+      const won = state.match.history[i] ?? -1;
       if (changed(history[i], won)) history[i].style.background = won < 0 ? '' : TEAMS[won].css;
     }
     // Crosshair gap = the live spread cone projected to pixels.

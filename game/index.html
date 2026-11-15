@@ -15,8 +15,8 @@ bots), static ES modules, no image files; written by an AI agent (Claude Code).
   canSee(), makeNoise(); movement.js moveActor() (walk, crouch silent); audio.js.
 4 sim/map.js LAYOUT; render/level.js, textures.js, palette.js, view.js.
 5 sim/ has no three.js or DOM; one state (state.js createState()); events.js ring; pooled effects.
-  Shots: 1 hud.js onEvent() feed, radio; 2 canBuy(); 3 objective() arm bar; 4 banner(), payRound();
-  tools/ stages them via main.js's test hook.
+  Shots: 1 hud.js onEvent() feed, radio, coach.js plan line; 2 canBuy(); 3 objective() arm bar; 4 banner(),
+  payRound(). tools/ sets each scene up via main.js's test hook; then step(), the view and the HUD draw it.
 -->
 <html lang="en">
 <head>

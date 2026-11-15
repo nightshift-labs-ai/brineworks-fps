@@ -27,7 +27,6 @@ export function updateCore(state) {
       core.x = (n % map.w + 0.5) * map.cell; core.y = map.height[n]; core.z = ((n / map.w | 0) + 0.5) * map.cell;
       core.state = 'dropped'; core.carrier = -1; core.droppedAt = state.time;
       stopWork(core);
-      emit(state.events, EV.CORE, c.id, -1, 0);
       return;
     }
     // Armed standing still on a site, holding use.
@@ -45,7 +44,6 @@ export function updateCore(state) {
     for (const a of state.actors) {
       if (!a.alive || state.teams[a.team].side !== SIDE.ATTACK || Math.hypot(a.pos.x - core.x, a.pos.z - core.z) > OBJECTIVE.reach) continue;
       core.state = 'carried'; core.carrier = a.id;
-      emit(state.events, EV.CORE, a.id, -1, 1);
       return;
     }
   } else if (core.state === 'planted') {
@@ -79,7 +77,6 @@ function work(state, a, duration) {
   const core = state.core;
   if (core.worker !== a.id) {
     core.worker = a.id; core.progress = 0;
-    emit(state.events, EV.CORE, a.id, -1, 5);
     makeNoise(state, a, 'work');
   }
   core.progress += DT / duration;

@@ -68,7 +68,7 @@ function endRound(state, winner, reason) {
   round.phase = 'over'; round.timer = ROUND.over; round.endedAt = state.time;
   round.winner = winner; round.reason = reason; round.buyOpen = false;
   state.teams[winner].score++;
-  state.match.history.push(winner, reason); // pairs: winning team, reason
+  state.match.history.push(winner);
   payRound(state, winner, reason);
   reviewRound(state, winner);
   if (state.teams[winner].score >= ROUND.winsNeeded) state.match.winner = winner;

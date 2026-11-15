@@ -62,7 +62,7 @@ export function createAudio(state) {
     else if (t === EV.STEP) hiss(v / 2, 0.04, 'lowpass', 500);
     else if (t === EV.BLAST) { hiss(v, 0.6, 'lowpass', 400); tone(v, 0.4, 90, 30); }
     else if (t === EV.BOUNCE) tone(v * 0.3, 0.03, 2400, 1200);
-    else if (t === EV.CORE) { if (e.v === 4) tone(v / 2, 0.06, 880, 880); } // the fuse beep
+    else if (t === EV.CORE) tone(v / 2, 0.06, 880, 880); // the fuse beep (v 4)
     else { // a click; a reload also seats the magazine
       tone(v * 0.4, 0.02, 2200, 900);
       if (t === EV.RELOAD) tone(v * 0.4, 0.03, 1400, 600, ctx.currentTime + 0.2);
