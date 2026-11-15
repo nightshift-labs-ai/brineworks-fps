@@ -42,7 +42,7 @@ export function createHud(state, camera) {
   const scores = [el.score0, el.score1], sides = [el.side0, el.side1], radar = createRadar(state, el.radar);
   let cursor = state.events.head, hitTime = -99, hurtTime = -99, hurtAngle = 0, killTime = -99, buyOpen = false, boardOpen = false;
 
-  // Newest first (radio rows reversed: newest last); no html clears the list; rows leave after ROW_LIFE.
+  // Kill feed: newest on top. Radio: newest last (rows reversed). No html clears; rows expire (ROW_LIFE).
   function push(list, rows, html, t) {
     if (html && state.time - t > ROW_LIFE) return; // already stale when drained
     if (html) list.unshift({ html, t }); else list.length = 0;
