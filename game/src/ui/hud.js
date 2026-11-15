@@ -131,8 +131,8 @@ export function createHud(state, camera) {
     if (buyOpen) {
       if (changed('buyMoney', p.money)) el['buy-money'].textContent = '$' + p.money;
       for (let i = 0; i < SHOP.length; i++) toggle(buyRows[i], 'off', !canBuy(state, p, SHOP[i]));
-      const left = Math.max(0, Math.ceil((round.phase === 'freeze' ? round.timer : round.clock - ROUND.live) + ROUND.buyWindow));
-      if (changed('buyFoot', left)) el['buy-foot'].textContent = `Loss pay next round: $${lossPay(state.teams[p.team])}\nKeys 1-9 buy, B closes. Buying closes in ${left} s.`;
+      const loss = lossPay(state.teams[p.team]);
+      if (changed('buyFoot', loss)) el['buy-foot'].textContent = `Loss pay next round: $${loss}\nKeys 1-9 buy, B closes. Buying stays open ${ROUND.buyWindow} s into the round.`;
     }
     const board = boardOpen || round.phase === 'matchover';
     if (board) {

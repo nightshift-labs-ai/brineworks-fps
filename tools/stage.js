@@ -29,7 +29,7 @@ const SCENES = {
       s.p.cmd.fire = i === 15 || i === 31;
     } },
   // Buy time in the defenders' yard, the low sun across the cladding, teammates armed differently.
-  2: { side: 1, round: 7, phase: 'freeze', ticks: 12, buy: true, money: 5200, bare: true,
+  2: { side: 1, round: 7, phase: 'freeze', ticks: 12, buy: true, money: 2350, bare: true,
     cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 26, 9, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
     script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
@@ -88,7 +88,7 @@ function stage(ctx, sc) {
   for (const [k, c, r, fc, fr, gun] of sc.cast) place(state, who(k), c, r, fc, fr, gun);
   if (sc.bare) Object.assign(p, { armor: 0, helm: false, kit: false }), Object.assign(p.grenades, { frag: 0, smoke: 0 });
   else { Object.assign(p.grenades, { frag: 1, smoke: 1 }); p.armor = 100; p.helm = true; p.kit = mySide === 1; } // the kit is the defenders'
-  p.money = Math.max(p.money, sc.money ?? 3150);
+  p.money = sc.money ?? Math.max(p.money, 3150); // exact when the scene sets it
   p.hp = sc.hp ?? 100;
   if (sc.core === 'carry' || sc.core === 'mate') Object.assign(state.core, { state: 'carried', carrier: sc.core === 'mate' ? mates.find((m) => !m.brain.lurk).id : p.id }); // the lurker never carries
   if (sc.core === 'm0') Object.assign(state.core, { state: 'carried', carrier: who('m0').id, worker: who('m0').id, progress: 0.62 }); // mid-arm
