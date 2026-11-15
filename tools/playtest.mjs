@@ -12,14 +12,15 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 await page.goto(`http://127.0.0.1:${process.env.PORT ?? 8792}/index.html?test&seed=${seed}`, { waitUntil: 'load' });
 await page.waitForFunction(() => window.__brineworks, null, { timeout: 30000 });
+await page.evaluate(() => { document.getElementById('overlay').hidden = true; window.__brineworks.run(true); });
 await page.waitForTimeout(1500);
 
 const checks = [];
 const check = (name, ok, detail = '') => { checks.push({ name, ok, detail }); };
 
 const r = await page.evaluate(() => {
-  const { state, step, pause } = window.__brineworks;
-  pause();
+  const { state, step, run } = window.__brineworks;
+  run(false);
   const p = state.player, cmd = p.cmd;
   const out = {};
   const tick = (n, set) => { for (let i = 0; i < n; i++) { if (set) set(cmd); step(state); } };
@@ -72,11 +73,11 @@ check('reload refills from reserve', r.magReloaded === r.mag0 && r.resAfter < r.
 check('recoil recovers', Math.abs(r.punchAfterRest) < 0.005, r.punchAfterRest.toFixed(4));
 
 // Real-time play with rendering, then fast-forward the sim, then render again.
-await page.evaluate(() => window.__brineworks.resume());
+await page.evaluate(() => window.__brineworks.run(true));
 await page.waitForTimeout(6000);
 const mid = await page.evaluate(() => {
-  const { state, step, pause, resume } = window.__brineworks;
-  pause();
+  const { state, step, run } = window.__brineworks;
+  run(false);
   const before = state.round.number;
   let roundsEnded = 0, matches = 0, last = state.round.phase, travel = 0;
   for (let i = 0; i < 60 * 60 * 8; i++) {
@@ -84,7 +85,7 @@ const mid = await page.evaluate(() => {
     for (const a of state.actors) if (a.isBot && a.alive) travel += Math.hypot(a.pos.x - a.prev.x, a.pos.z - a.prev.z);
     if (state.round.phase !== last) { last = state.round.phase; if (last === 'over') roundsEnded++; if (last === 'matchover') matches++; }
   }
-  resume();
+  run(true);
   return { moved: Math.round(travel / 8), roundsEnded, matches, before, after: state.round.number, scores: state.teams.map((t) => t.score), kills: state.actors.reduce((n, a) => n + a.kills, 0), phase: state.round.phase, clock: state.round.clock, core: state.core.state, fuse: state.core.fuse, site: state.core.site };
 });
 await page.waitForTimeout(4000);

@@ -53,6 +53,6 @@ function frame(now) {
   hud.update();
 }
 
-// Screenshot staging and the play-test hook live in a dev module loaded only for ?shot / ?test.
-if (shot || params.has('test')) import('./shots.js').then((m) => m.dev(shot, { state, view, hud, input, step }, (on) => { running = on; }));
+// Dev hook for tools/ (staged screenshots, the play test): the sim, the view and a switch for the loop.
+if (shot || params.has('test')) window.__brineworks = { state, view, hud, input, step, run: (on) => { running = on; } };
 if (!shot) { followRounds(); requestAnimationFrame(frame); }

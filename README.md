@@ -43,8 +43,9 @@ python3 -m http.server 8080 --directory game   # or: node serve.ts
   weapons, grenades, the Fuse Core objective, bots and their team coach, A* navigation, rounds,
   economy, events.
 - `game/src/render/`: three.js view of the state: level meshes, textures, characters, effects, gun.
-- `game/src/ui/`: HUD, radar. `game/src/input.js`: keyboard and mouse. `game/src/shots.js`: staged
-  screenshot scenes (`?shot=1..4&seed=N`).
+- `game/src/ui/`: HUD, radar. `game/src/input.js`: keyboard and mouse.
+- `tools/stage.js`: staged screenshot scenes (`?shot=1..4&seed=N`), injected into the page by
+  `tools/shoot.mjs` through main.js's dev hook; `tools/shoot-all.sh` retakes all four.
 - `main.ts`: packages `game/` and `screenshots/` with `dossier.json` for make.fun
   (`mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts`).
 - `tools/`: development helpers (map carver, headless sim test, browser play test, screenshot capture).

@@ -1,9 +1,11 @@
-// Screenshot staging (?shot=N&seed=S), dev only: the sim plays the match with the player slot on the
-// bot brain up to a round, the cast below is placed for the frame, and the real sim runs the moment.
-import { DT } from './sim/config.js';
-import { giveWeapon, eyeOf } from './sim/actors.js';
-import { createBrain, think } from './sim/bots.js';
-import { yawTo } from './sim/util.js';
+// Screenshot staging for ?shot=N&seed=S. tools/shoot.mjs injects this file into the game page as a module
+// (imports resolve from game/index.html), so it drives the same module instances as the game through
+// window.__brineworks: the sim plays the match with the player slot on the bot brain up to a round, the
+// cast below is placed for the frame, and the real sim runs the moment. Not part of the judged game/.
+import { DT } from './src/sim/config.js';
+import { giveWeapon, eyeOf } from './src/sim/actors.js';
+import { createBrain, think } from './src/sim/bots.js';
+import { yawTo } from './src/sim/util.js';
 
 // cast: [who, col, row, faces col, faces row, gun]; who: p player, m0.. teammates, f0.. opponents.
 // fire: opponents already engaging the player [who, reaction s]; shoot: tick the player opens fire.
@@ -77,19 +79,9 @@ function stage(ctx, sc) {
   if (sc.buy) ctx.hud.toggleBuy(true);
 }
 
-// ?shot=N stages scene N and sets window.__shotReady; ?test exposes the sim to tools/playtest.mjs.
-export function dev(name, ctx, setRunning) {
-  document.getElementById('overlay').hidden = true;
-  if (!name) {
-    setRunning(true);
-    window.__brineworks = { state: ctx.state, step: ctx.step, pause: () => setRunning(false), resume: () => setRunning(true) };
-    return;
-  }
-  const go = () => setTimeout(() => {
-    ctx.state.player.brain = createBrain(0.7, 'entry');
-    stage(ctx, SCENES[name] ?? SCENES[1]);
-    ctx.hud.update();
-    requestAnimationFrame(() => { ctx.hud.update(); window.__shotReady = true; });
-  }, 50);
-  if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
-}
+const ctx = window.__brineworks, name = new URLSearchParams(location.search).get('shot');
+document.getElementById('overlay').hidden = true;
+ctx.state.player.brain = createBrain(0.7, 'entry');
+stage(ctx, SCENES[name] ?? SCENES[1]);
+ctx.hud.update();
+requestAnimationFrame(() => { ctx.hud.update(); window.__shotReady = true; });
