@@ -154,7 +154,7 @@ export function createHud(state, camera) {
       el.progress.style.setProperty('--p', pct + '%');
       el['progress-label'].textContent = `${core.state === 'planted' ? 'DISARMING' : 'ARMING'} FUSE CORE ${pct}%${core.state === 'planted' && worker.kit ? '  KIT' : ''}${worker === p ? '' : '  ' + worker.name}`;
     }
-    const live = state.round.phase === 'live' && p.alive && !ours; // the bar alone while our side works the core
+    const live = state.round.phase === 'live' && p.alive && !ours; // the bar alone while our side works
     if (!changed('obj', core.state, live ? core.carrier : -2)) return;
     const attacking = state.teams[p.team].side === SIDE.ATTACK;
     el.objective.textContent = !live ? ''

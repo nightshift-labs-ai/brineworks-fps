@@ -35,7 +35,7 @@ export function think(state, a) {
   if (state.round.phase === 'freeze') { cmd.crouch = false; return; }
   if ((state.tick + a.id) % BOT.thinkEvery === 0) perceive(state, a, b);
   if (b.lastSeenTime > -99 && !state.actors[b.lastSeenId].alive) b.lastSeenTime = -99;
-  if (core.worker === a.id && core.progress > 0.6) { cmd.use = true; cmd.crouch = defends; return; }
+  if (core.worker === a.id && core.progress > 0.6) { cmd.use = cmd.crouch = true; return; }
   const w = a.slots[a.active];
   if (!w.mag && !w.reserve) { // dry: the sidearm, else drop the fight rather than strafe unarmed
     if (a.active === 0 && a.slots[1].mag + a.slots[1].reserve) cmd.slot = 1;
@@ -111,7 +111,7 @@ function playObjective(state, a, b) {
   if (state.teams[a.team].side === SIDE.ATTACK) {
     if (core.state === 'carried' && core.carrier === a.id) {
       b.lurk = false; // a lurker with the core joins the push
-      if (siteNear(map, a.pos.x, a.pos.z, 0) && quiet) { cmd.use = true; return true; }
+      if (siteNear(map, a.pos.x, a.pos.z, 0) && quiet) { cmd.use = cmd.crouch = true; return true; }
       if (b.plan === 'hold') { goTo(state, a, map.sites[b.site].x, map.sites[b.site].z); return true; }
       return false;
     }
