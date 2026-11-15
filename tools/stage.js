@@ -1,24 +1,43 @@
 // Screenshot staging for ?shot=N&seed=S. tools/shoot.mjs injects this file into the game page as a module
 // (imports resolve from game/index.html), so it drives the same module instances as the game through
-// window.__brineworks: the sim plays the match with the player slot on the bot brain up to a round, the
-// cast below is placed for the frame, and the real sim runs the moment. Not part of the judged game/.
+// window.__brineworks: the sim plays the match with the player slot on the bot brain up to the scene's
+// round, the cast below is placed for the frame, and the real sim runs the moment (bots think, guns fire,
+// the HUD and view read the events as in play). Not part of the judged game/.
 import { DT } from './src/sim/config.js';
-import { giveWeapon, eyeOf } from './src/sim/actors.js';
+import { giveWeapon, eyeOf, heightOf } from './src/sim/actors.js';
 import { createBrain, think } from './src/sim/bots.js';
 import { yawTo } from './src/sim/util.js';
 
 // cast: [who, col, row, faces col, faces row, gun]; who: p player, m0.. teammates, f0.. opponents.
-// fire: opponents already engaging the player [who, reaction s]; shoot: tick the player opens fire.
-// side: the side the player must be on (0 attack, 1 defend); core: 'carry' (arming) or 'armed' (disarming).
-const B_SITE = [['m0', 12, 13, 12, 18, 'hawser'], ['m1', 13, 8, 10, 6, 'skiff'], ['f0', 10, 6, 8, 13, 'hawser']];
-const PLANT = { side: 0, round: 2, clock: 92, core: 'carry', ticks: 110, look: [-0.15, -0.36], cast: [['p', 8, 13, 10, 7, 'hawser'], ...B_SITE] };
+// side: the player's side (0 attack, 1 defend); phase: 'freeze' stages in buy time, else live with clock < clock.
+// fire: opponents already engaging the player [who, reaction s]. script(i, s): per tick, s = { ctx, p, who, aim }.
 const SCENES = {
-  1: { round: 5, clock: 95, ticks: 24, shoot: 12, fire: [['f0', 0.3], ['f1', 0.25]],
-    cast: [['p', 24, 30, 25, 27, 'hawser'], ['f0', 25, 27, 24, 30, 'hawser'], ['f1', 31, 24, 24, 30, 'skiff']] },
-  2: { round: 7, ticks: 20, buy: true, look: [0.12, -0.03],
-    cast: [['p', 28, 5, 28, 15], ['m0', 24, 4, 26, 9, 'hawser'], ['m1', 31, 2, 28, 8, 'skiff'], ['f0', 28, 16, 28, 9, 'hawser']] },
-  3: PLANT,
-  4: { side: 1, round: 6, clock: 95, core: 'armed', ticks: 240, end: true, look: [-0.15, -0.36], cast: [['p', 8, 13, 10, 7, 'hawser'], ...B_SITE, ['f1', 4, 8, 8, 13, 'skiff']] },
+  // Conveyor Court: crouched behind the low wall, the player drops one Saltreeve with a headshot while a
+  // second, half behind the crate at the pan, fires back. A teammate holds the wall's far end.
+  1: { side: 0, round: 5, clock: 80, ticks: 34, hp: 76, core: 'mate',
+    cast: [['p', 25, 30, 23, 23, 'hawser'], ['m0', 28, 28, 31, 21, 'hawser'], ['f0', 25, 24, 25, 30, 'hawser'], ['f1', 24, 23, 25, 30, 'cleat']],
+    fire: [['f1', 0.3]],
+    script(i, s) {
+      s.p.cmd.crouch = true;
+      if (i === 16) s.aim('f0', 'head');
+      s.p.cmd.fire = i === 17;
+      if (i >= 21) s.aim('f1', 'chest');
+    } },
+  // Buy time in the defenders' yard, the low sun across the cladding, teammates armed differently.
+  2: { side: 1, round: 7, phase: 'freeze', ticks: 12, buy: true, money: 5200, bare: true,
+    cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 26, 9, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
+    script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
+  // Arming on B: a teammate's smoke closes Hall Gate 12 m out, a Saltreeve works round its edge, a teammate
+  // already holds Pan Door for the post-plant.
+  3: { side: 0, round: 2, clock: 92, core: 'carry', ticks: 110, smoke: [10.5, 6.6],
+    cast: [['p', 8, 14, 10, 7, 'hawser'], ['m0', 12, 12, 13, 19, 'hawser'], ['f0', 13, 7, 8, 13, 'hawser'], ['m1', 4, 12, 5, 19, 'skiff']],
+    fire: [['f0', 4]], // he has the player in his sights but will not fire inside the scene
+    script(i, s) { s.p.cmd.use = true; s.aim(null, -0.12, 10.6, 7); } },
+  // A retake won by the disarm, seen from the player's eyes: the Spanner kit halves the work, the core's
+  // bands turn teal, the banner names the disarm; the match goes on.
+  4: { side: 1, round: 6, clock: 70, core: 'armed', ticks: 220, end: 0.35, dead: ['f0', 'f1'],
+    cast: [['p', 8, 13, 9, 9, 'hawser'], ['m0', 12, 12, 10, 6, 'hawser'], ['m1', 5, 9, 10, 6, 'skiff'], ['f0', 10, 10, 8, 13, 'hawser'], ['f1', 6, 10, 8, 13, 'skiff']],
+    script(i, s) { s.p.cmd.use = true; s.aim(null, -0.3, 9.5, 9); } },
 };
 
 function run(ctx, n, script, drawn = 3) { // n ticks; only the last `drawn` are rendered (effects in flight)
@@ -50,31 +69,36 @@ function place(state, a, c, r, fc, fr, gun) {
 }
 
 function stage(ctx, sc) {
-  const { state } = ctx, p = state.player, mySide = state.teams[p.team].side;
-  autopilot(ctx, (s) => s.round.number >= sc.round && s.teams[p.team].side === (sc.side ?? s.teams[p.team].side) && s.round.phase === 'live' && s.round.clock < (sc.clock ?? 999));
-  const team = (side) => state.actors.filter((a) => a !== p && state.teams[a.team].side === side);
+  const { state } = ctx, p = state.player, S = state.map.cell;
+  autopilot(ctx, (s) => s.round.number >= sc.round && s.teams[p.team].side === sc.side
+    && (sc.phase === 'freeze' ? s.round.phase === 'freeze' : s.round.phase === 'live' && s.round.clock < sc.clock));
+  const mySide = state.teams[p.team].side, team = (side) => state.actors.filter((a) => a !== p && state.teams[a.team].side === side);
   const mates = team(mySide), foes = team(1 - mySide), who = (k) => (k === 'p' ? p : (k[0] === 'm' ? mates : foes)[+k[1]]);
   // Everyone not cast waits in their own spawn, out of sight.
   [...mates, ...foes].forEach((a, i) => { const s = state.map.spawns[state.teams[a.team].side][i % 5]; place(state, a, s.c, s.r, 27, 20); });
   for (const [k, c, r, fc, fr, gun] of sc.cast) place(state, who(k), c, r, fc, fr, gun);
-  Object.assign(p.grenades, { frag: 1, smoke: 1 });
-  p.armor = 100; p.helm = true; p.money = Math.max(p.money, 3150);
-  if (sc.core) { // a teammate's smoke sits in front of Hall Gate; a Saltreeve behind it cannot see out
-    if (sc.core === 'carry') Object.assign(state.core, { state: 'carried', carrier: p.id });
-    else Object.assign(state.core, { state: 'planted', site: 'B', fuse: 30, carrier: -1, x: p.pos.x - Math.sin(p.yaw) * 1.2, y: 0, z: p.pos.z - Math.cos(p.yaw) * 1.2 });
-    state.round.planted = sc.core === 'armed';
-    p.kit = mySide === 1; // the Spanner kit is the defenders' (it halves disarming)
-    Object.assign(state.smokes[0], { live: true, x: 10.5 * state.map.cell, y: 0, z: 7.8 * state.map.cell, age: 2 });
-  }
-  for (const [k, react] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: 0.01, aimHead: false, lastSeenId: p.id, lastSeenTime: 1e9 });
-  const f = who(sc.cast[1][0]), ey = p.pos.y + eyeOf(p);
-  if (sc.fire) ctx.input.face(yawTo(p.pos.x, p.pos.z, f.pos.x, f.pos.z) + 0.02, Math.atan2(f.pos.y + 1.25 - ey, Math.hypot(f.pos.x - p.pos.x, f.pos.z - p.pos.z)));
-  else ctx.input.face(p.yaw + sc.look[0], sc.look[1]);
-  run(ctx, sc.ticks, (i) => { p.cmd.fire = i >= (sc.shoot ?? 1e9); p.cmd.use = !!sc.core; }, sc.end ? 0 : 3);
-  if (sc.end) { // the same round played out: banner, scores, the camera up over the site
-    autopilot(ctx, (s) => s.round.phase === 'over' && s.time - s.round.endedAt > 2.2);
-    ctx.hud.showBoard(true);
-    run(ctx, 2, () => {});
+  if (sc.bare) Object.assign(p, { armor: 0, helm: false, kit: false }), Object.assign(p.grenades, { frag: 0, smoke: 0 });
+  else { Object.assign(p.grenades, { frag: 1, smoke: 1 }); p.armor = 100; p.helm = true; p.kit = mySide === 1; } // the kit is the defenders'
+  p.money = Math.max(p.money, sc.money ?? 3150);
+  p.hp = sc.hp ?? 100;
+  if (sc.core === 'carry' || sc.core === 'mate') Object.assign(state.core, { state: 'carried', carrier: sc.core === 'mate' ? mates[3].id : p.id });
+  if (sc.core === 'armed') Object.assign(state.core, { state: 'planted', site: 'B', fuse: 25, carrier: -1, x: p.pos.x + 0.4, y: 0, z: p.pos.z - 1.1 });
+  state.round.planted = sc.core === 'armed';
+  if (sc.smoke) Object.assign(state.smokes[0], { live: true, x: sc.smoke[0] * S, y: 0, z: sc.smoke[1] * S, age: 2 });
+  for (const k of sc.dead ?? []) Object.assign(who(k), { alive: false, hp: 0, diedAt: -99 }); // bodies of an earlier fight
+  for (const [k, react] of sc.fire ?? []) Object.assign(who(k).brain, { target: p.id, reactTimer: react, errYaw: 0.02, errPitch: 0.01, aimHead: false, crouchSpray: false, lastSeenId: p.id, lastSeenTime: 1e9 });
+  // Look at an actor's head or chest, or (k null) at pitch `part` toward cell (c, r).
+  const aim = (k, part, c, r) => {
+    const ey = p.pos.y + eyeOf(p);
+    if (!k) return ctx.input.face(yawTo(p.pos.x, p.pos.z, (c + 0.5) * S, (r + 0.5) * S), part);
+    const a = who(k), y = a.pos.y + (part === 'head' ? heightOf(a) - 0.17 : heightOf(a) * 0.62);
+    ctx.input.face(yawTo(p.pos.x, p.pos.z, a.pos.x, a.pos.z), Math.atan2(y - ey, Math.hypot(a.pos.x - p.pos.x, a.pos.z - p.pos.z)));
+  };
+  const s = { ctx, p, who, aim };
+  run(ctx, sc.ticks, (i) => sc.script(i, s), sc.end === undefined ? 3 : 0);
+  if (sc.end !== undefined) { // the round played out to its end, captured `end` s after the banner
+    autopilot(ctx, (st) => st.round.phase !== 'live');
+    run(ctx, Math.round(sc.end / DT), () => {});
   }
   if (sc.buy) ctx.hud.toggleBuy(true);
 }
