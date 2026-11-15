@@ -35,10 +35,10 @@ const SCENES = {
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
   // closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate holds Pan Door.
   3: { side: 0, round: 4, clock: 97, core: 'm0', hide: ['hint'], ticks: 40, smoke: [10.5, 6.6],
-    cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 8, 12, 12, 12, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 12, 8, 8, 13, 'hawser']],
+    cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 9, 11, 12, 11, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 12, 8, 8, 13, 'hawser']],
     radio: [['m1', 'holding Pan Door'], ['m1', 'footsteps at Boiler Gate']],
     fire: [['f0', 4]], // he has the player in his sights but will not fire inside the scene
-    script(i, s) { s.aim(null, -0.2, 9, 9); } },
+    script(i, s) { s.aim(null, -0.14, 9, 9); } },
   // A retake of A won by a teammate's disarm with the kit, 2.7 m ahead, looking south down the lane past the
   // pad over two downed Saltreeves: the window turns teal, the banner names the disarm; the match goes on.
   4: { side: 1, round: 7, clock: 95, core: 'armed', site: 'A', ticks: 234, end: 0.017, dead: ['f0', 'f1'],
