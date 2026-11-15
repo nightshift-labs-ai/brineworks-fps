@@ -31,11 +31,11 @@ export function createView(state, container) {
 
   const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(), side: THREE.BackSide, fog: false, depthWrite: false }));
   const sun = new THREE.DirectionalLight(PALETTE.sun, 5.2), map = state.map;
-  sun.position.set(map.width / 2 - 60, 24, map.depth / 2 + 25); // 20 degrees up, west-south-west
+  sun.position.set(map.width / 2 - 60, 46, map.depth / 2 + 25); // 35 degrees up, west-south-west
   sun.target.position.set(map.width / 2, 0, map.depth / 2);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -50, right: 50, top: 24, bottom: -24, near: 10, far: 170 });
+  Object.assign(sun.shadow.camera, { left: -50, right: 50, top: 36, bottom: -36, near: 10, far: 170 });
   Object.assign(sun.shadow, { bias: -0.0004, normalBias: 0.03 });
   const disc = new THREE.Sprite(glow(0xffd9a0));
   disc.position.copy(sun.position).sub(sun.target.position).normalize().multiplyScalar(380).add(sun.target.position);
