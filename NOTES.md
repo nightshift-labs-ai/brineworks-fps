@@ -109,7 +109,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
   `?shot=2&seed=7`; 3 arming on B under smoke `?shot=3&seed=7`; 4 disarm win `?shot=4&seed=7`
-  (shots.json). `python3 tools/sheet.py` makes a 2x2 contact sheet.
+  (shots.json, all seed 14: one match). `python3 tools/sheet.py` makes a 2x2 contact sheet.
 - `node tools/check-shots.mjs` checks size and dimensions.
 
 ## Decisions

@@ -34,14 +34,14 @@ const SCENES = {
     script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
   // closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate holds Pan Door.
-  3: { side: 0, round: 2, clock: 97, core: 'm0', hide: ['hint'], ticks: 40, smoke: [10.5, 6.6],
+  3: { side: 0, round: 4, clock: 97, core: 'm0', hide: ['hint'], ticks: 40, smoke: [10.5, 6.6],
     cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 8, 12, 12, 12, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 13, 7, 8, 13, 'hawser']],
     radio: [['m1', 'holding Pan Door'], ['m1', 'footsteps at Boiler Gate']],
     fire: [['f0', 4]], // he has the player in his sights but will not fire inside the scene
     script(i, s) { s.aim(null, -0.2, 9, 9); } },
   // A retake of A won by a teammate's disarm with the kit, 2.7 m ahead, looking south down the lane past the
   // pad over two downed Saltreeves: the window turns teal, the banner names the disarm; the match goes on.
-  4: { side: 1, round: 7, clock: 95, core: 'armed', site: 'A', ticks: 230, end: 0.05, dead: ['f0', 'f1'],
+  4: { side: 1, round: 7, clock: 95, core: 'armed', site: 'A', ticks: 300, end: 0.05, dead: ['f0', 'f1'],
     cast: [['p', 48, 8, 48, 20, 'hawser'], ['m0', 49.6, 10.7, 48.9, 10.3, 'hawser'], ['m1', 46, 15, 47, 20, 'skiff'], ['f0', 47, 13, 51, 13, 'hawser'], ['f1', 46.3, 12.6, 51, 12.6, 'skiff']],
     radio: [['m1', 'they are on A, rotate']], // Carrick says 'disarming, cover me' himself
     script(i, s) { s.aim(null, -0.28, 48, 20); } },
@@ -80,7 +80,7 @@ function place(state, a, c, r, fc, fr, gun) {
 
 function stage(ctx, sc) {
   const { state } = ctx, p = state.player, S = state.map.cell;
-  autopilot(ctx, (s) => s.round.number >= sc.round && s.teams[p.team].side === sc.side
+  autopilot(ctx, (s) => s.round.number >= sc.round && s.teams[p.team].side === sc.side && p.alive
     && (sc.phase === 'freeze' ? s.round.phase === 'freeze' : s.round.phase === 'live' && s.round.clock < sc.clock));
   // The cast comes from the living; the round's dead stay down where they fell, so pips and kill feed agree.
   // A scene's bodies (sc.dead) are opponents already down when there are any.

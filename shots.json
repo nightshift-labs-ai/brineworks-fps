@@ -1,6 +1,6 @@
 [
-  { "name": "1-firefight.jpg", "query": "?shot=1&seed=9" },
-  { "name": "2-buy.jpg", "query": "?shot=2&seed=7" },
-  { "name": "3-arming.jpg", "query": "?shot=3&seed=7" },
-  { "name": "4-round-won.jpg", "query": "?shot=4&seed=7" }
+  { "name": "1-firefight.jpg", "query": "?shot=1&seed=14" },
+  { "name": "2-buy.jpg", "query": "?shot=2&seed=14" },
+  { "name": "3-arming.jpg", "query": "?shot=3&seed=14" },
+  { "name": "4-round-won.jpg", "query": "?shot=4&seed=14" }
 ]
