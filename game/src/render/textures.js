@@ -41,11 +41,9 @@ const cladding = (ctx) => {
   for (let y = 0; y < 256; y += 128) rect(ctx, '#19202673', 0, y, 256, 3);
 };
 
-const crate = (ctx) => {
-  ctx.strokeStyle = '#2c353b';
-  ctx.lineWidth = 9; ctx.strokeRect(5, 5, 118, 118);
-  ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(10, 118); ctx.lineTo(118, 10); ctx.stroke();
-  rect(ctx, PALETTE.paint, 14, 14, 26, 8);
+const crate = (ctx) => { // a canvas-wrapped pallet of salt sacks: two straps, a stencilled lot number
+  for (const y of [22, 96]) rect(ctx, '#4d3f3170', 0, y, 128, 10);
+  ctx.font = 'bold 15px monospace'; ctx.fillStyle = '#3a2f2580'; ctx.fillText('LOT 07', 36, 70);
 };
 
 const ground = (ctx, rand) => {
@@ -72,7 +70,7 @@ export function createTextures() {
   const t = {
     wall: paint(256, 11, PALETTE.concrete, concrete, 6),
     clad: paint(256, 23, '#e9eceb', cladding, 8),
-    crate: paint(128, 41, '#8d9ba5', crate, 10),
+    crate: paint(128, 41, '#b3a88f', crate, 14),
     ground: paint(512, 61, PALETTE.ground, ground, 10),
     grating: paint(128, 71, '#3e464b', grating, 12),
     hazard: paint(128, 1, PALETTE.paint, hazard),

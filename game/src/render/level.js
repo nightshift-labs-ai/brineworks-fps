@@ -68,7 +68,7 @@ const POOLS = [[22, 25, 23, 27], [32, 23, 33, 26], [51, 26, 52, 28], [3, 23, 4, 
 export function buildLevel(map, tex) {
   const group = new THREE.Group(), S = map.cell, W = map.width, D = map.depth, H = (code) => map.height[map.kind.indexOf(code)];
   const mats = {
-    wall: std({ map: tex.wall }), crate: std({ map: tex.crate, roughness: 0.6, metalness: 0.3 }), trim: std({ color: 0x3a4248 }),
+    wall: std({ map: tex.wall }), crate: std({ map: tex.crate }), trim: std({ color: 0x3a4248 }),
     grating: std({ map: tex.grating, roughness: 0.5, metalness: 0.5 }), hazard: std({ map: tex.hazard }), roof: std({ map: tex.gravel }),
   };
   for (const k in PALETTE.lanes) [mats[k], mats[k + 'X']] = PALETTE.lanes[k].map((color) => std({ map: tex.clad, color, roughness: 0.6, metalness: 0.3 }));
@@ -107,7 +107,7 @@ export function buildLevel(map, tex) {
   cells(120, (x, z) => batch.crate.add(x + 0.03, 0, z + 0.03, x + S - 0.03, H(120), z + S - 0.03, 1, true));
   each(45, (x0, z0, x1, z1, top) => { // '-': barrier
     batch.wall.add(x0, 0, z0, x1, top - 0.12, z1, 3);
-    batch.hazard.add(x0, top - 0.12, z0, x1, top, z1, 1.2);
+    batch.trim.add(x0, top - 0.12, z0, x1, top, z1, 1.2);
   });
   for (const code of [49, 50, 51]) each(code, (x0, z0, x1, z1, top) => { // '1' '2' '3': decks and stairs
     batch.trim.add(x0, 0, z0, x1, top - 0.08, z1, 2);
@@ -143,7 +143,7 @@ export function buildLevel(map, tex) {
   // Beyond the walls, never collided.
   const salt = std({ color: 0xf2f4f3, roughness: 1 }), steel = std({ color: PALETTE.steel, metalness: 0.4, roughness: 0.6 }), oxide = std({ color: 0x8c4c3a });
   const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; group.add(m); };
-  for (const [x, z, r, h] of [[-14, 18, 13, 10], [-10, 50, 10, 8], [W + 16, 30, 15, 11], [W + 12, 70, 11, 8], [24, -18, 12, 9], [62, -16, 14, 10]]) add(new THREE.ConeGeometry(r, h, 28), salt, x, h / 2 - 0.3, z);
+  for (const [x, z, r, h] of [[-14, 18, 13, 10], [-10, 50, 10, 8], [W + 16, 30, 15, 11], [W + 12, 70, 11, 8], [30, -22, 20, 19], [64, -18, 16, 15]]) add(new THREE.ConeGeometry(r, h, 28), salt, x, h / 2 - 0.3, z);
   for (const z of [34, 42]) for (const x of [58, 65]) { add(new THREE.CylinderGeometry(3.2, 3.2, 17, 24), steel, x, 8.5, z); add(new THREE.ConeGeometry(3.3, 1.6, 24), oxide, x, 17.8, z); }
   flat(900, 900, std({ color: 0x6f6c66, roughness: 1 }), W / 2, -0.05, D / 2); // salt flats into the fog
   return group;
