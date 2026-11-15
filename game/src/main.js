@@ -65,6 +65,6 @@ function frame(now) {
   audio.update();
 }
 
-// Dev hook for tools/ (staged screenshots, play test).
+// Test hook for tools/ (screenshot scenes, play test).
 if (shot || params.has('test')) window.__brineworks = { state, view, hud, input, step, run: (on) => { running = on; } };
 if (!shot) { followRounds(); requestAnimationFrame(frame); }

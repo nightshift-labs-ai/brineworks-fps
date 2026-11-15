@@ -26,7 +26,7 @@ export const BODY = { headRadius: 0.16, torsoRadius: 0.27, legRadius: 0.22, legT
 // Intent: a Hawser headshot (34 x 3.8) beats a helm only up close; a Capstan body shot kills through
 // a vest, a leg shot does not; the Skiff is cheap and forgiving on the move but weak far off.
 export const WEAPONS = {
-  cleat: { name: 'Cleat', cls: 'sidearm', kind: 'pistol', price: 180, mag: 13, reserve: 39, interval: 0.15, damage: 29, headMult: 3.8, armorPen: 0.5, falloff: 0.85, range: 60, reload: 2, speedMult: 1, reward: 250, draw: 0.45,
+  cleat: { name: 'Cleat', cls: 'sidearm', kind: 'pistol', mag: 13, reserve: 39, interval: 0.15, damage: 29, headMult: 3.8, armorPen: 0.5, falloff: 0.85, range: 60, reload: 2, speedMult: 1, reward: 250, draw: 0.45,
     spread: { base: 0.006, move: 0.042, air: 0.12, crouch: 0.8, bloom: 0.02 }, recoil: { climb: 0.017, sway: 0.004, settle: 2, recover: 5 } },
   skiff: { name: 'Skiff', cls: 'SMG', kind: 'smg', price: 1150, mag: 28, reserve: 112, interval: 0.072, auto: true, damage: 24, headMult: 3.4, armorPen: 0.6, falloff: 0.76, range: 50, reload: 2.3, speedMult: 0.98, reward: 550, draw: 0.6,
     spread: { base: 0.009, move: 0.021, air: 0.1, crouch: 0.85, bloom: 0.006 }, recoil: { climb: 0.006, sway: 0.008, settle: 5, recover: 7 } },

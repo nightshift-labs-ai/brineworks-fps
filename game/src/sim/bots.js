@@ -98,7 +98,7 @@ function perceive(state, a, b) {
     if (now - b.calledAt > 4) { b.calledAt = now; radio(state, a, `contact, ${placeName(state.map, x, z)}`); }
   }
   b.target = b.lastSeenId = best.id; b.lastSeenX = x; b.lastSeenZ = z; b.lastSeenTime = now;
-  // Team intel (coach rotations, the radar): sightings of different enemies close together add up.
+  // Team intel (coach rotations): sightings of different enemies close together add up.
   const intel = state.intel[a.team], close = now - intel.time < 4 && dist2(intel.x, intel.z, x, z) < 400;
   intel.count = close ? intel.count + (intel.id !== best.id ? 1 : 0) : 1;
   intel.x = x; intel.z = z; intel.time = now; intel.id = best.id;

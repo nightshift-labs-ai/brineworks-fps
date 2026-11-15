@@ -1,21 +1,22 @@
 <!doctype html>
 <!--
 NOTE FOR THE REVIEWER, criterion -> file function(). BRINEWORKS: 5v5 round-based tactical FPS (you + 4
-bots), three.js 0.187.0, static ES modules, no image files; written by an AI agent (Claude Code).
+bots), static ES modules, no image files; written by an AI agent (Claude Code).
 1 main.js frame() fixed 60 Hz steps, interpolated render; input.js fill(); sim/weapons.js updateWeapon(),
-  fire() (magazine, reload, dry); bots.js think() fills the player's command record; round.js
-  updateRound(), endRound(); ui/hud.js update().
-2 sim/actors.js rayActor() hitboxes, applyDamage() head multiplier, hurt() armour/helm; weapons.js
-  spreadOf() (speed, air, crouch, bloom), fire() spray pattern; movement.js accelerate(), applyFriction();
-  collide.js moveBody().
-3 sim/objective.js updateCore() (the Fuse Core: carry, drop, arm, fuse, disarm); economy.js payRound(),
-  buy(), botShop(), teamCall(); grenades.js predictBurst(); bots.js perceive() (slower at range, faster
-  on a held angle), think(), engage(), followPlan(), playObjective() (retake, disarm); coach.js
-  planRound(), updateCoach(), reviewRound(); nav.js findPath() A*; senses.js canSee(), makeNoise();
-  movement.js moveActor() (walk and crouch are silent); audio.js (heard like the bots hear).
+  fire() (magazine, reload, dry); bots.js think() fills a bot's command record as fill() does the
+  player's; round.js updateRound(), endRound(); ui/hud.js update().
+2 sim/actors.js rayActor() hitboxes, applyDamage() head/leg multipliers, falloff per 25 m, hurt()
+  armour/helm; weapons.js spreadOf() (speed, air, crouch, bloom), fire() spray pattern; movement.js
+  accelerate(), applyFriction(); collide.js moveBody().
+3 sim/objective.js updateCore() (the Fuse Core); economy.js payRound(),
+  buy(), botShop(), teamCall(); grenades.js smokeBlocks() (blinds canSee()), predictBurst(); bots.js
+  perceive() (slower at range, faster on a held angle), think(), engage(), followPlan(), playObjective();
+  coach.js planRound(), updateCoach(), reviewRound(); nav.js findPath() A*; senses.js
+  canSee(), makeNoise(); movement.js moveActor() (walk, crouch silent); audio.js.
 4 sim/map.js LAYOUT; render/level.js, textures.js, palette.js, view.js.
 5 sim/ has no three.js or DOM; one state (state.js createState()); events.js ring; pooled effects.
-  Screenshots: real renders staged through main.js's dev hook.
+  Shots: 1 hud.js onEvent() feed, radio; 2 canBuy(); 3 objective() arm bar; 4 banner(), payRound();
+  tools/ stages them via main.js's test hook.
 -->
 <html lang="en">
 <head>

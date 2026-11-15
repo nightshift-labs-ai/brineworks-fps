@@ -1,4 +1,4 @@
-// The HUD, the only writer of #hud: values are written only on change, so update() allocates nothing.
+// The HUD, the only writer of #hud: each value is written only when it changes.
 import { TEAMS, TEAM_SIZE, WEAPONS, WEAPON_ORDER, GRENADES, SIDE, ROUND } from '../sim/config.js';
 import { SHOP, itemDef, canBuy, lossPay } from '../sim/economy.js';
 import { spreadOf } from '../sim/weapons.js';

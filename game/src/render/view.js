@@ -75,7 +75,7 @@ export function createView(state, container) {
         vm.fired();
       } else {
         const yaw = state.actors[e.a].yaw, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-        muzzle.set(e.x + (fx * 0.75 - fz * 0.08), e.y - 0.12 - 0.1, e.z + (fz * 0.75 + fx * 0.08));
+        muzzle.set(e.x + (fx * 0.75 - fz * 0.08), e.y - 0.22, e.z + (fz * 0.75 + fx * 0.08));
         effects.spawnFlash(muzzle.x, muzzle.y, muzzle.z);
       }
       effects.spawnTracer(muzzle, e.x2, e.y2, e.z2, camera.position, own);
@@ -88,7 +88,7 @@ export function createView(state, container) {
     } else if (t === EV.ROUND && e.v === 0) effects.clearDecals();
     else if (t === EV.BLAST) {
       effects.spawnBlast(e.x, e.y, e.z, e.v);
-      shake = Math.max(shake, 0, 1 - Math.hypot(e.x - camera.position.x, e.z - camera.position.z) / (e.v * 3));
+      shake = Math.max(shake, 1 - Math.hypot(e.x - camera.position.x, e.z - camera.position.z) / (e.v * 3));
     } else if (t === EV.CORE && e.v === 4) props.beep();
   }
 
