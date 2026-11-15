@@ -3,7 +3,7 @@
 //   # perimeter wall   H refinery building   X stacked crates   x crate (vaultable)   - low wall   . floor
 //   1 2 3 stairs / deck (HEIGHTS)   A B Fuse Core sites   a d attacker / defender spawns   other letters: waypoints
 // Lanes: west Brine Channel to B; Conveyor Court in the middle (its tower blocks spawn-to-spawn
-// sight) with the Pan House to B and the Brine Bridge to A; the east Quay to A.
+// sight) with the Pan House to B and the Brine Bridge to A; the east Slipway to A.
 export const CELL = 1.5;
 
 const LAYOUT = `
@@ -56,9 +56,9 @@ const LAYOUT = `
 const HEIGHTS = { '#': 4.8, H: 9, X: 2.6, x: 1.1, '-': 1, 1: 0.4, 2: 0.8, 3: 1.2 };
 const CALLOUTS = {
   e: 'Rail Cut', f: 'Weighbridge', g: 'Conveyor Court', h: 'Tower Foot', i: 'Pump Gate', j: 'Brine Bridge',
-  k: 'Dock Gate', l: 'Bollard Corner', m: 'Quay', n: 'Channel Foot', o: 'Brine Channel', p: 'Channel Gate',
-  q: 'Pan House', r: 'Pan Door', s: 'Office Row', t: 'Tank Walk', u: 'Tank Gate', v: 'Hall Gate', w: 'Tank Apron',
-  y: 'Pumphouse East', z: 'Pumphouse West', A: 'Brine Tanks', B: 'Evaporator Hall',
+  k: 'Jetty Gate', l: 'Bollard Corner', m: 'Slipway', n: 'Channel Foot', o: 'Brine Channel', p: 'Channel Gate',
+  q: 'Pan House', r: 'Pan Door', s: 'Office Row', t: 'Tank Walk', u: 'Tank Gate', v: 'Boiler Gate', w: 'Tank Apron',
+  y: 'Pumphouse East', z: 'Pumphouse West', A: 'Brine Tanks', B: 'Boiling House',
 };
 
 // Attack routes from the railhead: the group gathers at `stage`, then pushes the last leg together.

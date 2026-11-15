@@ -52,15 +52,15 @@ function rectangles(map, code) {
 function laneOf(c, r) {
   if (c >= 26 && c <= 29 && r >= 19 && r <= 22) return 'tanks'; // the conveyor tower
   if (c < 21) return r < 18 ? 'hall' : 'channel';
-  if (c >= 35 && r >= 18) return 'quay';
+  if (c >= 35 && r >= 18) return 'slip';
   return c >= 30 && r < 13 ? 'tanks' : 'court';
 }
 
 // Wall signs: [lines, column, row, cell face n s e w].
 const SIGNS = [
-  [['A  >', 'DOCK GATE'], 47, 18, 's'], [['A', 'TANK GATE'], 43, 6, 'n'], [['A  >', 'BRINE BRIDGE'], 36, 13, 's'],
-  [['B', 'HALL GATE'], 13, 6, 'n'], [['B  ^', 'EVAPORATOR HALL'], 8, 18, 's'], [['< B', 'PAN HOUSE'], 17, 19, 's'],
-  [['CONVEYOR', 'COURT  BAY 03'], 27, 22, 's'], [['PUMP GATE'], 31, 10, 'w'], [['QUAY', 'BAY 07'], 53, 28, 'w'], [['BRINE', 'CHANNEL'], 2, 26, 'e'],
+  [['A  >', 'JETTY GATE'], 47, 18, 's'], [['A', 'TANK GATE'], 43, 6, 'n'], [['A  >', 'BRINE BRIDGE'], 36, 13, 's'],
+  [['B', 'BOILER GATE'], 13, 6, 'n'], [['B  ^', 'BOILING HOUSE'], 8, 18, 's'], [['< B', 'PAN HOUSE'], 17, 19, 's'],
+  [['CONVEYOR', 'COURT  BAY 03'], 27, 22, 's'], [['PUMP GATE'], 31, 10, 'w'], [['SLIPWAY', 'BAY 07'], 53, 28, 'w'], [['BRINE', 'CHANNEL'], 2, 26, 'e'],
 ];
 const LAMPS = [[16, 20, 'n'], [52, 24, 'w'], [3, 29, 'e'], [22, 26, 'e']]; // warm wall lamps: column, row, wall face
 const POOLS = [[22, 25, 23, 27], [32, 23, 33, 26], [51, 26, 52, 28], [3, 23, 4, 25]]; // brine pans: c0 r0 c1 r1

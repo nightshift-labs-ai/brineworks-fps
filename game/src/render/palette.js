@@ -8,7 +8,7 @@ export const PALETTE = {
   haze: '#9a8a86', sun: '#ffac68', skyLight: '#a9b6cf', groundLight: '#6b6458',
   ground: '#858279', concrete: '#aeaaa0', steel: '#56626b', brine: '#c98790', lamp: '#ffb760', paint: '#efc94c',
   // Per lane: cladding tint, then its accent (containers, sign stripes): rust or weathered teal.
-  lanes: { hall: ['#9a5a45', '#3f7568'], tanks: ['#d2cfc6', '#9a4a32'], channel: ['#4f8576', '#a24f33'], quay: ['#8c4c38', '#2f7470'], court: ['#c4c0b6', '#93472f'] },
+  lanes: { hall: ['#9a5a45', '#3f7568'], tanks: ['#d2cfc6', '#9a4a32'], channel: ['#4f8576', '#a24f33'], slip: ['#8c4c38', '#2f7470'], court: ['#c4c0b6', '#93472f'] },
 };
 
 export const std = (o) => new THREE.MeshStandardMaterial({ roughness: 0.85, ...o });

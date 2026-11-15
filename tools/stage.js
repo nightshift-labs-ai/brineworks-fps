@@ -27,7 +27,7 @@ const SCENES = {
   2: { side: 1, round: 7, phase: 'freeze', ticks: 12, buy: true, money: 5200, bare: true,
     cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 26, 9, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
     script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
-  // Arming on B: a teammate's smoke closes Hall Gate 12 m out, a Saltreeve works round its edge, a teammate
+  // Arming on B: a teammate's smoke closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate
   // already holds Pan Door for the post-plant.
   3: { side: 0, round: 2, clock: 92, core: 'carry', ticks: 110, smoke: [10.5, 6.6],
     cast: [['p', 8, 14, 10, 7, 'hawser'], ['m0', 12, 12, 13, 19, 'hawser'], ['f0', 13, 7, 8, 13, 'hawser'], ['m1', 4, 12, 5, 19, 'skiff']],
