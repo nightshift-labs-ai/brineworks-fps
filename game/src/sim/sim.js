@@ -1,11 +1,11 @@
 // The fixed-step simulation: step(state) advances the world exactly DT (no clock, DOM or three.js).
 import { DT } from './config.js';
+import { moveActor, separateActors } from './movement.js';
+import { updateWeapon } from './weapons.js';
 import { createState } from './state.js';
 import { startMatch, updateRound } from './round.js';
 import { think } from './bots.js';
 import { updateCoach } from './coach.js';
-import { moveActor, separateActors } from './movement.js';
-import { updateWeapon } from './weapons.js';
 import { updateCore, workerOf } from './objective.js';
 import { updateNades } from './grenades.js';
 

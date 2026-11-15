@@ -4,8 +4,8 @@ import { createGame, step } from './sim/sim.js';
 import { SHOP, buy } from './sim/economy.js';
 import { createInput } from './input.js';
 import { createHud } from './ui/hud.js';
-import { createAudio } from './audio.js';
 import { createView } from './render/view.js';
+import { createAudio } from './audio.js';
 
 const params = new URLSearchParams(location.search), shot = params.get('shot');
 const byId = (id) => document.getElementById(id);
