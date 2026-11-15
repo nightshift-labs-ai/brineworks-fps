@@ -49,9 +49,9 @@ const crate = (ctx) => { // a canvas-wrapped pallet of salt sacks: two straps, a
 const ground = (ctx, rand) => {
   for (let i = 0; i < 70; i++) radial(ctx, rand() * 512, rand() * 512, 10 + rand() * 46, [[0, '#d8d4c450'], [1, '#d8d4c400']]); // salt crust
   for (let i = 0; i < 1500; i++) rect(ctx, `rgba(232,230,220,${rand() * 0.6})`, rand() * 512, rand() * 512, 1 + rand(), 1 + rand());
-  for (let i = 0; i <= 2; i++) { rect(ctx, '#2a2f2c80', i * 256 - 1, 0, 2, 512); rect(ctx, '#2a2f2c80', 0, i * 256 - 1, 512, 2); }
-  ctx.strokeStyle = '#2a2f2c66';
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i <= 4; i++) { rect(ctx, '#2a2f2c80', i * 128 - 1, 0, 2, 512); rect(ctx, '#2a2f2c80', 0, i * 128 - 1, 512, 2); }
+  ctx.strokeStyle = '#2a2f2c40';
+  for (let i = 0; i < 24; i++) {
     let x = rand() * 512, y = rand() * 512;
     ctx.beginPath(); ctx.moveTo(x, y);
     for (let k = 0; k < 5; k++) { x += (rand() - 0.5) * 34; y += (rand() - 0.5) * 34; ctx.lineTo(x, y); }
