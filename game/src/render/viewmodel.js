@@ -2,12 +2,12 @@
 import * as THREE from 'three';
 import { WEAPONS, TEAMS } from '../sim/config.js';
 import { wrapAngle } from '../sim/util.js';
-import { glow } from './textures.js';
+import { glow, starTexture } from './textures.js';
 
 const mat = (color, roughness, metalness = 0.1, emissive = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive });
-// k polymer, e slate enamel, b bone enamel, m gunmetal, p signal band, r reticle, g gloves, s sleeves, c team cuff
+// k dark steel, e sand polymer, b olive polymer, m gunmetal, p signal band, r reticle, g gloves, s sleeves, c team cuff
 export const MATS = {
-  k: mat(0x2b2f33, 0.7), e: mat(0x4a5560, 0.5, 0.2), b: mat(0xd9d6cc, 0.55), m: mat(0x666d74, 0.35, 0.35), p: mat(0xefc94c, 0.5),
+  k: mat(0x41474d, 0.45, 0.3), e: mat(0xbcab80, 0.75), b: mat(0x6f6c48, 0.75), m: mat(0x5c636a, 0.35, 0.5), p: mat(0xefc94c, 0.5),
   r: mat(0x0c3a34, 0.3, 0, 0x3fe0c0), g: mat(0x2f3236, 0.85), s: mat(0x3c4147, 0.95), c: mat(0xffffff, 0.8),
 };
 
@@ -49,7 +49,8 @@ export function createViewModel() {
     holder.add(group);
     models[id] = { group, muzzle: new THREE.Vector3(0, ...muzzle) };
   }
-  const flash = new THREE.Sprite(glow(0xffc070)), light = new THREE.PointLight(0xffb060, 0, 4), fx = new THREE.Group().add(flash, light);
+  const flash = new THREE.Sprite(glow(0xffc070, starTexture()));
+  flash.material.depthTest = false; // over the muzzle it sits in
   let current = null, kick = 0, flashTime = 0, bob = 0, swayX = 0, swayY = 0, lastYaw = 0, lastPitch = 0, low = 0;
 
   function fired() {
@@ -62,13 +63,13 @@ export function createViewModel() {
   function update(dt, a, look, working) {
     const w = a.slots[a.active];
     if (!w) return;
-    const def = WEAPONS[w.id], pistol = def.kind === 'pistol'; // the pistol sits lower and turned in
+    const def = WEAPONS[w.id], pistol = def.kind === 'pistol'; // the pistol sits lower and closer
     if (current !== models[w.id]) {
       if (current) current.group.visible = false;
       current = models[w.id];
       current.group.visible = true;
-      current.group.add(fx);
-      fx.position.copy(current.muzzle);
+      current.group.add(flash);
+      flash.position.copy(current.muzzle);
     }
     MATS.c.color.setHex(TEAMS[a.team].color);
     kick *= Math.exp(-dt * 14);
@@ -82,19 +83,17 @@ export function createViewModel() {
     const draw = a.drawTimer > 0 ? Math.min(1, a.drawTimer / def.draw) : 0, dip = reload * 0.08 + draw * 0.18 + low * 0.16;
     current.group.position.set(
       (pistol ? 0.19 : 0.16) + Math.sin(bob) * 0.008 * bobAmt + swayX * 0.25,
-      (pistol ? -0.165 : -0.14) - Math.abs(Math.cos(bob)) * 0.007 * bobAmt - dip - a.crouch * 0.008 - swayY * 0.18,
-      -0.34 + kick * 0.02,
+      (pistol ? -0.165 : -0.105) - Math.abs(Math.cos(bob)) * 0.007 * bobAmt - dip - a.crouch * 0.008 - swayY * 0.18,
+      (pistol ? -0.34 : -0.5) + kick * 0.02,
     );
-    current.group.rotation.set(kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX + (pistol ? 0.12 : 0), reload * 0.4);
+    current.group.rotation.set((pistol ? 0 : 0.05) + kick * 0.07 - reload * 0.6 + draw * 0.9 - low * 0.5, swayX + (pistol ? 0.12 : 0.2), reload * 0.4);
     flashTime -= dt;
     flash.visible = flashTime > 0;
-    flash.scale.setScalar(0.16 + kick * 0.05);
-    light.intensity = flash.visible ? 3 : 0;
+    flash.scale.setScalar(0.1 + kick * 0.03);
   }
 
   function resize(aspect) { camera.aspect = aspect; camera.updateProjectionMatrix(); }
 
-  // World-space muzzle, for tracers.
   function muzzleWorld(worldCamera, out) {
     if (!current) return out.copy(worldCamera.position);
     return out.copy(current.muzzle).applyMatrix4(current.group.matrixWorld).applyMatrix4(camera.matrixWorldInverse).applyMatrix4(worldCamera.matrixWorld);

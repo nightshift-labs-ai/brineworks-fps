@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { holeTexture, softDot, glow } from './textures.js';
 
-const TRACERS = 48, DECALS = 160, PARTICLES = 400, FLASHES = 10, TRACER_SPEED = 260, STREAK = 5;
-const HIDE = new THREE.Matrix4().makeScale(0, 0, 0);
+const TRACERS = 48, DECALS = 160, PARTICLES = 400, FLASHES = 10, TRACER_SPEED = 260, STREAK = 5, NEAR_MISS = 2, CUT_BACK = 2.5, OWN_GAP = 1.5;
+const HIDE = new THREE.Matrix4().makeScale(0, 0, 0), HOT = new THREE.Color(0xf29e40), PALE = new THREE.Color(0xccb393); // pale at 0.6 (additive)
 
 function instanced(scene, geo, mat, n) {
   const m = new THREE.InstancedMesh(geo, mat, n);
@@ -16,10 +16,10 @@ function instanced(scene, geo, mat, n) {
 export function createEffects(scene) {
   const mat4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), zAxis = new THREE.Vector3(0, 0, 1);
   // Tracers: a unit box along +z, stretched into a streak.
-  const tracerMesh = instanced(scene, new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5), new THREE.MeshBasicMaterial({ color: 0xf29e40, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }), TRACERS);
+  const tracerMesh = instanced(scene, new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5), new THREE.MeshBasicMaterial({ blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }), TRACERS);
+  tracerMesh.setColorAt(0, HOT); // colours from the start: no shader rebuild at the first shot
   const tracers = Array.from({ length: TRACERS }, () => ({ live: false, o: new THREE.Vector3(), dir: new THREE.Vector3(), len: 0, t: 0 }));
   const decalMesh = instanced(scene, new THREE.PlaneGeometry(0.13, 0.13), new THREE.MeshBasicMaterial({ map: holeTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), DECALS);
-  // Particle colour alpha fades with life.
   const pPos = new Float32Array(PARTICLES * 3), pCol = new Float32Array(PARTICLES * 4), pVel = new Float32Array(PARTICLES * 3);
   const pLife = new Float32Array(PARTICLES), pMax = new Float32Array(PARTICLES);
   const pGeo = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pPos, 3));
@@ -34,14 +34,17 @@ export function createEffects(scene) {
   scene.add(blastSprite, blastLight);
   let nextTracer = 0, nextDecal = 0, nextParticle = 0, nextFlash = 0, blastLife = 0, blastSize = 0;
 
-  function spawnTracer(x0, y0, z0, x1, y1, z1) {
+  // Off the lens: one passing within NEAR_MISS m of the eye ends CUT_BACK m before that point (k); the viewer's own starts OWN_GAP m out.
+  function spawnTracer(o, x1, y1, z1, eye, own) {
+    const from = own ? OWN_GAP : 0;
+    let len = s.set(x1 - o.x, y1 - o.y, z1 - o.z).length();
+    const k = Math.min(len, v.subVectors(eye, o).dot(s.divideScalar(len)));
+    if (!own && k > 0 && v.addScaledVector(s, -k).length() < NEAR_MISS) len = k - CUT_BACK;
+    if ((len -= from) < 0.5) return;
     const t = tracers[nextTracer];
+    t.o.copy(o).addScaledVector(t.dir.copy(s), from); t.len = len; t.t = 0; t.live = true;
+    tracerMesh.setColorAt(nextTracer, own ? PALE : HOT);
     nextTracer = (nextTracer + 1) % TRACERS;
-    t.dir.set(x1 - x0, y1 - y0, z1 - z0);
-    t.len = t.dir.length();
-    if (t.len < 0.5) return;
-    t.o.set(x0, y0, z0); t.t = 0; t.live = true;
-    t.dir.multiplyScalar(1 / t.len);
   }
 
   // A bullet hole on the struck face, or (size ~25) a blast scorch.
@@ -100,7 +103,7 @@ export function createEffects(scene) {
       mat4.compose(v.copy(t.o).addScaledVector(t.dir, tail), q, s.set(0.014, 0.014, Math.max(0.01, head - tail)));
       tracerMesh.setMatrixAt(i, mat4);
     }
-    tracerMesh.instanceMatrix.needsUpdate = true;
+    tracerMesh.instanceMatrix.needsUpdate = tracerMesh.instanceColor.needsUpdate = true;
     for (let i = 0; i < PARTICLES; i++) {
       if (pLife[i] <= 0) continue;
       const p = i * 3;

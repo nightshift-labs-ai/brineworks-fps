@@ -69,10 +69,9 @@ export function buildLevel(map, tex) {
   const group = new THREE.Group(), S = map.cell, W = map.width, D = map.depth, H = (code) => map.height[map.kind.indexOf(code)];
   const mats = {
     wall: std({ map: tex.wall }), crate: std({ map: tex.crate, roughness: 0.6, metalness: 0.3 }), trim: std({ color: 0x3a4248 }),
-    grating: std({ map: tex.grating, roughness: 0.5, metalness: 0.5 }), hazard: std({ map: tex.hazard }),
+    grating: std({ map: tex.grating, roughness: 0.5, metalness: 0.5 }), hazard: std({ map: tex.hazard }), roof: std({ map: tex.gravel }),
   };
-  for (const k in PALETTE.lanes) mats[k] = std({ map: tex.clad, color: PALETTE.lanes[k], roughness: 0.6, metalness: 0.3 });
-  PALETTE.boxes.forEach((color, i) => { mats['box' + i] = std({ map: tex.clad, color, metalness: 0.3 }); });
+  for (const k in PALETTE.lanes) [mats[k], mats[k + 'X']] = PALETTE.lanes[k].map((color) => std({ map: tex.clad, color, roughness: 0.6, metalness: 0.3 }));
   const batch = {};
   for (const k in mats) batch[k] = new BoxBatch();
   const each = (code, fn) => { for (const b of rectangles(map, code)) fn(b.c * S, b.r * S, (b.c + b.w) * S, (b.r + b.h) * S, H(code), b); };
@@ -87,17 +86,21 @@ export function buildLevel(map, tex) {
     group.add(m);
   };
 
-  each(35, (x0, z0, x1, z1, top) => { // '#': perimeter wall and cap
+  const roof = (x0, z0, x1, z1, y, e) => { // gravel inside a thin dark coping
+    batch.trim.add(x0 - e, y, z0 - e, x1 + e, y += e * 3, z1 + e, 3);
+    batch.roof.add(x0 + 0.25, y, z0 + 0.25, x1 - 0.25, y + 0.02, z1 - 0.25, 2);
+  };
+  each(35, (x0, z0, x1, z1, top) => { // '#': perimeter wall
     batch.wall.add(x0, 0, z0, x1, top, z1, top);
-    batch.trim.add(x0 - 0.05, top, z0 - 0.05, x1 + 0.05, top + 0.18, z1 + 0.05, 3);
+    roof(x0, z0, x1, z1, top, 0.06);
   });
   each(72, (x0, z0, x1, z1, top, b) => { // 'H': clad building on a plinth
     batch[laneOf(b.c, b.r)].add(x0, 0.9, z0, x1, top, z1, 4);
     batch.wall.add(x0 - 0.06, 0, z0 - 0.06, x1 + 0.06, 0.9, z1 + 0.06, 4.8);
-    batch.trim.add(x0 - 0.12, top, z0 - 0.12, x1 + 0.12, top + 0.35, z1 + 0.12, 3);
+    roof(x0, z0, x1, z1, top, 0.12);
   });
-  cells(88, (x, z, c, r) => { // 'X': two stacked containers
-    const k = `box${(c * 7 + r * 3) % 3}`;
+  cells(88, (x, z, c, r) => { // 'X': two stacked containers, lane accent
+    const k = laneOf(c, r) + 'X';
     batch[k].add(x + 0.02, 0, z + 0.02, x + S - 0.02, 1.3, z + S - 0.02, 1.5, true);
     batch[k].add(x + 0.08, 1.3, z + 0.08, x + S - 0.08, H(88), z + S - 0.08, 1.5, true);
   });
@@ -130,7 +133,7 @@ export function buildLevel(map, tex) {
     obj.rotation.y = n[2];
     group.add(obj);
   };
-  for (const [lines, c, r, face] of SIGNS) place(new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), std({ map: signTexture(lines), roughness: 0.6 })), c, r, face, 2.6, 0.02);
+  for (const [lines, c, r, face] of SIGNS) place(new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), std({ map: signTexture(lines, PALETTE.lanes[laneOf(c, r)][1]), roughness: 0.6 })), c, r, face, 2.6, 0.02);
   const lampMat = std({ color: 0x222222, emissive: PALETTE.lamp, emissiveIntensity: 2.5 });
   for (const [c, r, face] of LAMPS) {
     place(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.18, 0.3), lampMat), c, r, face, 3.4, 0.15);
@@ -142,9 +145,6 @@ export function buildLevel(map, tex) {
   const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; group.add(m); };
   for (const [x, z, r, h] of [[-14, 18, 13, 10], [-10, 50, 10, 8], [W + 16, 30, 15, 11], [W + 12, 70, 11, 8], [24, -18, 12, 9], [62, -16, 14, 10]]) add(new THREE.ConeGeometry(r, h, 28), salt, x, h / 2 - 0.3, z);
   for (const z of [34, 42]) for (const x of [58, 65]) { add(new THREE.CylinderGeometry(3.2, 3.2, 17, 24), steel, x, 8.5, z); add(new THREE.ConeGeometry(3.3, 1.6, 24), oxide, x, 17.8, z); }
-  for (const x of [W + 6, W + 22]) for (const z of [8, 22]) add(new THREE.BoxGeometry(0.8, 22, 0.8), oxide, x, 11, z);
-  add(new THREE.BoxGeometry(34, 1.6, 2), oxide, W + 10, 22, 15);
-  flat(W + 64, D + 120, std({ color: 0xb8bcb9, roughness: 1 }), (W - 56) / 2, -0.05, D / 2);
-  flat(1200, 1200, std({ color: 0x2f4a58, roughness: 0.3, metalness: 0.2 }), W / 2, -0.6, D / 2);
+  flat(900, 900, std({ color: 0x6f6c66, roughness: 1 }), W / 2, -0.05, D / 2); // salt flats into the fog
   return group;
 }

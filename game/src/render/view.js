@@ -11,6 +11,7 @@ import { drain, EV } from '../sim/events.js';
 import { eyeOf } from '../sim/actors.js';
 import { WEAPONS } from '../sim/config.js';
 import { wrapAngle } from '../sim/util.js';
+import { raycast } from '../sim/collide.js';
 
 const BASE_FOV = 74;
 
@@ -19,6 +20,7 @@ export function createView(state, container) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.9;
   renderer.autoClear = false;
   container.appendChild(renderer.domElement);
 
@@ -28,31 +30,24 @@ export function createView(state, container) {
   camera.rotation.order = 'YXZ';
 
   const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(), side: THREE.BackSide, fog: false, depthWrite: false }));
-  const sun = new THREE.DirectionalLight(PALETTE.sun, 3.2), map = state.map;
-  sun.position.set(map.width / 2 - 60, 38, map.depth / 2 + 25); // low in the south-west
+  const sun = new THREE.DirectionalLight(PALETTE.sun, 4.5), map = state.map;
+  sun.position.set(map.width / 2 - 60, 15, map.depth / 2 + 25); // 13 degrees up, west-south-west
   sun.target.position.set(map.width / 2, 0, map.depth / 2);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -62, right: 62, top: 52, bottom: -52, near: 10, far: 170 });
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.03;
+  Object.assign(sun.shadow.camera, { left: -50, right: 50, top: 24, bottom: -24, near: 10, far: 170 });
+  Object.assign(sun.shadow, { bias: -0.0004, normalBias: 0.03 });
   const disc = new THREE.Sprite(glow(0xffd9a0));
   disc.position.copy(sun.position).sub(sun.target.position).normalize().multiplyScalar(380).add(sun.target.position);
   disc.scale.setScalar(70);
-  scene.add(sky, new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.1), sun, sun.target, disc);
-
-  // Environment map, PMREM-filtered once.
-  const envScene = new THREE.Scene().add(new THREE.Mesh(sky.geometry, sky.material));
-  const panel = new THREE.Mesh(new THREE.PlaneGeometry(120, 60), new THREE.MeshBasicMaterial({ color: 0xffc890, side: THREE.DoubleSide }));
-  panel.position.copy(disc.position).multiplyScalar(0.9);
-  panel.lookAt(0, 0, 0);
-  const env = new THREE.PMREMGenerator(renderer).fromScene(envScene.add(panel), 0.03).texture;
+  scene.add(sky, new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 1.35), sun, sun.target, disc);
+  const vm = createViewModel();
+  scene.environment = vm.scene.environment = new THREE.PMREMGenerator(renderer).fromScene(scene, 0.03, 1, 1000).texture; // sky and sun, before the level
+  scene.environmentIntensity = vm.scene.environmentIntensity = 0.8;
 
   scene.add(buildLevel(map, createTextures()));
-  const characters = createCharacters(scene, state), effects = createEffects(scene), props = createProps(scene, state), vm = createViewModel();
-  scene.environment = vm.scene.environment = env;
-  scene.environmentIntensity = vm.scene.environmentIntensity = 0.6;
-  const muzzle = new THREE.Vector3(), overview = new THREE.Vector3();
+  const characters = createCharacters(scene, state), effects = createEffects(scene), props = createProps(scene, state);
+  const muzzle = new THREE.Vector3(), overview = new THREE.Vector3(), hit = {};
   let shake = 0, cursor = state.events.head;
 
   function resize() {
@@ -75,7 +70,8 @@ export function createView(state, container) {
     const p = state.player;
     switch (e.type) {
       case EV.SHOT: {
-        if (e.a === p.id && p.alive) {
+        const own = e.a === p.id && p.alive;
+        if (own) {
           vm.muzzleWorld(camera, muzzle);
           vm.fired();
         } else {
@@ -83,7 +79,7 @@ export function createView(state, container) {
           muzzle.set(e.x + (fx * 0.75 - fz * 0.08), e.y - 0.12 - 0.1, e.z + (fz * 0.75 + fx * 0.08));
           effects.spawnFlash(muzzle.x, muzzle.y, muzzle.z);
         }
-        effects.spawnTracer(muzzle.x, muzzle.y, muzzle.z, e.x2, e.y2, e.z2);
+        effects.spawnTracer(muzzle, e.x2, e.y2, e.z2, camera.position, own);
         break;
       }
       case EV.IMPACT:
@@ -111,7 +107,6 @@ export function createView(state, container) {
   }
 
   function render(alpha, dt, look) {
-    cursor = drain(state.events, cursor, onEvent);
     const who = viewer(), cam = camera.position.copy(who.prev).lerp(who.pos, alpha);
     cam.y += eyeOf(who);
     // Own view: the freshest mouse look, recoil punch on top.
@@ -119,21 +114,23 @@ export function createView(state, container) {
     let yaw = aim.yaw + who.punchYaw, pitch = aim.pitch + who.punchPitch;
     shake = Math.max(0, shake - dt * 1.8);
     const jolt = shake * shake * 0.04 * Math.sin(performance.now() * 0.09);
-    // Round over: rise and pull back over the Fuse Core.
+    // Round over: a 3/4 view of the Fuse Core from the viewer's side, clear of any wall.
     const round = state.round, ended = round.phase === 'over' || round.phase === 'matchover';
     const t = ended ? Math.min(1, Math.max(0, (state.time - round.endedAt - 0.6) / 1.4)) : 0;
     if (t > 0) {
-      const k = t * t * (3 - 2 * t), c = state.core, away = Math.atan2(cam.x - c.x, cam.z - c.z);
-      overview.set(c.x + Math.sin(away) * 15, c.y + 13, c.z + Math.cos(away) * 15);
-      cam.lerp(overview, k);
+      const k = t * t * (3 - 2 * t), c = state.core, away = Math.atan2(cam.x - c.x, cam.z - c.z), sx = Math.sin(away) * 0.8, sz = Math.cos(away) * 0.8;
+      raycast(map, c.x, c.y + 1.5, c.z, sx, 0.6, sz, 7, hit);
+      const d = hit.t - 0.3;
+      cam.lerp(overview.set(c.x + sx * d, c.y + 1.5 + 0.6 * d, c.z + sz * d), k);
       const dx = c.x - cam.x, dz = c.z - cam.z;
       yaw += wrapAngle(Math.atan2(-dx, -dz) - yaw) * k;
-      pitch += (Math.atan2(c.y - cam.y, Math.hypot(dx, dz)) - pitch) * k;
+      pitch += (Math.atan2(c.y - cam.y, Math.hypot(dx, dz)) + 0.25 - pitch) * k; // the core below the scoreboard
     }
     camera.rotation.set(pitch + jolt, yaw + jolt * 0.7, 0);
     const w = who.slots[who.active], fov = who.scoped && w ? BASE_FOV * WEAPONS[w.id].scope : BASE_FOV;
     if (camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
     camera.updateMatrixWorld();
+    cursor = drain(state.events, cursor, onEvent); // after the camera moves: tracers clip against this eye
 
     characters.update(alpha, dt, who.id, state.time);
     props.update(alpha, dt, who.id);

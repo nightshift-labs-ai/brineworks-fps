@@ -30,13 +30,7 @@ const concrete = (ctx, rand) => {
     rect(ctx, '#2a323833', x, y, 64, 1);
     for (let i = 0; i < 4; i++) rect(ctx, '#2d373e55', x + 15 + (i & 1) * 32, y + 30 + (i >> 1) * 64, 3, 3);
   }
-  for (let i = 0; i < 3; i++) {
-    const x = 20 + rand() * 216, y = 60 + rand() * 110;
-    rect(ctx, '#3c444a80', x - 2, y - 2, 5, 5);
-    rect(ctx, '#80543c2a', x, y + 3, 2, 14 + rand() * 30);
-  }
   rect(ctx, gradient(ctx.createLinearGradient(0, 256, 0, 210), [[0, '#343c4048'], [1, '#343c4000']]), 0, 210, 256, 46);
-  rect(ctx, '#ffffff4d', 0, 0, 256, 5);
 };
 
 // Corrugated sheet, near white so lane tints show true.
@@ -44,10 +38,7 @@ const cladding = (ctx) => {
   for (let x = 0; x < 256; x += 16) {
     rect(ctx, gradient(ctx.createLinearGradient(x, 0, x + 16, 0), [[0, '#00000040'], [0.45, '#ffffff22'], [1, '#00000040']]), x, 0, 16, 256);
   }
-  for (let y = 0; y < 256; y += 128) {
-    rect(ctx, '#19202673', 0, y, 256, 3);
-    for (let x = 8; x < 256; x += 32) { rect(ctx, '#1e262c99', x, y + 6, 3, 3); rect(ctx, '#6e4a3826', x, y + 9, 2, 22); }
-  }
+  for (let y = 0; y < 256; y += 128) rect(ctx, '#19202673', 0, y, 256, 3);
 };
 
 const crate = (ctx) => {
@@ -55,14 +46,13 @@ const crate = (ctx) => {
   ctx.lineWidth = 9; ctx.strokeRect(5, 5, 118, 118);
   ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(10, 118); ctx.lineTo(118, 10); ctx.stroke();
   rect(ctx, PALETTE.paint, 14, 14, 26, 8);
-  ctx.font = 'bold 13px monospace'; ctx.fillStyle = '#2c353bcc'; ctx.fillText('BW-07', 70, 112);
 };
 
 const ground = (ctx, rand) => {
-  for (let i = 0; i < 2600; i++) rect(ctx, `rgba(255,255,255,${0.35 + rand() * 0.6})`, rand() * 512, rand() * 512, 1 + rand(), 1 + rand());
-  for (let i = 0; i < 24; i++) rect(ctx, '#7d8a9010', rand() * 512, rand() * 512, 40 + rand() * 90, 30 + rand() * 60);
-  for (let i = 0; i <= 2; i++) { rect(ctx, '#5e6a7059', i * 256 - 1, 0, 2, 512); rect(ctx, '#5e6a7059', 0, i * 256 - 1, 512, 2); }
-  ctx.strokeStyle = '#5a666c40';
+  for (let i = 0; i < 70; i++) radial(ctx, rand() * 512, rand() * 512, 10 + rand() * 46, [[0, '#d8d4c450'], [1, '#d8d4c400']]); // salt crust
+  for (let i = 0; i < 1500; i++) rect(ctx, `rgba(232,230,220,${rand() * 0.6})`, rand() * 512, rand() * 512, 1 + rand(), 1 + rand());
+  for (let i = 0; i <= 2; i++) { rect(ctx, '#2a2f2c80', i * 256 - 1, 0, 2, 512); rect(ctx, '#2a2f2c80', 0, i * 256 - 1, 512, 2); }
+  ctx.strokeStyle = '#2a2f2c66';
   for (let i = 0; i < 60; i++) {
     let x = rand() * 512, y = rand() * 512;
     ctx.beginPath(); ctx.moveTo(x, y);
@@ -86,15 +76,16 @@ export function createTextures() {
     ground: paint(512, 61, PALETTE.ground, ground, 10),
     grating: paint(128, 71, '#3e464b', grating, 12),
     hazard: paint(128, 1, PALETTE.paint, hazard),
+    gravel: paint(64, 13, '#a19c92', () => {}, 70),
   };
   for (const k in t) t[k].wrapS = t[k].wrapT = THREE.RepeatWrapping;
   return t;
 }
 
-export const signTexture = (lines) => paint(256, 0, '#22313a', (ctx) => {
-  rect(ctx, PALETTE.paint, 0, 118, 256, 10);
+export const signTexture = (lines, accent) => paint(256, 0, '#22313a', (ctx) => {
+  rect(ctx, accent, 0, 118, 256, 10);
   ctx.fillStyle = '#e8ecee'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  lines.forEach((text, i) => { ctx.font = `bold ${i ? 26 : 48}px monospace`; ctx.fillText(text, 128, 118 * (i ? 0.78 : lines.length > 1 ? 0.36 : 0.5)); });
+  lines.forEach((text, i) => { ctx.font = `bold ${i ? 26 : 48}px monospace`; ctx.fillText(text, 128, 118 * (i ? 0.78 : lines.length > 1 ? 0.36 : 0.5), 230); }); // squeezed into 90% of the board
 }, 0, 128);
 
 export const siteDecal = (letter) => paint(256, 3, '#0000', (ctx) => {
@@ -109,21 +100,22 @@ export const holeTexture = () => paint(64, 5, '#0000', (ctx) => radial(ctx, 32, 
 let dot = null; // shared: flashes, sparks, the sun
 export const softDot = () => dot ??= paint(64, 7, '#0000', (ctx) => radial(ctx, 32, 32, 32, [[0, '#fff'], [0.4, '#fff9'], [1, '#fff0']]));
 
-export const glow = (color) => new THREE.SpriteMaterial({ map: softDot(), color, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+export const glow = (color, map = softDot()) => new THREE.SpriteMaterial({ map, color, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
 
+export const starTexture = () => paint(64, 9, '#0000', (ctx) => { // six points
+  for (let i = 0; i < 12; i++) ctx.lineTo(32 + Math.sin(i * 0.52) * (i & 1 ? 5 : 32), 32 + Math.cos(i * 0.52) * (i & 1 ? 5 : 32));
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+});
+
+// Lumps of a smoke puff, shaded from above.
 export const puffTexture = () => paint(128, 83, '#0000', (ctx, rand) => {
-  for (let i = 0; i < 18; i++) {
-    const a = rand() * 6.28, r = rand() * 34, v = (200 + rand() * 55) | 0;
-    radial(ctx, 64 + Math.cos(a) * r, 64 + Math.sin(a) * r, 18 + rand() * 22, [[0, `rgba(${v},${v},${v},.9)`], [0.6, `rgba(${v},${v},${v},.5)`], [1, '#fff0']]);
+  for (let i = 0; i < 14; i++) {
+    const a = rand() * 6.28, r = i && rand() * 28;
+    radial(ctx, 64 + Math.cos(a) * r, 64 + Math.sin(a) * r, 18 + rand() * 18, [[0, '#fff'], [0.7, '#fffe'], [1, '#fff0']]);
   }
+  ctx.globalCompositeOperation = 'source-atop';
+  rect(ctx, gradient(ctx.createLinearGradient(0, 24, 0, 110), [[0, '#fff0'], [1, '#3a3a3a99']]), 0, 0, 128, 128);
 });
 
-export const skyTexture = () => paint(512, 97, '#000', (ctx, rand) => {
-  rect(ctx, gradient(ctx.createLinearGradient(0, 0, 0, 512), PALETTE.sky), 0, 0, 512, 512);
-  for (let i = 0; i < 26; i++) {
-    const y = 160 + rand() * 88, w = 60 + rand() * 220, x = rand() * 512;
-    ctx.fillStyle = `rgba(255,${190 + rand() * 40 | 0},${150 + rand() * 40 | 0},${0.05 + (y - 160) / 88 * 0.16})`;
-    ctx.fillRect(x, y, w, 1 + rand() * 3);
-    ctx.fillRect(x - 512, y, w, 1 + rand() * 3);
-  }
-});
+export const skyTexture = () => paint(512, 97, '#000', (ctx) => rect(ctx, gradient(ctx.createLinearGradient(0, 0, 0, 512), PALETTE.sky), 0, 0, 512, 512));
