@@ -41,8 +41,10 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,296 bytes (157.5 KiB); dossier text 163,721 of 163,840 (no cut). Little headroom: every
-  addition is paid for by a trim. The reviewer NOTE was condensed (-700 B) to pay for the heaps.
+- Source 161,367 bytes (157.6 KiB); dossier text 163,792 of 163,840 (no cut, ~50 B left). Every
+  addition is paid for by a trim: NOTE condensed (-700 B), two trim passes (-0.5 KB, -0.3 KB, sim
+  and renders verified identical). Further savings need restructuring (collide.js raycast/fillHit,
+  bots.js playObjective/followPlan).
 
 ## Done since prompt 10/11
 - Names R/T/S/Y: bots, weapons (class captions), kit tag, callouts (Boiling House, Boiler Gate,
@@ -57,6 +59,9 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   smaller viewmodel; short tracers; the Fuse Core as a case with a window and a handle; pistol
   with a gunmetal slide; site letters half size; arming label on a dark plate.
 - U: the coach's plan pinned above the radio. Review 12e radar ring. Banner 'Next round in 5 s'.
+- Landmark: a slim evaporator stack with a rust cap beyond the north wall (shots 1 and 3).
+- HUD: health amber below 50; armour label 'VEST · HELM' (ARMOUR+HELM banned: the #2 entry's).
+- Rifle: sage-grey polymer with a team-colour band (khaki read as wood).
 
 ## Open (each needs bytes: a code-level trim pass is running to fund them)
 - (done 11: a slim evaporator stack at (36,-50) shows in shots 1 and 3) M: more skyline;
