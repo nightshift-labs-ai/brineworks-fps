@@ -128,6 +128,18 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   without a visible feed row is back at spawn for the staged HUD. S6: Carrick arms beside the B.
   S7: work plate names the worker first. S8: shot 2's left teammate faces down the lane.
 
+## Done in the 13:27 run (prompt 19 + benchmark s215 C/M/L/H items)
+- M1/C1b: shot 4's rotate call comes from Ozzy, the first living bot (coach.js firstBot).
+- C2/M2: dead core events (dropped, picked up, work started) and the unread round reason removed
+  (-229 B, sim identical); C3: the NOTE says tools/ sets each scene up and step(), the view and the
+  HUD draw it, and points shot 1's plan line to coach.js; C4/L1: menu buys queue and apply on the
+  next fixed tick (browser-tested in freeze and live). One commit, paid by the cut.
+- C5/L2: input.js early in the dossier walk (import order only).
+- C6/L3: config.js says what falloff and armorPen mean (75 B of the freed bytes).
+- H1 (hemisphere 1.6) tried and reverted: floors 73-76 (target 80) and saturation fell; a 2.0 fill
+  with a warmer ground reached the floor target but saturation stayed .30/.31 (target .33).
+  tools/lumsat.py measures both.
+
 ## Open
 - S5 buy on a sim tick (+40 B), G2 radar routes, G8 round line, E belt, BRINEWORKS stencil: need
   bytes (8 B left).

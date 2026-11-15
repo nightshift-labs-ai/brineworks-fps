@@ -23,6 +23,7 @@ export const BODY = { headRadius: 0.16, torsoRadius: 0.27, legRadius: 0.22, legT
 
 // Spread: cone radius (rad) = base + move x speed fraction + air + bloom, x crouch. Recoil: `climb`
 // per shot for `settle` shots, then a quarter of it while the muzzle sways; `recover` (1/s) fades it.
+// falloff: damage x per 25 m; armorPen: the share armour lets through.
 // Intent: a Hawser headshot (34 x 3.8) beats a helm only up close; a Capstan body shot kills through
 // a vest, a leg shot does not; the Skiff is cheap and forgiving on the move but weak far off.
 export const WEAPONS = {
