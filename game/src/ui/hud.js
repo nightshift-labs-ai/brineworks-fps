@@ -73,40 +73,8 @@ export function createHud(state, camera) {
     expire(feed, feedRows);
     expire(radio, radioRows);
     const p = state.player, round = state.round, core = state.core, w = p.slots[p.active];
-    show(el.hp, Math.max(0, p.hp));
-    toggle(el.hp.parentNode, 'warn', p.hp < 50);
-    toggle(el.hp.parentNode, 'low', p.hp <= 25);
-    show(el.armor, Math.round(p.armor));
-    show(el['armor-label'], p.helm ? 'VEST · HELM' : 'VEST');
-    if (changed('money', p.money)) el.money.textContent = '$' + p.money;
-    if (w) {
-      show(el.mag, w.mag);
-      if (changed('res', w.reserve)) el.reserve.textContent = '/ ' + w.reserve;
-      if (changed('wpn', w.id, p.reloadTimer > 0)) el.weapon.innerHTML = `${WEAPONS[w.id].name} <small>${p.reloadTimer > 0 ? 'reloading' : WEAPONS[w.id].cls}</small>`;
-      toggle(el.ammo, 'empty', w.mag === 0);
-    }
-    for (const k in KIT) {
-      if (changed(k, p.grenades[k])) el[k].textContent = KIT[k] + p.grenades[k];
-      toggle(el[k], 'off', !p.grenades[k]);
-    }
-    toggle(el.spanner, 'off', !p.kit);
-    const armed = core.state === 'planted';
-    const secs = Math.max(0, Math.ceil(round.phase === 'freeze' ? round.timer : armed ? core.fuse : round.clock));
-    if (changed('clock', secs, armed)) el.clock.textContent = (armed ? 'CORE ' : '') + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
-    toggle(el.clock, 'freeze', round.phase === 'freeze');
-    toggle(el.clock, 'urgent', armed || (round.phase === 'live' && round.clock < 15));
-    for (let t = 0; t < 2; t++) {
-      const team = state.teams[t];
-      if (!changed(scores[t], team.score, team.side)) continue;
-      scores[t].textContent = team.score;
-      sides[t].textContent = team.side === SIDE.ATTACK ? 'attack' : 'defend';
-    }
-    let n0 = 0, n1 = 0;
-    for (const a of state.actors) toggle(pips[a.team][a.team ? n1++ : n0++], 'dead', !a.alive);
-    for (let i = 0; i < history.length; i++) {
-      const won = state.match.history[i] ?? -1;
-      if (changed(history[i], won)) history[i].style.background = won < 0 ? '' : TEAMS[won].css;
-    }
+    vitals(p, w);
+    clockAndScore(round, core);
     // Crosshair gap = the live spread cone projected to pixels.
     if (w && p.alive) {
       const gap = Math.round(Math.min(80, 3 + Math.tan(spreadOf(p, WEAPONS[w.id])) / Math.tan((camera.fov * Math.PI) / 360) * (innerHeight / 2)));
@@ -143,6 +111,46 @@ export function createHud(state, camera) {
     }
     toggle(el.board, 'open', board);
     radar.draw();
+  }
+
+  function vitals(p, w) {
+    show(el.hp, Math.max(0, p.hp));
+    toggle(el.hp.parentNode, 'warn', p.hp < 50);
+    toggle(el.hp.parentNode, 'low', p.hp <= 25);
+    show(el.armor, Math.round(p.armor));
+    show(el['armor-label'], p.helm ? 'VEST · HELM' : 'VEST');
+    if (changed('money', p.money)) el.money.textContent = '$' + p.money;
+    if (w) {
+      show(el.mag, w.mag);
+      if (changed('res', w.reserve)) el.reserve.textContent = '/ ' + w.reserve;
+      if (changed('wpn', w.id, p.reloadTimer > 0)) el.weapon.innerHTML = `${WEAPONS[w.id].name} <small>${p.reloadTimer > 0 ? 'reloading' : WEAPONS[w.id].cls}</small>`;
+      toggle(el.ammo, 'empty', w.mag === 0);
+    }
+    for (const k in KIT) {
+      if (changed(k, p.grenades[k])) el[k].textContent = KIT[k] + p.grenades[k];
+      toggle(el[k], 'off', !p.grenades[k]);
+    }
+    toggle(el.spanner, 'off', !p.kit);
+  }
+
+  function clockAndScore(round, core) {
+    const armed = core.state === 'planted';
+    const secs = Math.max(0, Math.ceil(round.phase === 'freeze' ? round.timer : armed ? core.fuse : round.clock));
+    if (changed('clock', secs, armed)) el.clock.textContent = (armed ? 'CORE ' : '') + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+    toggle(el.clock, 'freeze', round.phase === 'freeze');
+    toggle(el.clock, 'urgent', armed || (round.phase === 'live' && round.clock < 15));
+    for (let t = 0; t < 2; t++) {
+      const team = state.teams[t];
+      if (!changed(scores[t], team.score, team.side)) continue;
+      scores[t].textContent = team.score;
+      sides[t].textContent = team.side === SIDE.ATTACK ? 'attack' : 'defend';
+    }
+    let n0 = 0, n1 = 0;
+    for (const a of state.actors) toggle(pips[a.team][a.team ? n1++ : n0++], 'dead', !a.alive);
+    for (let i = 0; i < history.length; i++) {
+      const won = state.match.history[i] ?? -1;
+      if (changed(history[i], won)) history[i].style.background = won < 0 ? '' : TEAMS[won].css;
+    }
   }
 
   // The arm/disarm bar while a teammate works the core; the Fuse Core line, rebuilt on change.
