@@ -137,6 +137,12 @@ function stage(ctx, sc) {
     autopilot(ctx, (st) => st.round.phase !== 'live');
     run(ctx, Math.round(sc.end / DT), () => {});
   }
+  // The feed shows this round's newest four kills; anyone who died earlier this round (out of the frame) is back
+  // at spawn for the HUD, so every dark pip has its row.
+  const ev = state.events, kills = [];
+  for (let i = Math.max(0, ev.head - ev.list.length); i < ev.head; i++) { const e = ev.list[i % ev.list.length]; if (e.type === EV.KILL && e.t >= roundStart) kills.push(e.b); }
+  const listed = new Set(kills.slice(-4));
+  for (const a of state.actors) if (!a.alive && a.diedAt >= roundStart && !listed.has(a.id)) Object.assign(a, { alive: true, hp: 100 });
   if (sc.buy) ctx.hud.toggleBuy(true);
   for (const id of sc.hide ?? []) document.getElementById(id).hidden = true; // the cover's wedge reads as a scoreboard tab; shot 3's buy hint as site B
 }
