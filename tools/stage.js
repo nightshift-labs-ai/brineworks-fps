@@ -84,6 +84,14 @@ function stage(ctx, sc) {
     && (sc.phase === 'freeze' ? s.round.phase === 'freeze' : s.round.phase === 'live' && s.round.clock < sc.clock));
   // The cast comes from the living; the round's dead stay down where they fell, so pips and kill feed agree.
   // A scene's bodies (sc.dead) are opponents already down when there are any.
+  // The fast-forward ran the player on a bot brain, so an attack plan counted him with the four bots: take
+  // his own route out of the pinned plan line (before the cast resets his brain).
+  const plan = state.teams[p.team].plan, slot = `via ${state.map.marks[p.brain.stage]?.name}`;
+  if (plan.text.startsWith('plan')) plan.text = plan.text.replace(new RegExp(`(\\d+) ${slot}`), (_, n) => `${n - 1} ${slot}`);
+  // A defence setup names five slots; with four bots the coach fills the first four (the fifth of each SETUPS
+  // entry is the site with three, else B).
+  const d = plan.text.match(/^setup: (\d) A, 1 tower, (\d) B$/);
+  if (d) plan.text = `setup: ${d[1] - (d[1] === '3')} A, 1 tower, ${d[2] - (d[1] !== '3')} B`;
   const mySide = state.teams[p.team].side, side = (sd, alive) => state.actors.filter((a) => a !== p && a.alive === alive && state.teams[a.team].side === sd);
   const mates = side(mySide, true), foes = side(1 - mySide, true), fallen = side(1 - mySide, false), picked = {};
   const who = (k) => (k === 'p' ? p : (picked[k] ??= k[0] === 'm' ? mates[+k[1]] : (sc.dead?.includes(k) && fallen.shift()) || foes[+k[1]]));
