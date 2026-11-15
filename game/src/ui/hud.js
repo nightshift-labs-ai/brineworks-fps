@@ -1,5 +1,5 @@
-// The HUD: the only writer of the DOM overlay, writing each value only when it changes.
-import { TEAMS, WEAPONS, WEAPON_ORDER, GRENADES, SIDE, ROUND } from '../sim/config.js';
+// The HUD: the only writer of #hud, writing each value only when it changes.
+import { TEAMS, TEAM_SIZE, WEAPONS, WEAPON_ORDER, GRENADES, SIDE, ROUND } from '../sim/config.js';
 import { SHOP, itemDef, canBuy, lossPay } from '../sim/economy.js';
 import { spreadOf } from '../sim/weapons.js';
 import { placeName } from '../sim/map.js';
@@ -7,9 +7,8 @@ import { drain, EV } from '../sim/events.js';
 import { yawTo } from '../sim/util.js';
 import { createRadar } from './radar.js';
 
-const PHASES = ['live', 'freeze', 'over', 'matchover'];
-const CORE_STATES = ['carried', 'dropped', 'planted', 'defused', 'detonated'];
-const HEADERS = { rivet: 'Sidearm', skiff: 'Primary', vest: 'Gear', frag: 'Grenades' }; // buy menu sections
+const HEADERS = { skiff: 'Primary', vest: 'Gear', frag: 'Grenades' }; // buy menu sections
+const ROW_LIFE = 10; // s a kill-feed or radio row stays up
 const REASONS = { time: 'Time ran out', detonated: 'The Fuse Core detonated', defused: 'The Fuse Core was disarmed' };
 const make = (parent, tag, n) => Array.from({ length: n }, () => parent.appendChild(document.createElement(tag)));
 
@@ -18,13 +17,19 @@ export function createHud(state, camera) {
   for (const n of document.querySelectorAll('#hud, #hud [id]')) el[n.id] = n;
   // Text is built only when the value behind it changed, so update() allocates nothing per frame.
   const cache = new Map();
-  const changed = (key, value) => { if (cache.get(key) === value) return false; cache.set(key, value); return true; };
+  const changed = (key, a, b = 0) => { // two values per key; NaN never matches, so the first call writes
+    let r = cache.get(key);
+    if (!r) cache.set(key, (r = [NaN, NaN]));
+    if (r[0] === a && r[1] === b) return false;
+    r[0] = a; r[1] = b;
+    return true;
+  };
   const show = (node, value) => { if (changed(node, value)) node.textContent = value; };
   const toggle = (node, cls, on) => { if (node.classList.contains(cls) !== on) node.classList.toggle(cls, on); };
 
-  const pips = [0, 1].map((t) => make(el[`pips${t}`], 'i', 5).map((i) => { i.style.background = TEAMS[t].css; return i; }));
+  const pips = [0, 1].map((t) => make(el[`pips${t}`], 'i', TEAM_SIZE).map((i) => { i.style.background = TEAMS[t].css; return i; }));
   const history = make(el.round, 'i', ROUND.winsNeeded * 2 - 1);
-  const feedRows = make(el.feed, 'li', 5), radioRows = make(el.radio, 'li', 4), feed = [], radio = [];
+  const feedRows = make(el.feed, 'li', 4), radioRows = make(el.radio, 'li', 2), feed = [], radio = [];
   const buyRows = SHOP.map((item) => {
     if (HEADERS[item.id]) make(el['buy-list'], 'h3', 1)[0].textContent = HEADERS[item.id];
     const [li] = make(el['buy-list'], 'li', 1), def = itemDef(item);
@@ -37,11 +42,15 @@ export function createHud(state, camera) {
   const scores = [el.score0, el.score1], sides = [el.side0, el.side1], radar = createRadar(state, el.radar);
   let cursor = state.events.head, hitTime = -99, hurtTime = -99, hurtAngle = 0, killTime = -99, buyOpen = false, boardOpen = false;
 
-  // Newest first: the kill feed and the team radio strip; no html clears the list.
-  function push(list, rows, html) {
-    if (html) list.unshift(html); else list.length = 0;
+  // Newest first: the kill feed and the team radio strip; no html clears the list, rows leave after ROW_LIFE.
+  function push(list, rows, html, t) {
+    if (html && state.time - t > ROW_LIFE) return; // already stale when drained
+    if (html) list.unshift({ html, t }); else list.length = 0;
     if (list.length > rows.length) list.pop();
-    for (let i = 0; i < rows.length; i++) rows[i].innerHTML = list[i] ?? '';
+    for (let i = 0; i < rows.length; i++) rows[i].innerHTML = list[i]?.html ?? '';
+  }
+  function expire(list, rows) {
+    if (list.length && state.time - list[list.length - 1].t > ROW_LIFE) { list.pop(); rows[list.length].innerHTML = ''; }
   }
 
   function onEvent(e) {
@@ -53,14 +62,16 @@ export function createHud(state, camera) {
       const k = e.a >= 0 ? state.actors[e.a] : null, v = state.actors[e.b];
       const weapon = e.v === GRENADES.frag.index ? GRENADES.frag.name : e.v >= 0 ? WEAPONS[WEAPON_ORDER[e.v]].name : 'Fuse Core';
       const who = (a) => `<b style="color:${TEAMS[a.team].css}">${a.name}</b>`;
-      push(feed, feedRows, `${k === p || v === p ? '<i class="mine"></i>' : ''}${k ? who(k) : ''}<em>${weapon}</em>${e.w ? '<span class="hs">HS</span>' : ''}${who(v)}`);
+      push(feed, feedRows, `${k === p || v === p ? '<i class="mine"></i>' : ''}${k ? who(k) : ''}<em>${weapon}</em>${e.w ? '<span class="hs">HS</span>' : ''}${who(v)}`, e.t);
       if (k === p) killTime = e.t;
     } else if (e.type === EV.ROUND && !e.v) { push(feed, feedRows); push(radio, radioRows); } // a new round: clean strips
-    else if (e.type === EV.RADIO && e.b === p.team) push(radio, radioRows, `<b>${state.actors[e.a].name}:</b> ${e.text}`);
+    else if (e.type === EV.RADIO && e.b === p.team) push(radio, radioRows, `<b>${state.actors[e.a].name}:</b> ${e.text}`, e.t);
   }
 
   function update() {
     cursor = drain(state.events, cursor, onEvent);
+    expire(feed, feedRows);
+    expire(radio, radioRows);
     const p = state.player, round = state.round, core = state.core, w = p.slots[p.active];
     show(el.hp, Math.max(0, p.hp));
     toggle(el.hp.parentNode, 'low', p.hp <= 25);
@@ -70,7 +81,7 @@ export function createHud(state, camera) {
     if (w) {
       show(el.mag, w.mag);
       if (changed('res', w.reserve)) el.reserve.textContent = '/ ' + w.reserve;
-      if (changed('wpn', w.id) | changed('rel', p.reloadTimer > 0)) el.weapon.textContent = WEAPONS[w.id].name + (p.reloadTimer > 0 ? '  reloading' : ''); // | updates both keys
+      if (changed('wpn', w.id, p.reloadTimer > 0)) el.weapon.textContent = WEAPONS[w.id].name + (p.reloadTimer > 0 ? '  reloading' : '');
       toggle(el.ammo, 'empty', w.mag === 0);
     }
     if (changed('frag', p.grenades.frag)) el.frag.textContent = 'G FRAG ' + p.grenades.frag;
@@ -80,12 +91,12 @@ export function createHud(state, camera) {
     toggle(el.spanner, 'off', !p.kit);
     const armed = core.state === 'planted';
     const secs = Math.max(0, Math.ceil(round.phase === 'freeze' ? round.timer : armed ? core.fuse : round.clock));
-    if (changed('clock', armed ? -secs - 1 : secs)) el.clock.textContent = (armed ? 'CORE ' : '') + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+    if (changed('clock', secs, armed)) el.clock.textContent = (armed ? 'CORE ' : '') + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
     toggle(el.clock, 'freeze', round.phase === 'freeze');
     toggle(el.clock, 'urgent', armed || (round.phase === 'live' && round.clock < 15));
     for (let t = 0; t < 2; t++) {
       const team = state.teams[t];
-      if (!changed(scores[t], team.score * 2 + team.side)) continue;
+      if (!changed(scores[t], team.score, team.side)) continue;
       scores[t].textContent = team.score;
       sides[t].textContent = team.side === SIDE.ATTACK ? 'attack' : 'defend';
     }
@@ -124,7 +135,7 @@ export function createHud(state, camera) {
     const board = boardOpen || round.phase === 'matchover';
     if (board) {
       for (const a of state.actors) {
-        if (!changed(boardRows[a.id], a.money * 4096 + a.kills * 64 + a.deaths * 2 + (a.alive ? 1 : 0))) continue;
+        if (!changed(boardRows[a.id], a.money, a.kills * 1e4 + a.deaths * 2 + (a.alive ? 1 : 0))) continue;
         boardRows[a.id].innerHTML = `<td style="color:${TEAMS[a.team].css}">${a.name}</td><td>${a.alive ? '' : 'down'}</td><td>${a.kills}</td><td>${a.deaths}</td><td>$${a.money}</td>`;
       }
     }
@@ -137,12 +148,12 @@ export function createHud(state, camera) {
     const worker = core.worker >= 0 && core.progress > 0 ? state.actors[core.worker] : null, pct = Math.floor(core.progress * 100);
     const ours = !!worker && worker.team === p.team;
     toggle(el.progress, 'on', ours);
-    if (ours && changed('prog', pct + worker.id * 1000)) {
+    if (ours && changed('prog', pct, worker.id)) {
       el.progress.style.setProperty('--p', pct + '%');
       el['progress-label'].textContent = `${core.state === 'planted' ? 'DISARMING' : 'ARMING'} ${pct}%${worker.kit ? '  KIT' : ''}${worker === p ? '' : '  ' + worker.name}`;
     }
-    const live = state.round.phase === 'live' && p.alive;
-    if (!changed('obj', (live ? 1 : 0) + (core.state === 'carried' ? core.carrier * 10 + 10 : CORE_STATES.indexOf(core.state) * 2))) return;
+    const live = state.round.phase === 'live' && p.alive && worker !== p; // the bar alone while the player works
+    if (!changed('obj', core.state, live ? core.carrier : -2)) return;
     const attacking = state.teams[p.team].side === SIDE.ATTACK;
     el.objective.textContent = !live ? ''
       : core.state === 'planted' ? `Core armed at ${core.site}: ${attacking ? 'hold the site' : 'hold E on it to disarm'}`
@@ -152,7 +163,7 @@ export function createHud(state, camera) {
   }
 
   function banner(round) {
-    if (!changed('banner', round.phase === 'live' ? -1 : round.number * 4 + PHASES.indexOf(round.phase))) return;
+    if (!changed('banner', round.phase === 'live' ? -1 : round.number, round.phase)) return;
     const p = state.player, attacking = state.teams[p.team].side === SIDE.ATTACK;
     let title = '', sub = '';
     if (round.phase === 'freeze') {
@@ -162,7 +173,7 @@ export function createHud(state, camera) {
       title = state.match.winner === p.team ? 'Match won' : 'Match lost';
       sub = `${state.teams[0].score} - ${state.teams[1].score}. A new match starts shortly.`;
     } else if (round.phase === 'over') {
-      title = `${TEAMS[round.winner].name} take the round`;
+      title = `${TEAMS[round.winner].name} ${state.match.winner >= 0 ? `win the match ${state.teams[round.winner].score} - ${state.teams[1 - round.winner].score}` : 'take the round'}`;
       sub = `${REASONS[round.reason] ?? `${TEAMS[1 - round.winner].name} eliminated`}.  Round +$${state.teams[p.team].lastPay}${p.earned ? `, kills +$${p.earned}` : ''}`;
     }
     toggle(el.banner, 'win', round.winner === p.team);

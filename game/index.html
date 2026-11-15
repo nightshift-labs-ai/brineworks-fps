@@ -93,7 +93,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 #damage,#scope{inset:0;opacity:0}
 #damage{background:radial-gradient(transparent 72%,#aa140a44)}
 #damage::after{content:'';position:absolute;left:50%;top:50%;width:150px;height:22px;margin:-11px -75px;background:linear-gradient(#ff3a22,#ff3a2200);clip-path:polygon(0 0,100% 0,70% 100%,30% 100%);transform:rotate(var(--angle)) translateY(-40vh)}
-#progress{top:40%;width:260px;display:none;text-align:center;font-size:12px}
+#progress{top:40%;width:260px;display:none;text-align:center;font-size:12px;text-shadow:0 0 3px #000,0 1px 2px #000}
 #progress div{height:8px;margin-top:4px;background:linear-gradient(90deg,var(--paint) var(--p),var(--panel) var(--p))}
 #scope{background:radial-gradient(circle,transparent 33vh,#000 calc(33vh + 2px))}
 #banner{top:76px;text-align:center;padding:10px 30px;opacity:0;transition:opacity .2s}
@@ -107,8 +107,8 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 #buy li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;padding:2px 8px;margin-bottom:2px;border-radius:3px}
 #buy li.off{opacity:.32}
 #buy-foot{margin-top:8px;white-space:pre-line}
-#board{top:168px;background:#10141a9e}
-#board table{border-collapse:collapse;font-size:13px}
+#board{top:160px;right:12px;width:40%;background:#10141a9e}
+#board table{width:100%;border-collapse:collapse;font-size:13px}
 #board td,#board th{padding:3px 10px;text-align:left;border-bottom:1px solid var(--line)}
 #overlay{display:grid;place-items:center;background:radial-gradient(#10141acc,#07090cf2)}
 #overlay section{width:min(540px,92vw);padding:28px 32px}
@@ -146,12 +146,12 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
   <div id="hint" class="c u"></div>
   <div id="ammo-box" class="panel"><div id="weapon" class="u"></div><div id="ammo"><span id="mag"></span> <span id="reserve"></span></div><div id="kit"><span id="frag"></span><span id="smoke"></span><span id="spanner">KIT</span></div></div>
   <div id="buy" class="menu panel"><h2 class="u">Requisition <span id="buy-money"></span></h2><ul id="buy-list"></ul><div id="buy-foot"></div></div>
-  <div id="board" class="menu panel c"><table><thead><tr class="u"><th>Operator</th><th></th><th>K</th><th>D</th><th>$</th></tr></thead><tbody id="board-body"></tbody></table></div>
+  <div id="board" class="menu panel"><table><thead><tr class="u"><th>Operator</th><th></th><th>K</th><th>D</th><th>$</th></tr></thead><tbody id="board-body"></tbody></table></div>
 </div>
 <div id="overlay">
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
     <h1 id="overlay-title">BRINE<span>WORKS</span></h1>
-    <p>Five against five at the Brineworks salt refinery. Raker salvage crews try to arm a Fuse Core on site A or B; the Saltreeves who guard the works stop them or disarm it. Rounds are brief, money carries over, and a shot fired on the run goes wide.</p>
+    <p>Five against five at the Brineworks salt refinery. Each half one crew arms a Fuse Core on site A or B and the other stops or disarms it; sides swap after round 5, first to 6 wins. Rounds are brief, money carries over, and a shot fired on the run goes wide.</p>
     <button id="play" type="button">Deploy</button>
     <ul class="keys">
       <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</li><li><kbd>Mouse</kbd> aim, <kbd>Click</kbd> fire</li>
