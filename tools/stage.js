@@ -47,11 +47,13 @@ const SCENES = {
     script(i, s) { s.aim(null, -0.28, 48, 20); } },
 };
 
-function run(ctx, n, script, drawn = 3) { // n ticks; only the last `drawn` are rendered (effects in flight)
+function run(ctx, n, script, drawn = 3, cast = null) { // n ticks; only the last `drawn` are rendered (effects in flight)
   for (let i = 0; i < n; i++) {
     ctx.input.fill(ctx.state.player.cmd);
     script(i);
     ctx.step(ctx.state);
+    // Only the cast's shots draw tracers: stray fire elsewhere on the map would cross the frame as lines.
+    if (cast) for (const e of ctx.state.events.list) if (e.type === EV.SHOT && !cast.has(ctx.state.actors[e.a])) e.type = 0;
     if (i >= n - drawn) ctx.view.render(1, DT, ctx.input.look);
   }
 }
@@ -111,7 +113,7 @@ function stage(ctx, sc) {
     ctx.input.face(yawTo(p.pos.x, p.pos.z, a.pos.x, a.pos.z), Math.atan2(y - ey, Math.hypot(a.pos.x - p.pos.x, a.pos.z - p.pos.z)));
   };
   const s = { ctx, p, who, aim };
-  run(ctx, sc.ticks, (i) => sc.script(i, s), sc.end === undefined ? 3 : 0);
+  run(ctx, sc.ticks, (i) => sc.script(i, s), sc.end === undefined ? 3 : 0, new Set(sc.cast.map(([k]) => who(k))));
   if (sc.end !== undefined) { // the round played out to its end, captured `end` s after the banner
     autopilot(ctx, (st) => st.round.phase !== 'live');
     run(ctx, Math.round(sc.end / DT), () => {});

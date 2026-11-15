@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { holeTexture, softDot, glow } from './textures.js';
 
-const TRACERS = 48, DECALS = 160, PARTICLES = 400, FLASHES = 10, TRACER_SPEED = 420, STREAK = 2.5, NEAR_MISS = 2, CUT_BACK = 2.5, OWN_GAP = 1.5;
+const TRACERS = 48, DECALS = 160, PARTICLES = 400, FLASHES = 10, TRACER_SPEED = 420, STREAK = 2.5, NEAR_MISS = 2, CUT_BACK = 6, OWN_GAP = 1.5;
 const HIDE = new THREE.Matrix4().makeScale(0, 0, 0), HOT = new THREE.Color(0xf29e40), PALE = new THREE.Color(0xccb393); // pale at 0.6 (additive)
 
 function hideAll(m) {
