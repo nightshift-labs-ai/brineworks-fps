@@ -47,9 +47,11 @@ export function createRadar(state, canvas) {
     const p = state.player, intel = state.intel[p.team], core = state.core;
     const heard = 1 - (state.time - intel.heardTime) / 4; // the team's last heard enemy noise: a ring fading over 4 s
     if (heard > 0) {
-      ctx.strokeStyle = `rgba(255,90,74,${heard.toFixed(2)})`;
+      ctx.strokeStyle = '#ff5a4a';
       ctx.lineWidth = 2;
+      ctx.globalAlpha = heard; // no colour string per frame
       ctx.beginPath(); ctx.arc(sx(intel.heardX), sy(intel.heardZ), 4 + (1 - heard) * 6, 0, 7); ctx.stroke();
+      ctx.globalAlpha = 1;
     }
     // Teammates with a small facing cone; enemies only while a teammate has eyes on them.
     for (const a of state.actors) {
