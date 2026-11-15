@@ -10,7 +10,7 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
-await page.goto(`http://127.0.0.1:8792/index.html?test&seed=${seed}`, { waitUntil: 'load' });
+await page.goto(`http://127.0.0.1:${process.env.PORT ?? 8792}/index.html?test&seed=${seed}`, { waitUntil: 'load' });
 await page.waitForFunction(() => window.__brineworks, null, { timeout: 30000 });
 await page.waitForTimeout(1500);
 
