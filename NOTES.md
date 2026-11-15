@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,371 bytes (157.6 KiB); dossier text 163,796 of 163,840 (no cut, ~45 B left). Every
+- Source 161,403 bytes (157.6 KiB); dossier text 163,828 of 163,840 (no cut, ~12 B left). Every
   addition is paid for by a trim: NOTE condensed (-700 B), two trim passes (-0.5 KB, -0.3 KB, sim
   and renders verified identical). Further savings need restructuring (collide.js raycast/fillHit,
   bots.js playObjective/followPlan).
@@ -73,12 +73,22 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - F: team Rakehands (Rakers was one letter from another entry's RAIDERS); raiders, breakers,
   breachers, runners, rakers banned.
 
-## Open (each needs bytes; ~45 B left)
-- D radar route lines: tried; staged bots hold (no routes to draw) and it was 240 B over.
-- E conveyor belt over the court: tried as one dark box; without salt lumps and rollers it read
-  as a black beam, so the stack stays.
-- G loadout line, BRINEWORKS stencil on the stack, P round indicator, Q callout signs, X/Z HUD,
-  merged radio lines, wall drip streaks.
+## Done in the 10:16 run (operator O/L/G list)
+- O1: stray tracer lines gone (staging draws only the cast's shots; near-miss cut-back 6 m).
+- L5: buy footer is a static true line (no second countdown next to the freeze clock), -78 B.
+- G6: shot 2 at $2350, Hawser and Capstan rows dimmed. G7/L3(2): damage wedge at 28vh, arming
+  plate at 64%. L4: the A deck in concrete; the A decal reads upright. L6: cast-concrete panels.
+- L7: the dead lay their gun flat; the core is set 0.8 m in front of the worker.
+- G5: shot 4 captured with Carrick at the case, both bodies in view.
+
+## Open
+- G1/L2 (shot 3 shows four kills but all pips lit) and G4 (all shots one match): tried; keeping the
+  dead dead breaks scenes whose cast slots are then empty, and match 2 of seed 7 has short rounds
+  (16-24 s) that change every scene. Needs scene casts chosen from the living at stage time.
+- G3/L3(1) bots kneel while arming: a sim change shifts every staged round history; do it together
+  with a full restage.
+- L1/O2 shot 1 sky + stack: the closer framing leaves no sky gap under the score bar.
+- G2 radar routes, E belt, G8 round line, stencil: need bytes (12 B left).
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
