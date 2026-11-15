@@ -41,7 +41,7 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,405 bytes (157.6 KiB); dossier text 163,830 of 163,840 (no cut, 10 B left). Every
+- Source 161,410 bytes (157.6 KiB); dossier text 163,835 of 163,840 (no cut, 5 B left). Every
   addition is paid for by a trim: NOTE condensed (-700 B), two trim passes (-0.5 KB, -0.3 KB, sim
   and renders verified identical). Further savings need restructuring (collide.js raycast/fillHit,
   bots.js playObjective/followPlan).
