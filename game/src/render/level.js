@@ -147,7 +147,7 @@ export function buildLevel(map, tex) {
   }
 
   // Beyond the walls, never collided.
-  const salt = std({ color: 0xe8e4d8, emissive: 0x44403a, roughness: 1 }), steel = std({ color: PALETTE.steel, metalness: 0.4, roughness: 0.6 }), oxide = std({ color: 0x8c4c3a });
+  const salt = std({ color: 0xe8e4d8, emissive: 0x8c887e, roughness: 1 }), steel = std({ color: PALETTE.steel, metalness: 0.4, roughness: 0.6 }), oxide = std({ color: 0x8c4c3a });
   const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; group.add(m); };
   // Salt heaps: a lathed slump (round crown, spread toe), lumpy in angle so the lathe seam stays closed.
   const heap = (r, h) => {
