@@ -33,11 +33,12 @@ const SCENES = {
     cast: [['p', 25, 1, 27, 8], ['m0', 25, 5, 24, 12, 'skiff'], ['m1', 29, 5, 28, 9, 'bollard'], ['m2', 27, 7, 27, 12, 'hawser']],
     script(i, s) { s.aim(null, 0.05, 27.5, 8); } },
   // Arming on B: a teammate arms the Fuse Core on the pad while the player covers from behind; the smoke
-  // closes Boiler Gate 12 m out, a Saltreeve works round its edge, a teammate holds Pan Door.
+  // closes Boiler Gate 12 m out, a Saltreeve works round its edge, Skerry has him spotted.
   3: { side: 0, round: 4, clock: 97, core: 'm0', hide: ['hint'], ticks: 40, smoke: [10.5, 6.6],
-    cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 9, 11, 12, 11, 'hawser'], ['m1', 12, 13, 13, 19, 'skiff'], ['f0', 12, 8, 8, 13, 'hawser']],
-    radio: [['m1', 'holding Pan Door'], ['m1', 'footsteps at Boiler Gate']],
-    fire: [['f0', 4]], // he has the player in his sights but will not fire inside the scene
+    cast: [['p', 7, 17, 9, 8, 'hawser'], ['m0', 9, 11, 12, 11, 'hawser'], ['m1', 11, 12, 12, 8, 'skiff'], ['f0', 12, 8, 8, 13, 'hawser']],
+    radio: [['m1', 'footsteps at Boiler Gate'], ['m1', 'contact, Boiler Gate']],
+    fire: [['f0', 4]], // the smoke's edge hides him: no clear shot either way inside the scene (any clear line
+    // past the cloud picks the arming Carrick, the nearest target, and ends the arm)
     script(i, s) { s.aim(null, -0.14, 9, 9); } },
   // A retake of A won by a teammate's disarm with the kit, 2.7 m ahead, looking south down the lane past the
   // pad over two downed Saltreeves: the window turns teal, the banner names the disarm; the match goes on.
