@@ -37,7 +37,7 @@ const SCENES = {
   // bands turn teal, the banner names the disarm; the match goes on.
   4: { side: 1, round: 6, clock: 70, core: 'armed', ticks: 220, end: 0.35, dead: ['f0', 'f1'],
     cast: [['p', 8, 13, 9, 9, 'hawser'], ['m0', 12, 12, 10, 6, 'hawser'], ['m1', 5, 9, 10, 6, 'skiff'], ['f0', 10, 10, 8, 13, 'hawser'], ['f1', 3, 8, 8, 13, 'skiff']],
-    script(i, s) { s.p.cmd.use = true; s.aim(null, -0.17, 9.5, 9); } },
+    script(i, s) { s.p.cmd.use = true; s.aim(null, -0.26, 9.5, 9); } },
 };
 
 function run(ctx, n, script, drawn = 3) { // n ticks; only the last `drawn` are rendered (effects in flight)
@@ -82,7 +82,7 @@ function stage(ctx, sc) {
   p.money = Math.max(p.money, sc.money ?? 3150);
   p.hp = sc.hp ?? 100;
   if (sc.core === 'carry' || sc.core === 'mate') Object.assign(state.core, { state: 'carried', carrier: sc.core === 'mate' ? mates[3].id : p.id });
-  if (sc.core === 'armed') Object.assign(state.core, { state: 'planted', site: 'B', fuse: 25, carrier: -1, x: p.pos.x + 0.4, y: 0, z: p.pos.z - 1.1 });
+  if (sc.core === 'armed') Object.assign(state.core, { state: 'planted', site: 'B', fuse: 25, carrier: -1, x: p.pos.x + 0.3, y: 0, z: p.pos.z - 1.45 });
   state.round.planted = sc.core === 'armed';
   if (sc.smoke) Object.assign(state.smokes[0], { live: true, x: sc.smoke[0] * S, y: 0, z: sc.smoke[1] * S, age: 2 });
   for (const k of sc.dead ?? []) Object.assign(who(k), { alive: false, hp: 0, diedAt: -99 }); // bodies of an earlier fight

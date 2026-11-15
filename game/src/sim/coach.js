@@ -50,7 +50,7 @@ export function planRound(state, team, call) {
   }
 }
 
-// When the attack executes (gathered, waited enough, spotted or the clock is low) and when the defence rotates.
+// When the attack executes (gathered, waited, spotted or late) and when the defence rotates.
 export function updateCoach(state) {
   for (const team of state.teams) {
     const plan = team.plan;

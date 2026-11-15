@@ -42,7 +42,7 @@ export function createHud(state, camera) {
   const scores = [el.score0, el.score1], sides = [el.side0, el.side1], radar = createRadar(state, el.radar);
   let cursor = state.events.head, hitTime = -99, hurtTime = -99, hurtAngle = 0, killTime = -99, buyOpen = false, boardOpen = false;
 
-  // Newest first: the kill feed and the team radio strip; no html clears the list, rows leave after ROW_LIFE.
+  // Newest first: kill feed and radio; no html clears the list; rows leave after ROW_LIFE.
   function push(list, rows, html, t) {
     if (html && state.time - t > ROW_LIFE) return; // already stale when drained
     if (html) list.unshift({ html, t }); else list.length = 0;
@@ -143,7 +143,7 @@ export function createHud(state, camera) {
     radar.draw();
   }
 
-  // The arm/disarm bar while a teammate works the core; the Fuse Core line, rebuilt only when the core's state changes.
+  // The arm/disarm bar while a teammate works the core; the Fuse Core line, rebuilt on change.
   function objective(p, core) {
     const worker = core.worker >= 0 && core.progress > 0 ? state.actors[core.worker] : null, pct = Math.floor(core.progress * 100);
     const ours = !!worker && worker.team === p.team;

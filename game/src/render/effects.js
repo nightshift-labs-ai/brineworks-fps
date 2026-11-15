@@ -34,7 +34,7 @@ export function createEffects(scene) {
   scene.add(blastSprite, blastLight);
   let nextTracer = 0, nextDecal = 0, nextParticle = 0, nextFlash = 0, blastLife = 0, blastSize = 0;
 
-  // Off the lens: one passing within NEAR_MISS m of the eye ends CUT_BACK m before that point (k); the viewer's own starts OWN_GAP m out.
+  // Off the lens: a shot passing within NEAR_MISS m of the eye ends CUT_BACK m before it; the viewer's own starts OWN_GAP m out.
   function spawnTracer(o, x1, y1, z1, eye, own) {
     const from = own ? OWN_GAP : 0;
     let len = s.set(x1 - o.x, y1 - o.y, z1 - o.z).length();

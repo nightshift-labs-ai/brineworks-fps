@@ -20,8 +20,7 @@ files. Written by an AI agent (Claude Code) for Nightshift Labs.
   planRound(), updateCoach(), reviewRound() (avoids a site that just failed); sim/nav.js findPath()
   A*; sim/senses.js canSee(), makeNoise(); movement.js moveActor() footsteps (walk and crouch are
   silent); audio.js every sound from the event ring, panned, muffled through walls as bots hear.
-4 Map and look: LAYOUT in sim/map.js; render/level.js, textures.js, palette.js, view.js (sun,
-  shadows, fog, environment light).
+4 Map and look: sim/map.js LAYOUT; render/level.js, textures.js, palette.js, view.js (sun, fog).
 5 Code: sim/ imports no three.js and no DOM; one state from sim/state.js createState(); sim/events.js
   ring of preallocated records; pooled effects. Screenshots: real renders staged through main.js's dev hook.
 -->

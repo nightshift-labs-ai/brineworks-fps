@@ -84,7 +84,7 @@ export function findPath(map, fx, fz, tx, tz, path) {
     }
   }
   if (!found) return false;
-  // Parents into the (now free) heap buffer, then pull the string: jump to the farthest cell in a straight walkable line.
+  // Parents into the free heap buffer, then pull the string to the farthest cell in a straight walkable line.
   let n = goal, k = 0;
   while (n >= 0 && k < S.size) { heap[k++] = n; n = parent[n]; }
   let x = fx, z = fz, i = k - 1;
