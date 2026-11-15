@@ -52,10 +52,7 @@ export function botShop(state, a, call, marksman) {
     else if (call === 'full' && a.money >= WEAPONS.hawser.price + GEAR.vest.price) get('hawser');
     else if (!primary) get(state.rng() < 0.6 ? 'skiff' : 'bollard');
   }
-  if (a.money >= 600) get('vest');
-  if (a.money >= 900) get('helm');
-  if (a.money >= 700) get('smoke');
-  if (a.money >= 500) get('frag');
+  for (const [id, min] of [['vest', 600], ['helm', 900], ['smoke', 700], ['frag', 500]]) if (a.money >= min) get(id);
   if (a.money >= 350 && state.teams[a.team].side === SIDE.DEFEND) get('kit');
 }
 
