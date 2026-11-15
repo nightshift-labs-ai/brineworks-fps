@@ -41,21 +41,28 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
   Saltreeves; weapons Cleat, Skiff, Hawser, Bollard, Capstan; the field's names are banned.
 
 ## Budget (tools/budget.mjs 158)
-- Source 161,398 bytes (157.6 KiB); dossier text 163,823 of 163,840 (no cut). No headroom: every
-  addition is paid for by a trim (a trim pass found ~0.5 KB without losing "why" comments; the sun
-  halo was dropped for the plan line).
+- Source 161,411 bytes (157.6 KiB); dossier text 163,836 of 163,840 (no cut). No headroom: every
+  addition is paid for by a trim. The reviewer NOTE was condensed (-700 B) to pay for the heaps.
 
-## Done since prompt 10
+## Done since prompt 10/11
 - Names R/T/S/Y: bots, weapons (class captions), kit tag, callouts (Boiling House, Boiler Gate,
   Jetty Gate, Slipway); old names banned in check-names.
-- J/W/I screenshots restaged; E smaller viewmodel; F short tracers; K one palette (rust, teal,
-  salt-white, rose brine), canvas salt loads; L lamps as housing + lens + glow, fog in the horizon
-  colour; U plan line pinned above the radio; N Fuse Core as a case with window and handle, pistol
-  turned with a gunmetal slide; review 12e radar ring; banner 'Next round in 5 s'.
+- Screenshots (tools/stage.js): 1 headshot then a trade with a Saltreeve ~7 m out against the lit
+  wall; 2 buy time in the defenders' yard; 3 a teammate arming on the B pad (bar with his name),
+  smoke 12 m out, a heap over the wall; 4 crouched disarm on site A with the core in the lower
+  third. Four distinct places.
+- Look: one palette (rust, weathered teal, salt-white, rose-grey brine), slate sky to a peach
+  horizon matched by the fog, charcoal HUD panels; lumpy lathed salt heaps; salt bloom at the foot
+  of the concrete; brine pans in a concrete curb; canvas salt loads; lamps as housing + lens + glow;
+  smaller viewmodel; short tracers; the Fuse Core as a case with a window and a handle; pistol
+  with a gunmetal slide; site letters half size; arming label on a dark plate.
+- U: the coach's plan pinned above the radio. Review 12e radar ring. Banner 'Next round in 5 s'.
 
-## Next (each needs bytes: trade before adding)
-- M skyline silhouettes, O salt bloom/rust streaks (texture only), P round indicator + health bars,
-  Q callout signs (data), X loadout row, Z HUD plates; U radar route lines, merged radio lines.
+## Open (each needs bytes: a code-level trim pass is running to fund them)
+- 11/M a skyline landmark (evaporator tower) in the sky gap of shot 1: tried as a tall cylinder;
+  it covered the B view and cost 170 B over budget, so it was reverted.
+- P round indicator + health bars, Q callout signs, X loadout row, Z HUD plates; U radar route
+  lines and merged radio lines; wall drip streaks (dropped for bytes).
 
 ## Screenshots (retake LAST before each commit: `tools/shoot-all.sh`, then look at each)
 - 1 cover `?shot=1&seed=9` Conveyor Court headshot firefight; 2 buy time in the defenders' yard
