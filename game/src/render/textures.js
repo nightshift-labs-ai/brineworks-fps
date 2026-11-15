@@ -89,8 +89,8 @@ export const signTexture = (lines, accent) => paint(256, 0, '#22313a', (ctx) => 
 export const siteDecal = (letter) => paint(256, 3, '#0000', (ctx) => {
   ctx.globalAlpha = 0.85; ctx.strokeStyle = ctx.fillStyle = PALETTE.paint;
   ctx.lineWidth = 12; ctx.strokeRect(14, 14, 228, 228);
-  ctx.font = 'bold 170px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(letter, 128, 136);
+  ctx.font = 'bold 96px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(letter, 128, 132);
 });
 
 export const holeTexture = () => paint(64, 5, '#0000', (ctx) => radial(ctx, 32, 32, 30, [[0, '#0a0806'], [0.3, '#191410e6'], [0.6, '#3c322859'], [1, '#0000']]));
