@@ -196,3 +196,6 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - Added a live movement/recoil accuracy hint and purchase rows with weapon damage, magazine capacity and equipment purpose. Simulation rules, health, collision and bot behavior are unchanged.
 - Shortened redundant renderer comments so every executable source file still fits in the 160 KiB dossier. Retook all four screenshots from the final game source; each uses the existing real-simulation staging script.
 - Corrected the development sightline checker to read the map's current public holds/postplant data rather than removed named exports. Browser gameplay checks passed before submission.
+
+- Added player rally commands (Z: A, V: B) through the fixed-step loop. Attack calls reassign real split routes/lurker roles; defence calls assign real hold points. Calls reject dead players, invalid sites, finished rounds, planted cores and repeated orders inside four seconds. tools/command-test.mjs verifies those branches. The cover now demonstrates a real B order through the same command function.
+- Local rubric simulation favored the presentation candidate over the old entry by only margin 1/5; it was not an official score or a top-ten prediction. This motivated the squad-command addition. Review also corrected support-hand scaling and shadow casting on the new leg parts.

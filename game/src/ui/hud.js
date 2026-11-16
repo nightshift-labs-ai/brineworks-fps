@@ -95,7 +95,7 @@ export function createHud(state, camera) {
     banner(round);
     show(el.plan, state.teams[p.team].plan.text); // pinned above the radio
     show(el.spectate, !p.alive && round.phase !== 'freeze' ? 'You are down: watching your team' : '');
-    show(el.hint, round.buyOpen && p.alive && !buyOpen ? 'B  requisition' : '');
+    show(el.hint, round.buyOpen && p.alive && !buyOpen ? 'B  requisition / Z rally A / V rally B' : p.alive && core.state !== 'planted' ? 'Z rally A / V rally B' : '');
     if (buyOpen && !round.buyOpen) toggleBuy(false);
     if (buyOpen) {
       if (changed('buyMoney', p.money)) el['buy-money'].textContent = '$' + p.money;

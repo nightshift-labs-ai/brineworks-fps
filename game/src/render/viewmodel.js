@@ -28,6 +28,7 @@ function chamfer(w, h, d) {
   return g;
 }
 
+// Part rows: material w h d x y z (cm), pitch/yaw (centiradians); negative w makes a cylinder.
 export function build(parts, mats = MATS, group = new THREE.Group()) {
   for (const part of parts.split(',')) {
     const [m, w, h, d, x = 0, y = 0, z = 0, rx = 0, ry = 0] = part.split(' ').map((v, i) => (i ? v / 100 : v));

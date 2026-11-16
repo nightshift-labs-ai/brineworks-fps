@@ -9,7 +9,6 @@ export const TEAMS = [
 ];
 export const PLAYER_TEAM = 0, TEAM_SIZE = 5;
 
-// Metres, seconds. Quake-style accel/friction; spread follows speed (weapons.js): plan the stop.
 export const MOVE = {
   runSpeed: 5.2, walkSpeed: 2.6, crouchSpeed: 1.8,
   accel: 6.2, airAccel: 1.2, friction: 6, stopSpeed: 1.8,
@@ -18,14 +17,8 @@ export const MOVE = {
   footstepEvery: 2.2, // metres of running between footstep noises
 };
 
-// Hitboxes (the soldier model too): head sphere, torso/leg cylinder radii (m), legTop a fraction of height.
 export const BODY = { headRadius: 0.16, torsoRadius: 0.27, legRadius: 0.22, legTop: 0.47, legMult: 0.75, torsoMult: 1 };
 
-// Spread: cone radius (rad) = base + move x speed fraction + air + bloom, x crouch. Recoil: `climb`
-// per shot for `settle` shots, then a quarter of it while the muzzle sways; `recover` (1/s) fades it.
-// falloff: damage x per 25 m; armorPen: the share armour lets through.
-// Intent: a Hawser headshot (34 x 3.8) beats a helm only up close; a Capstan body shot kills through
-// a vest, a leg shot does not; the Skiff is cheap and forgiving on the move but weak far off.
 export const WEAPONS = {
   cleat: { name: 'Cleat', cls: 'sidearm', kind: 'pistol', mag: 13, reserve: 39, interval: 0.15, damage: 29, headMult: 3.8, armorPen: 0.5, falloff: 0.85, range: 60, reload: 2, speedMult: 1, reward: 250, draw: 0.45,
     spread: { base: 0.006, move: 0.042, air: 0.12, crouch: 0.8, bloom: 0.02 }, recoil: { climb: 0.017, sway: 0.004, settle: 2, recover: 5 } },
@@ -45,16 +38,13 @@ WEAPON_ORDER.forEach((id, index) => {
   Object.assign(w, { id, index, slot: w.kind === 'pistol' ? 'secondary' : 'primary', pellets: w.pellets ?? 1, auto: !!w.auto });
 });
 
-// The vest guards the torso, the helm (on a vest) the head; the kit halves disarming.
 export const GEAR = { vest: { name: 'Hull vest', price: 600 }, helm: { name: 'Hull helm', price: 300 }, kit: { name: 'Spanner kit', price: 330, side: SIDE.DEFEND } };
 
-// index 100: the frag's kill-feed id.
 export const GRENADES = {
   frag: { name: 'Clatter frag', price: 240, fuse: 1.6, radius: 7, damage: 100, armorPen: 0.6, reward: 250, index: 100 },
   smoke: { name: 'Haze canister', price: 280, fuse: 1.7, radius: 4.4, duration: 15 },
 };
 
-// The Fuse Core (objective.js).
 export const OBJECTIVE = {
   plantTime: 3, defuseTime: 7, kitDefuseTime: 3.5, fuse: 38,
   reach: 1.6, // metres from the core to pick it up or disarm it
@@ -63,7 +53,6 @@ export const OBJECTIVE = {
   blastRadius: 16, blastDamage: 250, armorPen: 0.5,
 };
 
-// Objective wins pay more; each loss raises the next loss pay one step, each win lowers it one step.
 export const ECON = { start: 900, max: 9500, win: 3100, objectiveWin: 3400, lossBase: 1500, lossStep: 450, lossMax: 3300 };
 
 export const ROUND = {
@@ -74,7 +63,6 @@ export const ROUND = {
   winsNeeded: 6, half: 5, // sides swap after the half
 };
 
-// How far each noise carries (m); through walls only HEARING.muffle of it.
 export const HEARING = { step: 18, land: 12, shot: 50, reload: 8, bounce: 14, work: 22, alarm: 200, muffle: 0.6 };
 
 export const BOT = {

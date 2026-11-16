@@ -9,7 +9,6 @@ import { throwNade } from './grenades.js';
 const worldHit = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
 const partOut = { part: 0 };
 
-// Current cone radius (radians) for an actor's weapon: what the dynamic crosshair draws too.
 export function spreadOf(a, def) {
   const moving = Math.max(0, Math.min(1, (Math.hypot(a.vel.x, a.vel.z) - 0.5) / (MOVE.runSpeed - 0.5))), s = def.spread;
   const cone = (def.scope && !a.scoped ? s.unscoped : s.base) + s.move * moving + (a.grounded ? 0 : s.air) + a.bloom;
@@ -42,7 +41,6 @@ export function updateWeapon(state, a, cmd, canFire) {
     }
   }
   a.triggerHeld = cmd.fire;
-  // Punch and bloom fade off the trigger, while reloading and through a slow gun's cooldown.
   if ((!cmd.fire || a.reloadTimer > 0 || w.mag === 0) && (a.fireCooldown <= 0 || def.interval > 0.3)) {
     const fade = Math.exp(-def.recoil.recover * DT);
     a.punchPitch *= fade; a.punchYaw *= fade; a.bloom *= fade;
@@ -67,7 +65,6 @@ function fire(state, a, w, def) {
     const yaw = baseYaw + r * Math.cos(th), pitch = basePitch + r * Math.sin(th), cp = Math.cos(pitch);
     traceBullet(state, a, def, ox, oy, oz, -Math.sin(yaw) * cp, Math.sin(pitch), -Math.cos(yaw) * cp);
   }
-  // Spray pattern: `settle` shots climb straight up, then the muzzle sways; fixed, so it can be learned.
   const rc = def.recoil, n = a.shotsFired++;
   a.punchPitch = Math.min(a.punchPitch + (n < rc.settle ? rc.climb : rc.climb * 0.25), 0.22);
   if (n >= rc.settle) a.punchYaw += rc.sway * Math.cos((n - rc.settle) * 0.55);

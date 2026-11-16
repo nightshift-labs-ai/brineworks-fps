@@ -22,6 +22,8 @@ python3 -m http.server 8080 --directory game
 # open http://localhost:8080 in desktop Chrome and click Deploy
 ```
 
+You can call a split-route attack or a defensive rotation with Z / V; the squad replans through its normal coach and A* navigation. Calls are rate-limited and unavailable once the Fuse Core is armed.
+
 The HUD shows whether movement or recoil is widening your shots. Requisition rows include weapon damage and magazine size; refinery crews have articulated knees, respirators and team safety markings.
 
 ## Controls
@@ -42,6 +44,7 @@ The HUD shows whether movement or recoil is widening your shots. Requisition row
 | X | drop the Fuse Core |
 | B | buy menu (freeze time and the first seconds of a round) |
 | Tab | scoreboard |
+| Z / V | rally the squad to site A / B (4-second cooldown) |
 
 ## Layout
 

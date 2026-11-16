@@ -11,11 +11,11 @@ const SETUPS = [ // defence: [weight, where each defender holds] = 2-1-2, 3-1-1,
 
 const mate = (a, team) => a.alive && a.isBot && a.team === team;
 
-export function createPlan() { return { site: 'A', rush: false, execute: false, staged: -99, executedAt: -99, rotated: false, fails: { A: 0, B: 0 }, text: '' }; }
+export function createPlan() { return { site: 'A', rush: false, execute: false, staged: -99, executedAt: -99, commandedAt: -99, rotated: false, fails: { A: 0, B: 0 }, text: '' }; }
 
 // Attack: a site (less likely one that just failed) split over its two routes plus a lurker, or a rush.
 // Defence: a weighted setup.
-export function planRound(state, team, call) {
+export function planRound(state, team, call, orderedSite) {
   const plan = team.plan, rng = state.rng, map = state.map;
   const bots = state.actors.filter((a) => a.team === team.id && a.isBot).sort((x, y) => (y.id === state.core.carrier) - (x.id === state.core.carrier));
   for (const { brain: b } of bots) {
@@ -26,7 +26,7 @@ export function planRound(state, team, call) {
   plan.execute = plan.rotated = false; plan.staged = plan.executedAt = -99;
   if (team.side === SIDE.ATTACK) {
     const weightA = 0.4 ** plan.fails.A, weightB = 0.4 ** plan.fails.B;
-    plan.site = rng() * (weightA + weightB) < weightA ? 'A' : 'B';
+    plan.site = orderedSite ?? (rng() * (weightA + weightB) < weightA ? 'A' : 'B');
     plan.execute = plan.rush = call === 'save';
     const routes = ATTACK_ROUTES.filter((r) => r.site === plan.site);
     const lurkRoute = rng.pick(ATTACK_ROUTES.filter((r) => r.site !== plan.site));
@@ -51,6 +51,21 @@ export function planRound(state, team, call) {
     const count = (s) => bots.filter((a, i) => setup[i % setup.length] === s).length;
     plan.text = `setup: ${count('A')} A, ${count('tower')} tower, ${count('B')} B`;
   }
+}
+
+// Player calls use the same team planner and navigation as the automatic coach.
+export function commandSite(state, site) {
+  const p = state.player, team = state.teams[p.team], plan = team.plan;
+  if (!p.alive || !state.map.sites[site] || !['freeze', 'live'].includes(state.round.phase) || state.core.state === 'planted' || state.time - plan.commandedAt < 4) return false;
+  planRound(state, team, 'full', site);
+  plan.site = site; plan.commandedAt = state.time;
+  if (team.side === SIDE.DEFEND) {
+    for (const a of state.actors) if (mate(a, team.id)) pickHold(state, a, state.map.holds[site], site);
+    plan.rotated = true;
+    plan.text = 'order: rotate ' + site;
+  } else plan.text = 'order: take ' + site + ' / ' + plan.text;
+  radio(state, p, 'Rally ' + site + '. Cover each other.');
+  return true;
 }
 
 // When the attack executes (gathered, waited, spotted or late) and when the defence rotates.

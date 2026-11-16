@@ -9,7 +9,7 @@ import { createBrain, think } from './src/sim/bots.js';
 import { yawTo } from './src/sim/util.js';
 import { buy } from './src/sim/economy.js';
 import { EV, emit } from './src/sim/events.js';
-import { radio } from './src/sim/coach.js';
+import { commandSite, radio } from './src/sim/coach.js';
 
 // cast: [who, col, row, faces col, faces row, gun]; who: p player, m0.. teammates, f0.. opponents.
 // side: the player's side (0 attack, 1 defend); phase: 'freeze' stages in buy time, else live with clock < clock.
@@ -24,6 +24,7 @@ const SCENES = {
     fire: [['f1', 0.55, -0.1]], // his first shot lands in the drawn frames, low: the player survives the trade
     radio: [['m1', 'gunfire at Conveyor Court'], ['m0', 'go B now']], // heard from the cut; the coach's call
     script(i, s) {
+      if (i === 0) commandSite(s.ctx.state, 'B');
       s.p.cmd.crouch = true;
       if (i === 11) s.aim('f0', 'head');
       if (i >= 20) s.aim('f1', 'waist'); // low on the torso: the marker clears his muzzle flash

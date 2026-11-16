@@ -5,6 +5,7 @@ import { heightOf } from '../sim/actors.js';
 import { wrapAngle } from '../sim/util.js';
 import { MATS, GUNS, build } from './viewmodel.js';
 
+// Rig nodes use parent-local centimetres; thighs and shins share the collision-body height.
 const LEG = 't 19 45 25 0 -23,d 19.5 7 26 0 -33', SHIN = 'c 17 39 22 0 -23,v 18 13 10 0 -5 -12,d 21 11 32 0 -47 -3', ARM = 'c 17 15 43 0 0 -22,d 16 15 15 0 0 -48,c 13 12 36 0 0 -72,d 15 12 16 0 0 -96';
 const NODES = [
   ['body root'], ['hipL body -11', LEG], ['hipR body 11', LEG], ['chest body'], ['neck chest'],
@@ -28,7 +29,7 @@ function reach(arm, x, y, z) {
   const p = arm.position, dx = x - p.x, dy = y - p.y, dz = z - p.z, len = Math.hypot(dx, dy, dz);
   arm.rotation.set(Math.asin(dy / len), Math.atan2(-dx, -dz), 0, 'YXZ');
   arm.scale.z = len;
-  arm.children[1].scale.z = 1 / len;
+  arm.children[3].scale.z = 1 / len;
 }
 
 function hold(rig, id) {
@@ -49,7 +50,6 @@ function buildRig(scene, team, mats, gunMats) {
     rig[k].position.set(x / 100, y / 100, 0);
   }
   build(HEADS[team], mats, rig.neck);
-  rig.root.traverse((m) => (m.castShadow = true));
   rig.hips = [rig.hipL, rig.hipR];
   rig.knees = rig.hips.map((hip) => { const knee = build(SHIN, mats); knee.position.y = -0.48; hip.add(knee); return knee; });
   for (const id in GUNS) {
@@ -59,6 +59,7 @@ function buildRig(scene, team, mats, gunMats) {
     gun.visible = false;
     rig.arms.add(gun);
   }
+  rig.root.traverse((m) => (m.castShadow = true));
   scene.add(rig.root);
   return rig;
 }

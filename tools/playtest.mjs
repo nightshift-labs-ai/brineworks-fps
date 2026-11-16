@@ -92,7 +92,7 @@ await page.waitForTimeout(4000);
 check('bots move', mid.moved >= 200, `bots travel ${mid.moved} m per minute`);
 check('rounds end and restart', mid.roundsEnded >= 3, JSON.stringify(mid));
 check('no console errors', errors.length === 0, errors.slice(0, 5).join(' | '));
-await page.screenshot({ path: '/home/agent/makefun/fps2/tools/playtest.jpg', type: 'jpeg', quality: 70 });
+await page.screenshot({ path: new URL('playtest.jpg', import.meta.url).pathname, type: 'jpeg', quality: 70 });
 await browser.close();
 let failed = 0;
 for (const c of checks) { console.log(`${c.ok ? 'PASS' : 'FAIL'}  ${c.name}  ${c.detail}`); if (!c.ok) failed++; }

@@ -2,6 +2,7 @@
 import { DT } from './sim/config.js';
 import { createInput } from './input.js';
 import { createGame, step } from './sim/sim.js';
+import { commandSite } from './sim/coach.js';
 import { SHOP, buy } from './sim/economy.js';
 import { createHud } from './ui/hud.js';
 import { createView } from './render/view.js';
@@ -12,7 +13,7 @@ const byId = (id) => document.getElementById(id);
 const state = createGame(parseInt(params.get('seed'), 10) || 7);
 const view = createView(state, byId('game'));
 const hud = createHud(state, view.camera), audio = createAudio(state);
-let running = false, lastRound = 0, order = null;
+let running = false, lastRound = 0, order = null, siteOrder = '';
 
 // Chrome refuses a re-lock for ~1 s after Esc: say so rather than fail silently.
 const hint = () => { byId('overlay-title').textContent = 'Click again to resume'; };
@@ -35,6 +36,7 @@ const input = createInput(view.canvas, {
   onKey(code, down) {
     if (code === 'Tab') { hud.showBoard(down); return true; }
     if (!down || !running) return false;
+    if (code === 'KeyZ' || code === 'KeyV') { siteOrder = code === 'KeyZ' ? 'A' : 'B'; return true; }
     if (code === 'KeyB') { hud.toggleBuy(); return true; }
     if (!hud.isBuyOpen()) return false;
     const item = SHOP.find((s) => `Digit${s.key}` === code);
@@ -57,6 +59,7 @@ function frame(now) {
     for (acc += dt; acc >= DT; acc -= DT) {
       input.fill(state.player.cmd);
       if (order) { buy(state, state.player, order); order = null; } // menu buys land on a tick
+      if (siteOrder) { commandSite(state, siteOrder); siteOrder = ''; }
       step(state);
       followRounds();
     }

@@ -36,7 +36,6 @@ export function moveActor(state, a, cmd, frozen) {
   moveBody(state.map, a, DT);
   if (wasAirborne && a.grounded && fallSpeed < -5) makeNoise(state, a, 'land');
 
-  // Running is loud; walking and crouching are silent.
   const speed = Math.hypot(a.vel.x, a.vel.z);
   if (a.grounded && speed > MOVE.walkSpeed * 1.15 && (a.stride += speed * DT) >= MOVE.footstepEvery) {
     a.stride = 0;
