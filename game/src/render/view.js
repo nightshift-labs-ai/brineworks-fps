@@ -95,12 +95,10 @@ export function createView(state, container) {
   function render(alpha, dt, look) {
     const who = viewer(), cam = camera.position.copy(who.prev).lerp(who.pos, alpha);
     cam.y += eyeOf(who);
-    // Own view: the freshest mouse look, recoil punch on top.
     const aim = who === state.player ? look : who;
     let yaw = aim.yaw + who.punchYaw, pitch = aim.pitch + who.punchPitch;
     shake = Math.max(0, shake - dt * 1.8);
     const jolt = shake * shake * 0.04 * Math.sin(performance.now() * 0.09);
-    // Round over: a 3/4 view of the Fuse Core from the viewer's side, clear of any wall.
     const round = state.round, ended = round.phase === 'over' || round.phase === 'matchover';
     const t = ended ? Math.min(1, Math.max(0, (state.time - round.endedAt - 0.6) / 1.4)) : 0;
     if (t > 0) {

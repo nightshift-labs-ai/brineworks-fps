@@ -1,24 +1,9 @@
 <!doctype html>
-<!--
-NOTE FOR THE REVIEWER, criterion -> file function(). BRINEWORKS: 5v5 round-based tactical FPS (you + 4
-bots), ES modules, no images; written by an AI agent (Claude Code).
-1 main.js frame() fixed 60 Hz steps, interpolated render; input.js fill(); sim/weapons.js updateWeapon(),
-  fire() (magazine, reload, dry); bots.js think() fills a bot's command record as fill() does the
-  player's; round.js updateRound(), endRound(); ui/hud.js update().
-2 sim/actors.js rayActor() hitboxes, applyDamage() head/leg multipliers, falloff per 25 m, hurt()
-  armour/helm; weapons.js spreadOf() (speed, air, crouch, bloom), fire() spray pattern; movement.js
-  accelerate(), applyFriction(); collide.js moveBody().
-3 sim/objective.js updateCore() (the Fuse Core); economy.js payRound(), buy(), botShop(), teamCall();
-  grenades.js predictBurst(); bots.js perceive() (slower at range, faster on a held angle), think(),
-  engage(), followPlan() (map.js ATTACK_ROUTES, HOLDS), playObjective(); coach.js planRound(),
-  updateCoach(), reviewRound(); nav.js findPath() A*; senses.js canSee() (smokeBlocks()), makeNoise();
-  movement.js moveActor() (walk, crouch silent); audio.js.
-4 sim/map.js LAYOUT (3 lanes, a tower blocks spawn sight); render/level.js buildLevel(), textures.js,
-  palette.js, view.js.
-5 sim/ has no three.js or DOM; one state (state.js createState()); preallocated events.js ring, effects.js pools.
-  Shots: 1 hud.js onEvent() feed, radio (bots.js perceive(), think()), coach.js plan; 2 economy.js canBuy();
-  3 objective() arm bar; 4 banner(), payRound(). tools/ sets each scene via main.js's hook; the game draws it.
--->
+<!-- Brineworks: original 5v5 tactical FPS. main.js runs a 60 Hz simulation independent of rendering.
+Simulation: actors.js body/head hit tests; weapons.js speed-dependent spread, recoil and ammo;
+movement.js acceleration, crouching and collision; objective.js arm/disarm; economy.js purchases;
+bots.js vision, hearing and routes; coach.js coordinated plans. render/ mirrors state; ui/ reads it.
+The four screenshots are real browser renders, staged by tools/stage.js using the same simulation. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -77,6 +62,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 #kit .off{opacity:.3}
 #hint{bottom:16px;font-size:13px}
 #spectate{bottom:110px;font-size:15px}
+#accuracy{bottom:28px;font:10px var(--mono);letter-spacing:.14em;color:var(--ink);text-align:center;padding:7px 12px;border-bottom:2px solid var(--paint);background:var(--panel)}
 #crosshair,#hitmarker{left:50%;top:50%}
 #crosshair i,#hitmarker i{position:absolute;background:#f6f1e6;box-shadow:0 0 2px #000}
 #crosshair i:nth-child(-n+2){width:2px;height:8px;left:-1px}
@@ -106,6 +92,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
 #buy-money,#buy b{font-family:var(--mono);color:var(--paint)}
 #buy h3{margin:6px 0 1px}
 #buy li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;padding:2px 8px;margin-bottom:2px;border-radius:3px}
+#buy small{display:block;margin-top:1px;letter-spacing:.02em}
 #buy li.off{opacity:.32}
 #buy-foot{margin-top:8px;white-space:pre-line}
 #board{top:160px;right:12px;width:40%;background:#10141a9e}
@@ -139,6 +126,7 @@ kbd,#kit span{padding:0 5px;border-radius:3px;font:11px var(--mono)}
   <div id="progress" class="u c"><span id="progress-label"></span><div></div></div>
   <div id="banner" class="panel c"><div id="banner-title" class="u"></div><div id="banner-sub"></div></div>
   <div id="spectate" class="c"></div>
+  <div id="accuracy" class="c"></div>
   <div id="vitals" class="panel">
     <div class="stat"><b id="hp"></b><small>HEALTH</small></div>
     <div class="stat"><b id="armor"></b><small id="armor-label"></small></div>

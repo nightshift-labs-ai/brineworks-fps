@@ -5,28 +5,25 @@ import { heightOf } from '../sim/actors.js';
 import { wrapAngle } from '../sim/util.js';
 import { MATS, GUNS, build } from './viewmodel.js';
 
-// Rig nodes "name parent x y" (cm) with build() parts; hips, trunk, arms are unit-sized, scaled per frame.
-// v vest, l team glow, t dark team tint, h helmet, c cloth, d dark, s steel
-const LEG = 't 17 93 21 0 -46.5,d 19 12 30 0 -95 4', ARM = 'c 11 11 100 0 0 -50,d 9 9 10 0 0 -100';
+const LEG = 't 19 45 25 0 -23,d 19.5 7 26 0 -33', SHIN = 'c 17 39 22 0 -23,v 18 13 10 0 -5 -12,d 21 11 32 0 -47 -3', ARM = 'c 17 15 43 0 0 -22,d 16 15 15 0 0 -48,c 13 12 36 0 0 -72,d 15 12 16 0 0 -96';
 const NODES = [
   ['body root'], ['hipL body -11', LEG], ['hipR body 11', LEG], ['chest body'], ['neck chest'],
-  ['trunk chest', 'c 44 100 26 0 50,v 50 72 32 0 48,d 32 50 14 0 55 20'],
-  ['arms chest', 'l 3 10 14 -27.5 2 -2,l 3 10 14 27.5 2 -2'], ['armL arms -21 -2', ARM], ['armR arms 21 -2', ARM],
+  ['trunk chest', 'c 49 96 30 0 49,v 43 67 36 0 55,d 42 12 34 0 9,v 10 32 7 -18 82 -16,v 10 32 7 18 82 -16,d 8 23 10 -12 43 -22,d 8 23 10 0 43 -22,d 8 23 10 12 43 -22,l 26 5 2 0 73 -20,d 32 46 17 0 56 24'],
+  ['arms chest', 'c 18 19 23 -25 -3,c 18 19 23 25 -3,l 3 9 18 -34 -3,l 3 9 18 34 -3'], ['armL arms -21 -2', ARM], ['armR arms 21 -2', ARM],
 ];
-const HEADS = [ // Rakehands: hood, respirator; Saltreeves: brimmed helmet, antenna
-  'c 22 20 22 0 -3,t 30 24 12 0 -10 9,h -18 9 16 0 3.5,h -16 7 9 0 11.5,l -18.5 4 18.5 0 1,s 17 11 6 0 -5 -12,s -5 9 5 4 -7 -16 157',
-  'c 24 26 26,h 28 8 30 0 13 1,h 40 2.5 42 0 9,l 28.5 3 30.5 0 11 1,d 22 6 3 0 1 -13.5,d 1.4 26 1.4 10 28 10,l 3 3 3 10 41 10',
+const HEADS = [ // Hooded salvage respirators / enclosed refinery hardhats.
+  'c 27 28 28,h -15 13 15 0 7,d 23 9 4 0 1 -14,l 23 2 1 0 4 -16,d 15 11 11 0 -9 -13,s -4 6 4 -9 -9 -14 157,s -4 6 4 9 -9 -14 157',
+  'c 26 26 26,h -15 14 15 0 9,h 35 3 36 0 8,d 23 10 6 0 0 -14,l 24 2 1 0 3 -18,s 15 10 9 0 -10 -14,d -3 6 3 -11 -10 -14 157,d -3 6 3 11 -10 -14 157',
 ];
 
 function teamMaterials(team) {
   const c = new THREE.Color(TEAMS[team].color), m = (color, o) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...o });
   return {
-    v: m(c), l: m(c, { emissive: c, emissiveIntensity: 1.5 }), t: m(c.clone().lerp(new THREE.Color(0x56606a), 0.6).multiplyScalar(0.45)),
-    h: m(team ? 0x56616b : 0xc9c4b8), c: m(0x4d555c), d: m(0x30353a), s: m(0x7a838b, { metalness: 0.3 }),
+    v: m(c), l: m(c, { emissive: c, emissiveIntensity: 1.5 }), t: m(c.clone().lerp(new THREE.Color(0x56606a), 0.55).multiplyScalar(0.65)),
+    h: m(team ? 0x8897a2 : 0xd9c7a3), c: m(team ? 0x596b7a : 0x82705c), d: m(0x293138), s: m(0x7a838b, { metalness: 0.3 }),
   };
 }
 
-// Point a unit-length arm at a hand (arms-group space).
 function reach(arm, x, y, z) {
   const p = arm.position, dx = x - p.x, dy = y - p.y, dz = z - p.z, len = Math.hypot(dx, dy, dz);
   arm.rotation.set(Math.asin(dy / len), Math.atan2(-dx, -dz), 0, 'YXZ');
@@ -54,6 +51,7 @@ function buildRig(scene, team, mats, gunMats) {
   build(HEADS[team], mats, rig.neck);
   rig.root.traverse((m) => (m.castShadow = true));
   rig.hips = [rig.hipL, rig.hipR];
+  rig.knees = rig.hips.map((hip) => { const knee = build(SHIN, mats); knee.position.y = -0.48; hip.add(knee); return knee; });
   for (const id in GUNS) {
     const gun = rig.guns[id] = build(GUNS[id].parts, gunMats), pistol = !GUNS[id].hand;
     gun.scale.setScalar(0.75);
@@ -70,7 +68,6 @@ export function createCharacters(scene, state) {
   for (const k in MATS) gunMats[k] = MATS[k].clone(); // own copies: the world pass has fog, the gun pass not
   const rigs = state.actors.map((a) => buildRig(scene, a.team, mats[a.team], gunMats));
 
-  // `hideId`: the actor we look through.
   function update(alpha, dt, hideId, time) {
     for (const a of state.actors) {
       const rig = rigs[a.id];
@@ -85,15 +82,18 @@ export function createCharacters(scene, state) {
       const speed = Math.hypot(a.vel.x, a.vel.z), bend = a.crouch * 0.45;
       rig.stride += speed * dt * 2.6;
       const swing = a.grounded ? Math.sin(rig.stride) * Math.min(1, speed / MOVE.runSpeed) * 0.7 : 0.35;
-      for (const hip of rig.hips) {
+      for (let i = 0; i < 2; i++) {
+        const hip = rig.hips[i], knee = rig.knees[i];
         hip.position.y = legLen;
-        hip.scale.y = legLen / Math.cos(bend); // legs fold to the crouch but still reach the ground
-        hip.children[1].scale.y = 1 / hip.scale.y;
+        hip.scale.y = legLen / Math.cos(bend);
+        knee.rotation.x = bend * 1.8 - Math.max(0, swing * (i ? -1 : 1)) * 0.45;
+        knee.children[2].scale.y = 1 / hip.scale.y;
       }
       rig.hipL.rotation.x = swing - bend;
       rig.hipR.rotation.x = -swing - bend;
       rig.chest.position.y = legLen;
       rig.chest.rotation.x = a.crouch * 0.15;
+      rig.chest.rotation.z = Math.sin(rig.stride) * Math.min(1, speed / MOVE.runSpeed) * 0.025;
       rig.trunk.scale.y = torsoLen;
       rig.neck.position.y = torsoLen + BODY.headRadius;
       rig.arms.position.y = torsoLen - 0.12;

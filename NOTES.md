@@ -190,3 +190,9 @@ after round 5; first to 6 wins. Objective: the Fuse Core (carry, arm on site A o
 - `tools/playtest.sh [seed]` (12 checks, fails on console errors).
 - `node tools/check-names.mjs`; `node tools/budget.mjs 158`.
 - Package: `mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts` twice, compare sha256.
+
+## Codex top-ten candidate, 2026-11-16
+- Refined the two refinery crews with respirators, safety markings, vest pouches, separated limbs and articulated knees. Shared bevelled geometry makes small weapon/armour edges catch the light; receiver barrels are cylindrical and detachable magazines move during reloads.
+- Added a live movement/recoil accuracy hint and purchase rows with weapon damage, magazine capacity and equipment purpose. Simulation rules, health, collision and bot behavior are unchanged.
+- Shortened redundant renderer comments so every executable source file still fits in the 160 KiB dossier. Retook all four screenshots from the final game source; each uses the existing real-simulation staging script.
+- Corrected the development sightline checker to read the map's current public holds/postplant data rather than removed named exports. Browser gameplay checks passed before submission.

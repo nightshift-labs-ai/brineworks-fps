@@ -3,10 +3,8 @@ import * as THREE from 'three';
 import { PALETTE, std } from './palette.js';
 import { siteDecal, signTexture, glow } from './textures.js';
 
-// Per face: normal axis and sign, then the u and v tangent axes and signs, with u x v = normal (CCW).
 const FACES = [[0, 1, 2, -1, 1, 1], [0, -1, 2, 1, 1, 1], [1, 1, 0, 1, 2, -1], [1, -1, 0, 1, 2, 1], [2, 1, 0, 1, 1, 1], [2, -1, 0, -1, 1, 1]];
 
-// Boxes pushed into one geometry; `scale` metres per texture repeat, or `fit` one texture per face.
 class BoxBatch {
   pos = []; nor = []; uv = []; idx = [];
   add(x0, y0, z0, x1, y1, z1, scale, fit = false) {
@@ -56,7 +54,6 @@ function laneOf(c, r) {
   return c >= 30 && r < 13 ? 'tanks' : 'court';
 }
 
-// Wall signs: [lines, column, row, cell face n s e w].
 const SIGNS = [
   [['A  >', 'JETTY GATE'], 47, 18, 's'], [['A', 'TANK GATE'], 43, 6, 'n'], [['A  >', 'BRINE BRIDGE'], 36, 13, 's'],
   [['B', 'BOILER GATE'], 13, 6, 'n'], [['B  ^', 'BOILING HOUSE'], 8, 18, 's'], [['< B', 'PAN HOUSE'], 17, 19, 's'],
@@ -146,10 +143,8 @@ export function buildLevel(map, tex) {
     place(new THREE.PointLight(PALETTE.lamp, 14, 10), c, r, face, 3.1, 0.6);
   }
 
-  // Beyond the walls, never collided.
   const salt = std({ color: 0xe8e4d8, emissive: 0x8c887e, roughness: 1 }), steel = std({ color: PALETTE.steel, metalness: 0.4, roughness: 0.6 }), oxide = std({ color: 0x8c4c3a });
   const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; group.add(m); };
-  // Salt heaps: a lathed slump (round crown, spread toe), lumpy in angle so the lathe seam stays closed.
   const heap = (r, h) => {
     const g = new THREE.LatheGeometry([[0, 1], [0.25, 0.93], [0.7, 0.45], [1, 0.06], [1.08, 0]].map(([u, v]) => new THREE.Vector2(u * r, v * h)), 16), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) {

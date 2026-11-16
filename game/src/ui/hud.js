@@ -33,7 +33,7 @@ export function createHud(state, camera) {
   const buyRows = SHOP.map((item) => {
     if (HEADERS[item.id]) make(el['buy-list'], 'h3', 1)[0].textContent = HEADERS[item.id];
     const [li] = make(el['buy-list'], 'li', 1), def = itemDef(item);
-    li.innerHTML = `<kbd>${item.key}</kbd><span>${def.name} <small>${def.cls ?? ''}</small></span><b>$${def.price}</b>`;
+    li.innerHTML = `<kbd>${item.key}</kbd><span>${def.name} <small>${def.cls ? def.cls + ' / ' + def.damage + ' DMG / ' + def.mag + ' RDS' : item.id === 'vest' ? 'Torso protection' : item.id === 'helm' ? 'Head protection' : item.id === 'kit' ? 'Disarm in 3.5 seconds' : item.id === 'smoke' ? 'Blocks sight for 15 seconds' : 'Area damage'}</small></span><b>$${def.price}</b>`;
     return li;
   });
   const boardRows = make(el['board-body'], 'tr', state.actors.length);
@@ -74,6 +74,7 @@ export function createHud(state, camera) {
     expire(radio, radioRows);
     const p = state.player, round = state.round, core = state.core, w = p.slots[p.active];
     vitals(p, w);
+    show(el.accuracy, !p.alive ? '' : !p.grounded ? 'AIRBORNE / WIDE SPREAD' : Math.hypot(p.vel.x, p.vel.z) > 0.6 ? 'MOVING / WIDE SPREAD' : p.bloom > 0.01 ? 'RECOIL / SETTLING' : p.crouch > 0.8 ? 'CROUCHED / AIM SETTLED' : 'STILL / AIM SETTLED');
     clockAndScore(round, core);
     // Crosshair gap = the live spread cone projected to pixels.
     if (w && p.alive) {

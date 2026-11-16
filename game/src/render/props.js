@@ -9,7 +9,6 @@ const PUFFS = 28;
 const add = (parent, geo, mat, y = 0) => { const m = new THREE.Mesh(geo, mat); m.position.y = y; m.castShadow = true; parent.add(m); return m; };
 
 export function createProps(scene, state) {
-  // The Fuse Core: a case whose window and seam flash on each beep; armed, a light column and ring pulse.
   const core = new THREE.Group(), steel = std({ color: 0x5b6258, roughness: 0.5, metalness: 0.5 });
   const band = std({ color: 0x3a2400, emissive: 0xffa31a });
   add(core, new THREE.BoxGeometry(0.46, 0.34, 0.32), steel, 0.17);
@@ -27,7 +26,6 @@ export function createProps(scene, state) {
   const nadeGeo = new THREE.SphereGeometry(0.08, 10, 8), nadeMats = { frag: std({ color: 0x4d5a3a }), smoke: std({ color: 0x9aa0a6 }) };
   const nades = state.nades.map(() => { const m = add(scene, nadeGeo, nadeMats.frag); m.visible = false; return m; });
 
-  // Smoke: a spiral of puffs filling a dome, big inside, small at the ragged rim; dark below, lit above.
   const tex = puffTexture(), clouds = state.smokes.map(() => Array.from({ length: PUFFS }, (_, i) => {
     const a = i * 2.39996, r = Math.sqrt((i + 0.5) / PUFFS), y = 0.15 + (i % 6) / 6 * Math.sqrt(1.1 - r * r);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: new THREE.Color(0x353b41).lerp(new THREE.Color(0xf4ead8), y), transparent: true, depthWrite: false, rotation: Math.sin(i) * 0.5 }));

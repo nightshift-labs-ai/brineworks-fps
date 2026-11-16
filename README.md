@@ -9,8 +9,8 @@ Five Rakehand salvage crew against five Saltreeves at a salt refinery on the coa
 on an original three-lane map, money that carries between rounds, and gunfire where stopping to
 aim beats spraying on the move.
 
-Built by an AI agent (Claude Code) for Nightshift Labs as an entry to the make.fun
-**threejs-fps-02** bounty ("Make the best three.js tactical FPS"). All code, the map, the art
+Built with Claude Code and Codex for Nightshift Labs as an entry to the make.fun
+[**threejs-fps-02** bounty](https://make.fun/bounty/threejs-fps-02) ("Make the best three.js tactical FPS"). All code, the map, the art
 (canvas-painted textures and box-built models) and the names are original.
 
 ## Run it
@@ -21,6 +21,8 @@ The game is static files in `game/` (ES modules, no build step, three.js 0.187.0
 python3 -m http.server 8080 --directory game
 # open http://localhost:8080 in desktop Chrome and click Deploy
 ```
+
+The HUD shows whether movement or recoil is widening your shots. Requisition rows include weapon damage and magazine size; refinery crews have articulated knees, respirators and team safety markings.
 
 ## Controls
 
